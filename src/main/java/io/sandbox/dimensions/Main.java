@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
+import io.sandbox.dimensions.commands.DownloadDimension;
 import io.sandbox.dimensions.commands.RestoreDimension;
 
 public class Main implements ModInitializer {
@@ -36,6 +37,7 @@ public class Main implements ModInitializer {
 					}
 					return true;
 				})
-				.then(RestoreDimension.register())));
+				.then(RestoreDimension.register())
+				.then(DownloadDimension.register())));
 	}
 }
