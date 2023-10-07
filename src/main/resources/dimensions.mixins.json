@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "com.example.mixin",
+	"package": "io.sandbox.dimensions.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ExampleMixin"
+		"MinecraftServerAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
