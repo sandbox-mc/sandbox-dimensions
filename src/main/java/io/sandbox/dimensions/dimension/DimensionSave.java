@@ -6,7 +6,6 @@ import java.nio.file.Paths;
 
 import io.sandbox.dimensions.dimension.zip.UnzipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.WorldSavePath;
