@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands.zip;
+package io.sandbox.dimensions.dimension.zip;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

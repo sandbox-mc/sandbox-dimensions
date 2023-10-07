@@ -1,47 +1,25 @@
-package io.sandbox.dimensions.commands;
+package io.sandbox.dimensions.dimension;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.jetbrains.annotations.Nullable;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-
-import io.sandbox.dimensions.commands.zip.UnzipUtility;
+import io.sandbox.dimensions.dimension.zip.UnzipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class RestoreDimension {
-  public static LiteralArgumentBuilder<ServerCommandSource> register() {
-    return CommandManager.literal("restore")
-      .then(
-        CommandManager.argument("file", StringArgumentType.word())
-        .executes(ctx -> execute(
-          StringArgumentType.getString(ctx, "file"),
-          null,
-          ctx.getSource()
-        ))
-      )
-      .executes(context -> {
-        System.out.println("Fallback????");
-        return 1;
-      });
-    }
-    
-    private static int execute(String file, @Nullable String comment, ServerCommandSource source) throws CommandSyntaxException {
+public class DimensionSave {
+  public void loadSaveFile(String datapackName, ServerCommandSource source) {
+    // MinecraftServer
     MinecraftServer server = source.getServer();
-    // ServerLifecycleEvents
-    // server.getSaveProperties().;
-    // The session is what owns the lock on the folders
-    // need to kill that lock
+    // The Session gets directory context into the specific save dir in run
+    // /run/<my-save-name>
     Session session = ((MinecraftServerAccessor)server).getSession();
-    // session.getLevelStorage()
+
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
       session.getDirectory(WorldSavePath.DATAPACKS).getParent().toString(),
@@ -129,7 +107,5 @@ public class RestoreDimension {
     //   System.out.println("ExecutionException");
     //   e.printStackTrace();
     // }
-
-    return 1;
   }
 }
