@@ -21,6 +21,7 @@ public class CommandInit {
 					}
 					return true;
 				})
-				.then(RestoreCommand.register())));
+				.then(RestoreCommand.register())
+        .then(DownloadDimension.register())));
   }
 }
