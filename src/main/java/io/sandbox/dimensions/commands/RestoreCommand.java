@@ -6,7 +6,9 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandbox.dimensions.commands.autoComplete.DimensionAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionSave;
+import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 
@@ -14,10 +16,10 @@ public class RestoreCommand {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("restore")
       .then(
-        CommandManager.argument("file", StringArgumentType.word())
+        CommandManager.argument("dimension", DimensionArgumentType.dimension())
+        .suggests(DimensionAutoComplete.Instance())
         .executes(ctx -> execute(
-          StringArgumentType.getString(ctx, "file"),
-          null,
+          StringArgumentType.getString(ctx, "dimension"),
           ctx.getSource()
         ))
       )
@@ -27,9 +29,9 @@ public class RestoreCommand {
       });
     }
     
-  private static int execute(String file, @Nullable String comment, ServerCommandSource source) throws CommandSyntaxException {
+  private static int execute(String dimension, ServerCommandSource source) throws CommandSyntaxException {
     var dimensionSave = new DimensionSave();
-    dimensionSave.loadSaveFile(file, source);
+    dimensionSave.loadSaveFile(dimension, source.getServer(), true);
 
     return 1;
   }

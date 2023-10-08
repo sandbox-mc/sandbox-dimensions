@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
@@ -25,7 +26,7 @@ import net.minecraft.world.level.storage.LevelStorage.Session;
 public class DimensionManager {
   private static List<String> initializedDimensions = new ArrayList<>();
   private static Map<Identifier, Resource> sandboxDimensionWorldFiles = new HashMap<>();
-  private static Map<Identifier, DimensionSave> dimensionSaves = new HashMap<>();
+  private static Map<String, DimensionSave> dimensionSaves = new HashMap<>();
   private static Path storageDirectory = null;
 
   public static void init() {
@@ -43,13 +44,11 @@ public class DimensionManager {
           System.out.println("Dimension: " + dimensionName);
           initializedDimensions.add(dimensionName.toString());
         }
+
         // test_realm:world_saves/my_world.zip
         // Load all template pools for reference later
         Map<Identifier, Resource> worldSaves = manager.findResources("world_saves", path -> true);
         for (Identifier resourceName : worldSaves.keySet()) {
-          String dataPackName = resourceName.getNamespace();
-          System.out.println("TEst: " + worldSaves.get(resourceName).getResourcePackName() + " : " + resourceName.getPath());
-
           // Resource resource = worldSaves.get(resourceName);
           // Pathing should match for Namespace and fileName
           String dimensionIdentifier = resourceName.toString()
@@ -57,7 +56,6 @@ public class DimensionManager {
             .replaceAll(".zip", ".json");
           // Check if there is an initialized dimension for the save file
           if (initializedDimensions.contains(dimensionIdentifier)) {
-            System.out.println("Loaded: " + dataPackName + " : " + resourceName);
             if (!sandboxDimensionWorldFiles.containsKey(resourceName)) {
               sandboxDimensionWorldFiles.put(resourceName, worldSaves.get(resourceName));
             }
@@ -67,6 +65,10 @@ public class DimensionManager {
         }
       }
     });
+  }
+
+  public static Set<String> getDimensionList() {
+    return dimensionSaves.keySet();
   }
 
   public static Path getStorageFolder(ServerCommandSource source) {
@@ -111,10 +113,8 @@ public class DimensionManager {
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
         DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
-        // System.out.println("Active: " + (dimensionSave.dimensionIsActive ? "True" : "False"));
-        // dimensionSave.dimensionIsActive = true;
-        // System.out.println("Active: " + (dimensionSave.dimensionIsActive ? "True" : "False"));
-        // dimensionSaves.put(dimensionId, dimensionSave);
+        dimensionSave.loadSaveFile(dimensionIdString, server, false);
+        dimensionSaves.put(dimensionIdString, dimensionSave);
       } else {
         System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
       }

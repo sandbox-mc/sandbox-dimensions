@@ -9,8 +9,8 @@ import io.sandbox.dimensions.dimension.zip.UnzipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
@@ -49,99 +49,52 @@ public class DimensionSave extends PersistentState {
     return dimensionSave;
   }
 
-  public void loadSaveFile(String datapackName, ServerCommandSource source) {
-    // MinecraftServer
-    MinecraftServer server = source.getServer();
+  public void loadSaveFile(String datapackNameString, MinecraftServer server, Boolean override) {
+    if (this.dimensionSaveLoaded && !override) {
+      // If we have already loaded this saved world, ignore, unless it was overriden
+      return;
+    };
+
     // The Session gets directory context into the specific save dir in run
     // /run/<my-save-name>
     Session session = ((MinecraftServerAccessor)server).getSession();
+    Identifier dataPackId = new Identifier(datapackNameString);
+    String dataPackName = dataPackId.getNamespace();
+    String dimensionName = dataPackId.getPath();
 
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
       session.getDirectory(WorldSavePath.DATAPACKS).getParent().toString(),
       "dimensions",
-      "test_realm",
-      "test_realm"
+      dataPackName,
+      dimensionName
     );
     Path datapackLoadFilePath = Paths.get(
       session.getDirectory(WorldSavePath.DATAPACKS).toString(),
-      "test_realm",
+      dataPackName,
       "data",
-      "test_realm",
-      "world_save",
-      "my_world.zip"
+      dataPackName,
+      "world_saves",
+      dimensionName + ".zip" // File name should be dimensionName + zip
     );
         
     System.out.println("DataPack Dir: " + datapackLoadFilePath); // full path
-    // Path tmp;
-
-    // try {
-    //   // Create tmp file for writing the Zip to
-    //   tmp = Files.createTempDirectory(dimensionSavePath, "my_world.zip");
-    // } catch (IOException e) {
-    //   System.out.println("IO Exception from tmp creation");
-    //   e.printStackTrace();
-    //   return 0; // failed
-    // }
-
-    //By making a separate thread we can start unpacking an old backup instantly
-    //Let the server shut down gracefully, and wait for the old world backup to complete
-    // FutureTask<Void> waitForShutdown = new FutureTask<>(() -> {
-    //   server.getThread().join(); //wait for server thread to die and save all its state
-    //   return null;
-    // });
-
-    // //run the thread.
-    // new Thread(waitForShutdown, "Server shutdown wait thread").start();
 
     try {
-      
-      // Wait for server to stop
-      // waitForShutdown.get();
-      
-      // // Something happened...
-      // if (Files.notExists(tmp)) {
-      //   System.out.println("File not found");
-      //   return 1;
-      // }
-      // server.submitAndJoin(() -> {
-      //   server.saveAll(true, true, true);
-      // });
-
-      
-      // server.getSer
-      // for (ServerWorld serverWorld : server.getWorlds()) {
-      //   if (serverWorld != null && !serverWorld.savingDisabled) {
-      //     System.out.println("World: ");
-      //     serverWorld.save(null, true, false);
-      //     // serverWorld.setChunkForced();
-      //   }
-      // }
-
-      // session.close();
       
       // delete current dimension save
       // Maybe make this a backup process or something???
       UnzipUtility.deleteDirectory(dimensionSavePath);
 
       // Unzip the world files
-      // UnzipUtility unzipper = new UnzipUtility();
       System.out.println("Starting unzip");
       UnzipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
       System.out.println("Done unzipping");
-
-
-      // Files.move(tmp, dimensionSavePath);
+      this.dimensionSaveLoaded = true;
+      this.markDirty(); // flags the state change for save on server restart
     } catch (IOException e) {
       System.out.println("IO Exception");
       e.printStackTrace();
     }
-    // catch (InterruptedException e) {
-    //   System.out.println("InterruptedException");
-    //   e.printStackTrace();
-    // } catch (ExecutionException e) {
-    //   System.out.println("ExecutionException");
-    //   e.printStackTrace();
-    // }
   }
 }
