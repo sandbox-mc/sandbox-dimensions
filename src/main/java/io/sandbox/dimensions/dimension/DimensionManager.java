@@ -1,24 +1,32 @@
 package io.sandbox.dimensions.dimension;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.sandbox.dimensions.Main;
+import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
+import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
   private static List<String> initializedDimensions = new ArrayList<>();
   private static Map<Identifier, Resource> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<Identifier, DimensionSave> dimensionSaves = new HashMap<>();
+  private static Path storageDirectory = null;
 
   public static void init() {
     ResourceManagerHelper.get(ResourceType.SERVER_DATA)
@@ -61,6 +69,32 @@ public class DimensionManager {
     });
   }
 
+  public static Path getStorageFolder(ServerCommandSource source) {
+    if (storageDirectory != null) {
+      return storageDirectory;
+    }
+
+    Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
+
+    String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
+
+    String sandboxDirName = Paths.get(minecraftFolder, "sandbox").toString();
+    File sandboxDirFile = new File(sandboxDirName);
+    if (!sandboxDirFile.exists()) {
+      sandboxDirFile.mkdir();
+    }
+
+    Path storageDirPath = Paths.get(sandboxDirName, "storage");
+    File storageDirFile = new File(storageDirPath.toString());
+    if (!storageDirFile.exists()) {
+      storageDirFile.mkdir();
+    }
+
+    storageDirectory = storageDirPath;
+
+    return storageDirPath;
+  }
+
   public static void processSandboxDimensionFiles(MinecraftServer server) {
     Map<String, ServerWorld> worldMap = new HashMap<>();
 
@@ -84,7 +118,6 @@ public class DimensionManager {
       } else {
         System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
       }
-
     }
   }
 }

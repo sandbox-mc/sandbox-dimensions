@@ -18,20 +18,17 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
-import net.minecraft.server.MinecraftServer;
+import io.sandbox.dimensions.dimension.DimensionManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DownloadDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("download")
       .then(
-        CommandManager.argument("url", StringArgumentType.word())
+        CommandManager.argument("code", StringArgumentType.word())
         .executes(ctx -> performDownloadCmd(
-          StringArgumentType.getString(ctx, "url"),
+          StringArgumentType.getString(ctx, "code"),
           null,
           ctx.getSource()
         ))
@@ -42,16 +39,18 @@ public class DownloadDimension {
       });
   }
 
-  private static int performDownloadCmd(String theUrl, @Nullable String customFileName, ServerCommandSource source) throws CommandSyntaxException {
+  private static int performDownloadCmd(String code, @Nullable String customFileName, ServerCommandSource source) throws CommandSyntaxException {
     // Make sure the URL is formed properly and can be accessed as an InputStream.
     URL url;
     InputStream inputStream;
     try {
-      url = new URL(theUrl);
+      url = new URL("https://www.sand-box.io/dimensions/get/" + code);
       inputStream = url.openStream();
     } catch (MalformedURLException e) {
+      System.out.println("MalformedURL");
       return 0;
     } catch (IOException e) {
+      System.out.println("IOException from input stream");
       return 0;
     }
 
@@ -63,6 +62,7 @@ public class DownloadDimension {
       Path filePath = getFileDestination(source, "butts.zip");
       fileOutputStream = new FileOutputStream(filePath.toString());
     } catch (FileNotFoundException e) {
+      System.out.println("file not found exception");
       return 0;
     }
   
@@ -72,6 +72,7 @@ public class DownloadDimension {
       fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
       fileOutputStream.close();
     } catch (IOException e) {
+      System.out.println("io exception reading file from channel");
       return 0;
     }
 
@@ -79,15 +80,8 @@ public class DownloadDimension {
   }
 
   private static Path getFileDestination(ServerCommandSource source, String fileName) {
-    MinecraftServer server = source.getServer();
-    Session session = ((MinecraftServerAccessor)server).getSession();
-    Path dimensionSavePath = Paths.get(
-      session.getDirectory(WorldSavePath.DATAPACKS).getParent().toString(),
-      "dimensions",
-      "downloads",
-      fileName
-    );
+    Path storageFolder = DimensionManager.getStorageFolder(source);
 
-    return dimensionSavePath;
+    return Paths.get(storageFolder.toString(), fileName);
   }
 }
