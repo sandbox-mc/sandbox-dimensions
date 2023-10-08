@@ -4,15 +4,51 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.dimension.zip.UnzipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.WorldSavePath;
+import net.minecraft.world.PersistentState;
+import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class DimensionSave {
+public class DimensionSave extends PersistentState {
+  private static String DIMENSION_IS_ACTIVE = "dimensionIsActive";
+  private static String DIMENSION_SAVE_LOADED = "dimensionSaveLoaded";
+  public Boolean dimensionIsActive = false;
+  public Boolean dimensionSaveLoaded = false;
+ 
+  @Override
+  public NbtCompound writeNbt(NbtCompound nbt) {
+      nbt.putBoolean(DIMENSION_IS_ACTIVE, dimensionIsActive);
+      nbt.putBoolean(DIMENSION_SAVE_LOADED, dimensionSaveLoaded);
+      return nbt;
+  }
+
+  public static DimensionSave createFromNbt(NbtCompound tag) {
+    DimensionSave state = new DimensionSave();
+    state.dimensionIsActive = tag.getBoolean(DIMENSION_IS_ACTIVE);
+    state.dimensionSaveLoaded = tag.getBoolean(DIMENSION_SAVE_LOADED);
+    return state;
+  }
+
+  private static Type<DimensionSave> type = new Type<>(
+    DimensionSave::new, // If there's no 'DimensionSave' yet create one
+    DimensionSave::createFromNbt, // If there is a 'DimensionSave' NBT, parse it with 'createFromNbt'
+    null // Supposed to be an 'DataFixTypes' enum, but we can just pass null
+  );
+
+  public static DimensionSave getDimensionState(ServerWorld dimension) {
+    PersistentStateManager persistentStateManager = dimension.getPersistentStateManager();
+    DimensionSave dimensionSave = persistentStateManager.getOrCreate(type, Main.modId);
+    dimensionSave.markDirty();
+    return dimensionSave;
+  }
+
   public void loadSaveFile(String datapackName, ServerCommandSource source) {
     // MinecraftServer
     MinecraftServer server = source.getServer();

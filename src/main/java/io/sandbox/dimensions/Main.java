@@ -22,7 +22,7 @@ public class Main implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		ServerLifecycleEvents.SERVER_STARTING.register(new ServerStartingListener());
+		ServerLifecycleEvents.SERVER_STARTED.register(new ServerStartedListener());
 
 		// Initialize Commands
 		CommandInit.init();

@@ -11,12 +11,13 @@ import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 
 public class DimensionManager {
   private static List<String> initializedDimensions = new ArrayList<>();
-  private static List<Identifier> sandboxDimensionWorldFiles = new ArrayList<>();
+  private static Map<Identifier, Resource> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<Identifier, DimensionSave> dimensionSaves = new HashMap<>();
 
   public static void init() {
@@ -46,22 +47,44 @@ public class DimensionManager {
           String dimensionIdentifier = resourceName.toString()
             .replaceAll("world_saves", "dimension")
             .replaceAll(".zip", ".json");
+          // Check if there is an initialized dimension for the save file
           if (initializedDimensions.contains(dimensionIdentifier)) {
             System.out.println("Loaded: " + dataPackName + " : " + resourceName);
-            if (!sandboxDimensionWorldFiles.contains(resourceName)) {
-              sandboxDimensionWorldFiles.add(resourceName);
+            if (!sandboxDimensionWorldFiles.containsKey(resourceName)) {
+              sandboxDimensionWorldFiles.put(resourceName, worldSaves.get(resourceName));
             }
+          } else {
+            System.out.println("WARNING: " + resourceName + " does not have a dimension");
           }
         }
       }
     });
   }
 
-  public static void processSandboxDimensionFiles(ServerWorld server) {
-    var storage = server.getPersistentStateManager();
-    for (Identifier dimensionId : sandboxDimensionWorldFiles) {
-      DimensionSave dimensionSave = new DimensionSave();
-      dimensionSaves.put(dimensionId, dimensionSave);
+  public static void processSandboxDimensionFiles(MinecraftServer server) {
+    Map<String, ServerWorld> worldMap = new HashMap<>();
+
+    // Get a mapping of the currently loaded worlds for persistent storage
+    for (ServerWorld world : server.getWorlds()) {
+      worldMap.put(world.getRegistryKey().getValue().toString(), world);
+    }
+
+    // Loop through all the saves that are found
+    for (Identifier dimensionId : sandboxDimensionWorldFiles.keySet()) {
+      String dimensionIdString = dimensionId.toString()
+        .replaceAll("world_saves/", "")
+        .replaceAll(".zip", "");
+      ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
+      if (dimensionWorld != null) {
+        DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
+        // System.out.println("Active: " + (dimensionSave.dimensionIsActive ? "True" : "False"));
+        // dimensionSave.dimensionIsActive = true;
+        // System.out.println("Active: " + (dimensionSave.dimensionIsActive ? "True" : "False"));
+        // dimensionSaves.put(dimensionId, dimensionSave);
+      } else {
+        System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
+      }
+
     }
   }
 }
