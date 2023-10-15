@@ -1,0 +1,5 @@
+{
+  "sandbox-dimensions.errorMessages.no-previous-pos": "You have no previous positions to leave to, try join command?",
+  "sandbox-dimensions.commands.dimensionrules.get": "DimensionRule %s is currently set to: %s",
+  "sandbox-dimensions.commands.dimensionrules.set": "DimensionRule %s is now set to: %s"
+}

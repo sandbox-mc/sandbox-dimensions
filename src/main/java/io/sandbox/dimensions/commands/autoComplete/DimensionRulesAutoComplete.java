@@ -8,13 +8,13 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import io.sandbox.dimensions.dimension.DimensionManager;
+import io.sandbox.dimensions.dimension.DimensionSave;
 import net.minecraft.server.command.ServerCommandSource;
 
-public final class DimensionAutoComplete implements SuggestionProvider<ServerCommandSource> {
-  private static final DimensionAutoComplete INSTANCE = new DimensionAutoComplete();
+public class DimensionRulesAutoComplete implements SuggestionProvider<ServerCommandSource> {
+  private static final DimensionRulesAutoComplete INSTANCE = new DimensionRulesAutoComplete();
 
-  public static DimensionAutoComplete Instance() { return INSTANCE; }
+  public static DimensionRulesAutoComplete Instance() { return INSTANCE; }
 
   @Override
   public CompletableFuture<Suggestions> getSuggestions(
@@ -23,13 +23,9 @@ public final class DimensionAutoComplete implements SuggestionProvider<ServerCom
   ) throws CommandSyntaxException {
     String remaining = builder.getRemaining();
 
-    // for (ServerWorld world : context.getSource().getServer().getWorlds()) {
-    //   builder.suggest(world.getRegistryKey().getValue().toString());
-    // }
-
-    for (String dimensionName : DimensionManager.getDimensionList()) {
-      if (dimensionName.startsWith(remaining)) {
-        builder.suggest(dimensionName);
+    for (String ruleName : DimensionSave.GAME_RULES) {
+      if (ruleName.startsWith(remaining)) {
+        builder.suggest(ruleName);
       }
     }
 

@@ -12,7 +12,7 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"icon": "assets/sandbox-dimensions/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -26,9 +26,9 @@
 		"fabricloader": ">=0.14.22",
 		"minecraft": "~1.20.2",
 		"java": ">=17",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"sandbox-lib": "*"
 	},
 	"suggests": {
-		"another-mod": "*"
 	}
 }

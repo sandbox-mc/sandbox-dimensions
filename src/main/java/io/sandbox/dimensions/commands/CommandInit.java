@@ -11,6 +11,7 @@ public class CommandInit {
 			LiteralArgumentBuilder.<ServerCommandSource>literal("dimension")
 				.requires((ctx) -> {
 					try {
+						// This is command auth, should look into this at some point
 						// return ((config.get().playerWhitelist.contains(ctx.getEntityOrThrow().getEntityName()) ||
 						// 				ctx.hasPermissionLevel(config.get().permissionLevel)) &&
 						// 				!config.get().playerBlacklist.contains(ctx.getEntityOrThrow().getEntityName())) ||
@@ -21,7 +22,11 @@ public class CommandInit {
 					}
 					return true;
 				})
-				.then(RestoreCommand.register())
-        .then(DownloadDimension.register())));
+				.then(DownloadDimension.register())
+				.then(JoinDimension.register())
+				.then(LeaveDimension.register())
+				.then(RestoreDimension.register())
+				.then(DimensionRule.register())
+				.then(SetSpawnDimension.register())));
   }
 }

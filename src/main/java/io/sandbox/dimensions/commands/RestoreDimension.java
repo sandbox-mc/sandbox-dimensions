@@ -1,7 +1,5 @@
 package io.sandbox.dimensions.commands;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -12,22 +10,22 @@ import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 
-public class RestoreCommand {
+public class RestoreDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("restore")
       .then(
         CommandManager.argument("dimension", DimensionArgumentType.dimension())
-        .suggests(DimensionAutoComplete.Instance())
-        .executes(ctx -> execute(
-          StringArgumentType.getString(ctx, "dimension"),
-          ctx.getSource()
-        ))
+          .suggests(DimensionAutoComplete.Instance())
+          .executes(ctx -> execute(
+            StringArgumentType.getString(ctx, "dimension"),
+            ctx.getSource()
+          ))
       )
       .executes(context -> {
         System.out.println("Fallback????");
         return 1;
       });
-    }
+  }
     
   private static int execute(String dimension, ServerCommandSource source) throws CommandSyntaxException {
     var dimensionSave = new DimensionSave();

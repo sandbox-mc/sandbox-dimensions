@@ -7,7 +7,6 @@ import net.minecraft.server.MinecraftServer;
 public class ServerStartedListener implements ServerStarted {
   @Override
   public void onServerStarted(MinecraftServer server) {
-    System.out.println("Hit the server");
     DimensionManager.processSandboxDimensionFiles(server);
   }
 }
