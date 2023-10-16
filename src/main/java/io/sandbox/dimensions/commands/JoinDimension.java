@@ -8,6 +8,7 @@ import io.sandbox.dimensions.player.PlayerData;
 import io.sandbox.dimensions.player.PlayerPosition;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.minecraft.command.argument.DimensionArgumentType;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -34,7 +35,7 @@ public class JoinDimension {
       });
   }
 
-  private static int joinDimension(ServerWorld dimension, ServerCommandSource source) {
+  private static int joinDimension(ServerWorld dimension, ServerCommandSource source) throws CommandSyntaxException {
     ServerPlayerEntity player;
     try {
       player = source.getPlayerOrThrow();
@@ -48,7 +49,8 @@ public class JoinDimension {
     DimensionSave overworldSaveData = DimensionSave.getDimensionState(overworld);
     PlayerData overworldPlayerData = overworldSaveData.getPlayerData(player);
     PlayerPosition playerPos = new PlayerPosition();
-    playerPos.dimension = player.getServerWorld().getRegistryKey().getValue().toString();
+    ServerWorld originalDimension = player.getServerWorld();
+    playerPos.dimension = originalDimension.getRegistryKey().getValue().toString();
     playerPos.posX = player.getBlockX();
     playerPos.posY = player.getBlockY();
     playerPos.posZ = player.getBlockZ();
@@ -57,8 +59,33 @@ public class JoinDimension {
     overworldPlayerData.previousPositions.add(playerPos);
     overworldSaveData.setPlayerData(player.getUuid(), overworldPlayerData);
     
-    // Get the Dimension Spawn location (where we drop them off when they join)
     DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+
+    // Save inventory if keepInventoryOnJoin rule is false
+    if (!dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {
+      DimensionSave originalDimensionSave = DimensionSave.getDimensionState(originalDimension);
+      PlayerData originalPlayerData = originalDimensionSave.getPlayerData(player);
+      PlayerData destinationPlayerData = dimensionSave.getPlayerData(player);
+      PlayerInventory playerInventory = player.getInventory();
+
+      // Create a cache inventory if one doesn't exist
+      if (originalPlayerData.inventoryCache == null) {
+        originalPlayerData.inventoryCache = new PlayerInventory(player);
+      }
+      
+      // Clone and cache the inventory
+      originalPlayerData.inventoryCache.clone(playerInventory);
+
+      // Clear the Player inventory so they enter empty
+      playerInventory.clear();
+
+      // If the destination has an inventory... load it?
+      if (destinationPlayerData.inventoryCache != null) {
+        playerInventory.clone(destinationPlayerData.inventoryCache);
+      }
+    }
+
+    // Get the Dimension Spawn location (where we drop them off when they join)
     BlockPos spawnPos = dimensionSave.getSpawnPos(dimension);
     FabricDimensions.teleport(
       player,

@@ -11,10 +11,8 @@ import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.dimension.zip.UnzipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import io.sandbox.dimensions.player.PlayerData;
-import io.sandbox.dimensions.player.PlayerPosition;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -68,7 +66,7 @@ public class DimensionSave extends PersistentState {
     // this is only populated for Overworld
     NbtCompound playerDataList = new NbtCompound();
     players.forEach((uuid, playerData) -> {
-      playerDataList.put(uuid.toString(), playerData.getPlayerDataNbt());
+      playerDataList.put(uuid.toString(), playerData.writePlayerDataNbt());
     });
     nbt.put(PLAYERS, playerDataList);
     return nbt;
@@ -89,16 +87,17 @@ public class DimensionSave extends PersistentState {
     NbtCompound playersNbt = tag.getCompound(PLAYERS);
     playersNbt.getKeys().forEach(key -> {
       PlayerData playerData = new PlayerData();
-      NbtList previousPositionsNbt = playersNbt.getList(key, 0);
-      for (int i = 0; i < previousPositionsNbt.size(); i++) {
-        PlayerPosition playerPosition = new PlayerPosition();
-        NbtCompound playerPosNbt = previousPositionsNbt.getCompound(i);
-        playerPosition.dimension = playerPosNbt.getString("dimension");
-        playerPosition.posX = playerPosNbt.getInt("posX");
-        playerPosition.posY = playerPosNbt.getInt("posY");
-        playerPosition.posZ = playerPosNbt.getInt("posZ");
-        playerData.previousPositions.add(playerPosition);
-      }
+      playerData.readFromNbt(playersNbt.getCompound(key));
+      // NbtList previousPositionsNbt = playersNbt.getList(key, 0);
+      // for (int i = 0; i < previousPositionsNbt.size(); i++) {
+      //   PlayerPosition playerPosition = new PlayerPosition();
+      //   NbtCompound playerPosNbt = previousPositionsNbt.getCompound(i);
+      //   playerPosition.dimension = playerPosNbt.getString("dimension");
+      //   playerPosition.posX = playerPosNbt.getInt("posX");
+      //   playerPosition.posY = playerPosNbt.getInt("posY");
+      //   playerPosition.posZ = playerPosNbt.getInt("posZ");
+      //   playerData.previousPositions.add(playerPosition);
+      // }
 
       state.players.put(UUID.fromString(key), playerData);
     });
