@@ -8,7 +8,6 @@ import io.sandbox.dimensions.player.PlayerData;
 import io.sandbox.dimensions.player.PlayerPosition;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.minecraft.command.argument.DimensionArgumentType;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -48,8 +47,8 @@ public class JoinDimension {
     ServerWorld overworld = source.getServer().getWorld(World.OVERWORLD);
     DimensionSave overworldSaveData = DimensionSave.getDimensionState(overworld);
     PlayerData overworldPlayerData = overworldSaveData.getPlayerData(player);
-    PlayerPosition playerPos = new PlayerPosition();
     ServerWorld originalDimension = player.getServerWorld();
+    PlayerPosition playerPos = new PlayerPosition();
     playerPos.dimension = originalDimension.getRegistryKey().getValue().toString();
     playerPos.posX = player.getBlockX();
     playerPos.posY = player.getBlockY();
@@ -61,28 +60,11 @@ public class JoinDimension {
     
     DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
 
-    // Save inventory if keepInventoryOnJoin rule is false
+    // swap inventory if keepInventoryOnJoin rule is false
     if (!dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {
-      DimensionSave originalDimensionSave = DimensionSave.getDimensionState(originalDimension);
-      PlayerData originalPlayerData = originalDimensionSave.getPlayerData(player);
-      PlayerData destinationPlayerData = dimensionSave.getPlayerData(player);
-      PlayerInventory playerInventory = player.getInventory();
-
-      // Create a cache inventory if one doesn't exist
-      if (originalPlayerData.inventoryCache == null) {
-        originalPlayerData.inventoryCache = new PlayerInventory(player);
-      }
-      
-      // Clone and cache the inventory
-      originalPlayerData.inventoryCache.clone(playerInventory);
-
-      // Clear the Player inventory so they enter empty
-      playerInventory.clear();
-
-      // If the destination has an inventory... load it?
-      if (destinationPlayerData.inventoryCache != null) {
-        playerInventory.clone(destinationPlayerData.inventoryCache);
-      }
+      PlayerData playerData = dimensionSave.getPlayerData(player);
+      playerData.previousPositions.add(playerPos);
+      dimensionSave.swapPlayerInventoryWithDestination(player);
     }
 
     // Get the Dimension Spawn location (where we drop them off when they join)

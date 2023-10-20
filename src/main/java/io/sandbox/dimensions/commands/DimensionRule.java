@@ -46,7 +46,7 @@ public class DimensionRule {
     DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
     Boolean ruleValue = dimensionSave.getRule(rule);
     source.sendFeedback(() -> {
-      return Text.translatable("sandbox-dimensions.commands.dimensionrules.get", new Object[]{rule, ruleValue.toString()});
+      return Text.literal("DimensionRule " + rule +" is currently set to: " + ruleValue.toString());
     }, false);
     return 1;
   }
@@ -56,7 +56,7 @@ public class DimensionRule {
     DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
     dimensionSave.setRule(rule, value);
     source.sendFeedback(() -> {
-      return Text.translatable("sandbox-dimensions.commands.dimensionrules.set", new Object[]{rule, value.toString()});
+      return Text.literal("DimensionRule " + rule +" has been set to: " + value.toString());
     }, false);
     return 1;
   }

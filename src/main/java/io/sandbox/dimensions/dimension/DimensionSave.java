@@ -12,8 +12,10 @@ import io.sandbox.dimensions.dimension.zip.UnzipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import io.sandbox.dimensions.player.PlayerData;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
@@ -88,17 +90,6 @@ public class DimensionSave extends PersistentState {
     playersNbt.getKeys().forEach(key -> {
       PlayerData playerData = new PlayerData();
       playerData.readFromNbt(playersNbt.getCompound(key));
-      // NbtList previousPositionsNbt = playersNbt.getList(key, 0);
-      // for (int i = 0; i < previousPositionsNbt.size(); i++) {
-      //   PlayerPosition playerPosition = new PlayerPosition();
-      //   NbtCompound playerPosNbt = previousPositionsNbt.getCompound(i);
-      //   playerPosition.dimension = playerPosNbt.getString("dimension");
-      //   playerPosition.posX = playerPosNbt.getInt("posX");
-      //   playerPosition.posY = playerPosNbt.getInt("posY");
-      //   playerPosition.posZ = playerPosNbt.getInt("posZ");
-      //   playerData.previousPositions.add(playerPosition);
-      // }
-
       state.players.put(UUID.fromString(key), playerData);
     });
 
@@ -119,8 +110,7 @@ public class DimensionSave extends PersistentState {
   }
 
   public PlayerData getPlayerData(PlayerEntity player) {
-    this.markDirty();
-    return this.players.getOrDefault(player.getUuid(), new PlayerData());
+    return this.players.computeIfAbsent(player.getUuid(), uuid -> new PlayerData());
   }
 
   public BlockPos getSpawnPos(ServerWorld dimension) {
@@ -243,5 +233,34 @@ public class DimensionSave extends PersistentState {
     this.markDirty();
 
     return true;
+  }
+
+  // Swaps inventory if the player has a different inventory in next dimension
+  // Empties invenotry if not
+  // Saves Original Inventory
+  public void swapPlayerInventoryWithDestination(ServerPlayerEntity player) {
+    DimensionSave originalDimensionSave = DimensionSave.getDimensionState(player.getServerWorld());
+    PlayerData originalDimensionPlayerData = originalDimensionSave.getPlayerData(player);
+    PlayerData destinationPlayerData = this.getPlayerData(player);
+    PlayerInventory playerInventory = player.getInventory();
+
+    // Create a cache inventory if one doesn't exist
+    if (originalDimensionPlayerData.inventoryCache == null) {
+      originalDimensionPlayerData.inventoryCache = new PlayerInventory(null);
+    }
+    
+    // Clone and cache the inventory
+    originalDimensionPlayerData.inventoryCache.clone(playerInventory);
+
+    // Clear the Player inventory so they enter empty
+    playerInventory.clear();
+
+    // If the destination has an inventory... load it?
+    if (destinationPlayerData.inventoryCache != null) {
+      System.out.println("HAD INV");
+      playerInventory.clone(destinationPlayerData.inventoryCache);
+    }
+    originalDimensionSave.markDirty();
+    this.markDirty();
   }
 }

@@ -40,7 +40,16 @@ public class LeaveDimension {
     PlayerPosition playerPos = overworldPlayerData.previousPositions.remove(
       overworldPlayerData.previousPositions.size() - 1
     );
-    ServerWorld dimension = source.getServer().getWorld(RegistryKey.of(RegistryKeys.WORLD, new Identifier(playerPos.dimension)));
+    ServerWorld dimension = source.getServer().getWorld(
+      RegistryKey.of(RegistryKeys.WORLD, new Identifier(playerPos.dimension))
+    );
+    DimensionSave leavingFromDimensionSave = DimensionSave.getDimensionState(player.getServerWorld());
+    if (!leavingFromDimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {
+      // If the world the player is leaving from has KeepInvOnJoin set to false
+      // we want to try to give them back their inventory from this previous world
+      DimensionSave destinationDimentionSave = DimensionSave.getDimensionState(dimension);
+      destinationDimentionSave.swapPlayerInventoryWithDestination(player);
+    }
 
     FabricDimensions.teleport(
       player,
