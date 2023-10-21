@@ -23,10 +23,6 @@ public final class DimensionAutoComplete implements SuggestionProvider<ServerCom
   ) throws CommandSyntaxException {
     String remaining = builder.getRemaining();
 
-    // for (ServerWorld world : context.getSource().getServer().getWorlds()) {
-    //   builder.suggest(world.getRegistryKey().getValue().toString());
-    // }
-
     for (String dimensionName : DimensionManager.getDimensionList()) {
       if (dimensionName.startsWith(remaining)) {
         builder.suggest(dimensionName);

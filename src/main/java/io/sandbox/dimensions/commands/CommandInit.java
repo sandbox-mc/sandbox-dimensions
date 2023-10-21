@@ -25,6 +25,7 @@ public class CommandInit {
 				.then(DownloadDimension.register())
 				.then(JoinDimension.register())
 				.then(LeaveDimension.register())
+				.then(ListDimensions.register())
 				.then(RestoreDimension.register())
 				.then(DimensionRule.register())
 				.then(SetSpawnDimension.register())));
