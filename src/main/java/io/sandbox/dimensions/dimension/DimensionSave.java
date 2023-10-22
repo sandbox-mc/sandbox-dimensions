@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import io.sandbox.dimensions.Main;
-import io.sandbox.dimensions.dimension.zip.UnzipUtility;
+import io.sandbox.dimensions.dimension.zip.ZipUtility;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import io.sandbox.dimensions.player.PlayerData;
 import net.minecraft.entity.player.PlayerEntity;
@@ -22,6 +22,7 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
+import net.minecraft.world.World;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionSave extends PersistentState {
@@ -113,6 +114,19 @@ public class DimensionSave extends PersistentState {
     return this.players.computeIfAbsent(player.getUuid(), uuid -> new PlayerData());
   }
 
+  public Boolean getRule(String ruleName) {
+    switch (ruleName) {
+      case KEEP_INVENTORY_ON_DEATH:
+        return this.keepInventoryOnDeath;
+      case KEEP_INVENTORY_ON_JOIN:
+        return this.keepInventoryOnJoin;
+      case RESPAWN_IN_DIMENSION:
+        return this.respawnInDimension;
+    }
+
+    return null;
+  }
+
   public BlockPos getSpawnPos(ServerWorld dimension) {
     BlockPos blockPos = new BlockPos(this.getSpawnX(), this.getSpawnY(), this.getSpawnZ());
     if (!dimension.getWorldBorder().contains(blockPos)) {
@@ -138,7 +152,7 @@ public class DimensionSave extends PersistentState {
   }
 
   // datapackNameString is dataPack:dimension format (can be the same name)
-  public void loadSaveFile(String datapackNameString, MinecraftServer server, Boolean override) {
+  public void loadSaveFile(String dimensionIdentifierString, String packName, MinecraftServer server, Boolean override) {
     if (this.dimensionSaveLoaded && !override) {
       // If we have already loaded this saved world, ignore, unless it was overriden
       return;
@@ -147,7 +161,7 @@ public class DimensionSave extends PersistentState {
     // The Session gets directory context into the specific save dir in run
     // /run/<my-save-name>
     Session session = ((MinecraftServerAccessor)server).getSession();
-    Identifier dataPackId = new Identifier(datapackNameString);
+    Identifier dataPackId = new Identifier(dimensionIdentifierString);
     String dataPackName = dataPackId.getNamespace();
     String dimensionName = dataPackId.getPath();
 
@@ -162,7 +176,7 @@ public class DimensionSave extends PersistentState {
     // Path to load dimension save
     Path datapackLoadFilePath = Paths.get(
       session.getDirectory(WorldSavePath.DATAPACKS).toString(),
-      dataPackName,
+      packName,
       "data",
       dataPackName,
       "world_saves",
@@ -175,11 +189,11 @@ public class DimensionSave extends PersistentState {
       
       // delete current dimension save
       // Maybe make this a backup process or something???
-      UnzipUtility.deleteDirectory(dimensionSavePath);
+      ZipUtility.deleteDirectory(dimensionSavePath);
 
       // Unzip the world files
       System.out.println("Starting unzip");
-      UnzipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
+      ZipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
       System.out.println("Done unzipping");
       this.dimensionSaveLoaded = true;
       // nbtCompound = NbtIo.readCompressed(path.toFile()); world.dat filepath
@@ -189,35 +203,48 @@ public class DimensionSave extends PersistentState {
       e.printStackTrace();
     }
   }
-  
+
+  public static void saveDimensionToFile(ServerWorld dimension) {
+    Session session = ((MinecraftServerAccessor)(dimension.getServer())).getSession();
+    Path dimensionPath = session.getWorldDirectory(dimension.getRegistryKey());
+
+    // Build sandboxPath
+    Path sandboxPath = Paths.get(session.getWorldDirectory(World.OVERWORLD).toString(), Main.modId);
+    // make the dir if it doesn't exist
+    if (!sandboxPath.toFile().exists()) {
+      sandboxPath.toFile().mkdir();
+    }
+
+    // Next level create if it doesn't exist
+    sandboxPath = Paths.get(sandboxPath.toString(), "saves");
+    // make the dir if it doesn't exist
+    if (!sandboxPath.toFile().exists()) {
+      sandboxPath.toFile().mkdir();
+    }
+
+    // ZipUtility.zipDirectory(dimensionPath.toFile(), sandboxPath.toString());
+
+
+    System.out.println("PATH: " + dimensionPath);
+    System.out.println("Save: " + sandboxPath);
+    // dimension();
+  }
+
   public void setPlayerData(UUID uuid, PlayerData playerData) {
     players.put(uuid, playerData);
   }
-
-  public Boolean getRule(String ruleName) {
-    switch (ruleName) {
-      case KEEP_INVENTORY_ON_DEATH:
-        return this.keepInventoryOnDeath;
-      case KEEP_INVENTORY_ON_JOIN:
-        return this.keepInventoryOnJoin;
-      case RESPAWN_IN_DIMENSION:
-        return this.respawnInDimension;
-    }
-
-    return null;
-  }
-
+  
   public void setRule(String ruleName, Boolean value) {
     switch (ruleName) {
       case KEEP_INVENTORY_ON_DEATH:
-        this.keepInventoryOnDeath = value;
-        break;
+      this.keepInventoryOnDeath = value;
+      break;
       case KEEP_INVENTORY_ON_JOIN:
-        this.keepInventoryOnJoin = value;
-        break;
+      this.keepInventoryOnJoin = value;
+      break;
       case RESPAWN_IN_DIMENSION:
-        this.respawnInDimension = value;
-        break;
+      this.respawnInDimension = value;
+      break;
     }
   }
 

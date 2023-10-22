@@ -25,7 +25,7 @@ import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
   private static List<String> initializedDimensions = new ArrayList<>();
-  private static Map<Identifier, Resource> sandboxDimensionWorldFiles = new HashMap<>();
+  private static Map<String, String> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<String, DimensionSave> dimensionSaves = new HashMap<>();
   private static Path storageDirectory = null;
 
@@ -41,23 +41,29 @@ public class DimensionManager {
       public void reload(ResourceManager manager) {
         Map<Identifier, Resource> dimensions = manager.findResources("dimension", path -> true);
         for (Identifier dimensionName : dimensions.keySet()) {
-          System.out.println("Dimension: " + dimensionName);
-          initializedDimensions.add(dimensionName.toString());
+          String dimPath = dimensionName.getPath()
+            .replaceAll("dimension/", "")
+            .replaceAll(".json", "");
+          String dimensionRegistrationKey = dimensionName.getNamespace() + ":" + dimPath;
+          System.out.println("DimensionKey: " + dimensionRegistrationKey);
+          initializedDimensions.add(dimensionRegistrationKey);
         }
 
         // test_realm:world_saves/my_world.zip
         // Load all template pools for reference later
         Map<Identifier, Resource> worldSaves = manager.findResources("world_saves", path -> true);
         for (Identifier resourceName : worldSaves.keySet()) {
-          // Resource resource = worldSaves.get(resourceName);
+          Resource resource = worldSaves.get(resourceName);
+          String packName = resource.getResourcePackName().replaceAll("file/", "");
+          System.out.println("Pathing: " + resourceName);
           // Pathing should match for Namespace and fileName
-          String dimensionIdentifier = resourceName.toString()
-            .replaceAll("world_saves", "dimension")
-            .replaceAll(".zip", ".json");
+          String dimensionKey = resourceName.toString()
+            .replaceAll("world_saves/", "")
+            .replaceAll(".zip", "");
           // Check if there is an initialized dimension for the save file
-          if (initializedDimensions.contains(dimensionIdentifier)) {
-            if (!sandboxDimensionWorldFiles.containsKey(resourceName)) {
-              sandboxDimensionWorldFiles.put(resourceName, worldSaves.get(resourceName));
+          if (initializedDimensions.contains(dimensionKey)) {
+            if (!sandboxDimensionWorldFiles.containsKey(dimensionKey)) {
+              sandboxDimensionWorldFiles.put(dimensionKey, packName);
             }
           } else {
             System.out.println("WARNING: " + resourceName + " does not have a dimension");
@@ -106,14 +112,16 @@ public class DimensionManager {
     }
 
     // Loop through all the saves that are found
-    for (Identifier dimensionId : sandboxDimensionWorldFiles.keySet()) {
-      String dimensionIdString = dimensionId.toString()
-        .replaceAll("world_saves/", "")
-        .replaceAll(".zip", "");
+    for (String dimensionIdString : sandboxDimensionWorldFiles.keySet()) {
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
         DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
-        dimensionSave.loadSaveFile(dimensionIdString, server, false);
+        dimensionSave.loadSaveFile(
+          dimensionIdString,
+          sandboxDimensionWorldFiles.get(dimensionIdString),
+          server,
+          false
+        );
         dimensionSaves.put(dimensionIdString, dimensionSave);
       } else {
         System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
