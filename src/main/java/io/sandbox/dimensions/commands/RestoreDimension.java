@@ -29,7 +29,8 @@ public class RestoreDimension {
     
   private static int execute(String dimension, ServerCommandSource source) throws CommandSyntaxException {
     var dimensionSave = new DimensionSave();
-    dimensionSave.loadSaveFile(dimension, source.getServer(), true);
+    System.out.println("Restore Command not fully Implemented yet...");
+    // dimensionSave.loadSaveFile(dimension, source.getServer(), true);
 
     return 1;
   }

@@ -22,7 +22,7 @@ public class ZipUtility {
   /**
    * Size of the buffer to read/write data
    */
-  private static final int BUFFER_SIZE = 4096;
+  // private static final int BUFFER_SIZE = 4096;
 
   /**
    * Deletes all items in directory Path
@@ -45,24 +45,24 @@ public class ZipUtility {
 		});
 	}
 
-  /**
-   * Extracts a zip entry (file entry)
-   * @param zipIn
-   * @param filePath
-   * @throws IOException
-   */
-  private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-    byte[] bytesIn = new byte[BUFFER_SIZE];
-    int read = 0;
+  // /**
+  //  * Extracts a zip entry (file entry)
+  //  * @param zipIn
+  //  * @param filePath
+  //  * @throws IOException
+  //  */
+  // private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
+  //   BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
+  //   byte[] bytesIn = new byte[BUFFER_SIZE];
+  //   int read = 0;
 
-    // Read through buffer
-    while ((read = zipIn.read(bytesIn)) != -1) {
-      bos.write(bytesIn, 0, read);
-    }
+  //   // Read through buffer
+  //   while ((read = zipIn.read(bytesIn)) != -1) {
+  //     bos.write(bytesIn, 0, read);
+  //   }
 
-    bos.close();
-  }
+  //   bos.close();
+  // }
 
   public static void unzipFile(Path inputZip, Path targetDir) throws IOException {
     InputStream inStream = new FileInputStream(inputZip.toString());
