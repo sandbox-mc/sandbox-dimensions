@@ -22,7 +22,6 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.World;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionSave extends PersistentState {
@@ -207,16 +206,24 @@ public class DimensionSave extends PersistentState {
   public static void saveDimensionToFile(ServerWorld dimension) {
     Session session = ((MinecraftServerAccessor)(dimension.getServer())).getSession();
     Path dimensionPath = session.getWorldDirectory(dimension.getRegistryKey());
+    Identifier dimensionId = dimension.getRegistryKey().getValue();
+    String dataPackName = DimensionManager.getPackFolder(dimensionId.toString());
 
     // Build sandboxPath
-    Path sandboxPath = Paths.get(session.getWorldDirectory(World.OVERWORLD).toString(), Main.modId);
+    Path sandboxPath = Paths.get(
+      session.getDirectory(WorldSavePath.DATAPACKS).toString(),
+      dataPackName,
+      "data",
+      dimensionId.getNamespace()
+    );
+
     // make the dir if it doesn't exist
     if (!sandboxPath.toFile().exists()) {
       sandboxPath.toFile().mkdir();
     }
 
     // Next level create if it doesn't exist
-    sandboxPath = Paths.get(sandboxPath.toString(), "saves");
+    sandboxPath = Paths.get(sandboxPath.toString(), "saves", dimensionId.toString() + ".zip");
     // make the dir if it doesn't exist
     if (!sandboxPath.toFile().exists()) {
       sandboxPath.toFile().mkdir();
@@ -224,10 +231,7 @@ public class DimensionSave extends PersistentState {
 
     // ZipUtility.zipDirectory(dimensionPath.toFile(), sandboxPath.toString());
 
-
-    System.out.println("PATH: " + dimensionPath);
     System.out.println("Save: " + sandboxPath);
-    // dimension();
   }
 
   public void setPlayerData(UUID uuid, PlayerData playerData) {

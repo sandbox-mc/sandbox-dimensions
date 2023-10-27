@@ -77,6 +77,10 @@ public class DimensionManager {
     return dimensionSaves.keySet();
   }
 
+  public static String getPackFolder(String dimensionId) {
+    return sandboxDimensionWorldFiles.get(dimensionId);
+  }
+
   public static Path getStorageFolder(ServerCommandSource source) {
     if (storageDirectory != null) {
       return storageDirectory;
@@ -116,6 +120,7 @@ public class DimensionManager {
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
         DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
+        System.out.println("HUT: " + dimensionIdString);
         dimensionSave.loadSaveFile(
           dimensionIdString,
           sandboxDimensionWorldFiles.get(dimensionIdString),
