@@ -1,5 +1,6 @@
 package io.sandbox.dimensions.dimension;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -151,24 +152,26 @@ public class DimensionSave extends PersistentState {
   }
 
   // datapackNameString is dataPack:dimension format (can be the same name)
-  public void loadSaveFile(String dimensionIdentifierString, String packName, MinecraftServer server, Boolean override) {
+  public void loadDimensionFile(String dimensionIdentifierString, MinecraftServer server, Boolean override) {
     if (this.dimensionSaveLoaded && !override) {
       // If we have already loaded this saved world, ignore, unless it was overriden
       return;
     };
 
+    String packName = DimensionManager.getPackFolder(dimensionIdentifierString);
+
     // The Session gets directory context into the specific save dir in run
     // /run/<my-save-name>
     Session session = ((MinecraftServerAccessor)server).getSession();
     Identifier dataPackId = new Identifier(dimensionIdentifierString);
-    String dataPackName = dataPackId.getNamespace();
+    String dimensionNamespace = dataPackId.getNamespace();
     String dimensionName = dataPackId.getPath();
 
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
       session.getDirectory(WorldSavePath.DATAPACKS).getParent().toString(),
       "dimensions",
-      dataPackName,
+      dimensionNamespace,
       dimensionName
     );
     
@@ -177,8 +180,8 @@ public class DimensionSave extends PersistentState {
       session.getDirectory(WorldSavePath.DATAPACKS).toString(),
       packName,
       "data",
-      dataPackName,
-      "world_saves",
+      dimensionNamespace,
+      "saves",
       dimensionName + ".zip" // File name should be dimensionName + zip
     );
         
@@ -203,35 +206,43 @@ public class DimensionSave extends PersistentState {
     }
   }
 
-  public static void saveDimensionToFile(ServerWorld dimension) {
+  public static void saveDimensionFile(ServerWorld dimension) {
     Session session = ((MinecraftServerAccessor)(dimension.getServer())).getSession();
     Path dimensionPath = session.getWorldDirectory(dimension.getRegistryKey());
     Identifier dimensionId = dimension.getRegistryKey().getValue();
-    String dataPackName = DimensionManager.getPackFolder(dimensionId.toString());
+    String dimensionNamespace = dimensionId.getNamespace();
+    String dataPackFolder = DimensionManager.getPackFolder(dimensionId.toString());
+    String dimensionFileName = dimensionId.getPath() + ".zip";
 
     // Build sandboxPath
-    Path sandboxPath = Paths.get(
+    // Example: /datapacks/<datapackName>/data/<dataPackNamespace>
+    Path saveZipFile = Paths.get(
       session.getDirectory(WorldSavePath.DATAPACKS).toString(),
-      dataPackName,
+      dataPackFolder,
       "data",
-      dimensionId.getNamespace()
+      dimensionNamespace
     );
-
+    
+    File asFile = saveZipFile.toFile();
     // make the dir if it doesn't exist
-    if (!sandboxPath.toFile().exists()) {
-      sandboxPath.toFile().mkdir();
+    if (!asFile.exists()) {
+      asFile.mkdir();
     }
-
+    
     // Next level create if it doesn't exist
-    sandboxPath = Paths.get(sandboxPath.toString(), "saves", dimensionId.toString() + ".zip");
+    // Example: /datapacks/<datapackName>/data/<dataPackNamespace>/saves
+    saveZipFile = Paths.get(saveZipFile.toString(), "saves");
     // make the dir if it doesn't exist
-    if (!sandboxPath.toFile().exists()) {
-      sandboxPath.toFile().mkdir();
+    if (!saveZipFile.toFile().exists()) {
+      saveZipFile.toFile().mkdir();
     }
 
-    // ZipUtility.zipDirectory(dimensionPath.toFile(), sandboxPath.toString());
+    // Example: /datapacks/<datapackName>/data/<dataPackNamespace>/saves/<datapackNamespace>_<dimensionName>.zip
+    saveZipFile = Paths.get(saveZipFile.toString(), dimensionFileName);
 
-    System.out.println("Save: " + sandboxPath);
+    System.out.println("Save: " + saveZipFile);
+
+    ZipUtility.zipDirectory(dimensionPath.toFile(), saveZipFile.toString());
   }
 
   public void setPlayerData(UUID uuid, PlayerData playerData) {

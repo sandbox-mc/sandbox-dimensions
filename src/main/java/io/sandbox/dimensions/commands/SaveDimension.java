@@ -27,7 +27,7 @@ public class SaveDimension {
   }
 
   private static int saveDimension(ServerWorld dimension, ServerCommandSource source) {
-    DimensionSave.saveDimensionToFile(dimension);
+    DimensionSave.saveDimensionFile(dimension);
     return 1;
   }
 }

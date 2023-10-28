@@ -120,10 +120,9 @@ public class DimensionManager {
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
         DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
-        System.out.println("HUT: " + dimensionIdString);
-        dimensionSave.loadSaveFile(
+        System.out.println("Loading World File: " + dimensionIdString);
+        dimensionSave.loadDimensionFile(
           dimensionIdString,
-          sandboxDimensionWorldFiles.get(dimensionIdString),
           server,
           false
         );

@@ -1,6 +1,5 @@
 package io.sandbox.dimensions.dimension.zip;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -136,7 +135,6 @@ public class ZipUtility {
 
       // now zip files one by one
       for (String filePath : filesListInDir) {
-        System.out.println("Zipping " + filePath);
 
         // for ZipEntry we need to keep only relative file path, so we used substring on absolute path
         ZipEntry ze = new ZipEntry(filePath.substring(dir.getAbsolutePath().length() + 1, filePath.length()));
@@ -167,6 +165,13 @@ public class ZipUtility {
       if(file.isFile()) {
         filesListInDir.add(file.getAbsolutePath());
       } else {
+        // We skip datapacks dir, if we are saving the overworld
+        // this would be the folder we save into...
+        // TODO: create filter for correct files
+        if (file.toString().endsWith("datapacks")) {
+          continue;
+        }
+
         populateFilesList(file, filesListInDir);
       }
     }
