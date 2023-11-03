@@ -22,7 +22,7 @@ repositories {
 }
 
 loom {
-    splitEnvironmentSourceSets()
+	splitEnvironmentSourceSets()
 
 	mods {
 		"sandbox-dimensions" {

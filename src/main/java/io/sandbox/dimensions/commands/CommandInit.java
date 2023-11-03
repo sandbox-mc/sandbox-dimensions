@@ -20,15 +20,19 @@ public class CommandInit {
 					} catch (Exception ignored) { //Command was called from server console.
 						return true;
 					}
+
 					return true;
 				})
-				.then(DimensionRule.register())
+				.then(CreateCmd.register())
+				.then(Rule.register())
 				.then(DownloadDimension.register())
 				.then(JoinDimension.register())
 				.then(LeaveDimension.register())
 				.then(ListDimensions.register())
 				.then(RestoreDimension.register())
 				.then(SaveDimension.register())
-				.then(SetSpawnDimension.register())));
+				.then(SetSpawnDimension.register())
+			)
+		);
   }
 }

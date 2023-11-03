@@ -14,7 +14,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 
-public class DimensionRule {
+public class Rule {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("rule")
       .then(CommandManager.argument("dimension", DimensionArgumentType.dimension()).suggests(DimensionAutoComplete.Instance())

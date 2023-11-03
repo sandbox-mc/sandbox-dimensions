@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +25,7 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
+  private static Map<String, Identifier> sandboxDefaultIdentifiers = new HashMap<>();
   private static List<String> initializedDimensions = new ArrayList<>();
   private static Map<String, String> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<String, DimensionSave> dimensionSaves = new HashMap<>();
@@ -39,6 +41,15 @@ public class DimensionManager {
 
       @Override
       public void reload(ResourceManager manager) {
+        // Use the Identifier in the server ResourceManager to get the inputStream to copy
+        Map<Identifier, Resource> defaults = manager.findResources("sandbox-defaults", path -> true);
+        for (Identifier defaultIdentifier : defaults.keySet()) {
+          String defaultType = defaultIdentifier.getPath()
+            .replaceAll("sandbox-defaults/", "")
+            .replaceAll(".json", "");
+          sandboxDefaultIdentifiers.put(defaultType, defaultIdentifier);
+        }
+
         Map<Identifier, Resource> dimensions = manager.findResources("dimension", path -> true);
         for (Identifier dimensionName : dimensions.keySet()) {
           String dimPath = dimensionName.getPath()
@@ -51,14 +62,14 @@ public class DimensionManager {
 
         // test_realm:world_saves/my_world.zip
         // Load all template pools for reference later
-        Map<Identifier, Resource> worldSaves = manager.findResources("world_saves", path -> true);
+        Map<Identifier, Resource> worldSaves = manager.findResources("saves", path -> true);
         for (Identifier resourceName : worldSaves.keySet()) {
           Resource resource = worldSaves.get(resourceName);
           String packName = resource.getResourcePackName().replaceAll("file/", "");
           System.out.println("Pathing: " + resourceName);
           // Pathing should match for Namespace and fileName
           String dimensionKey = resourceName.toString()
-            .replaceAll("world_saves/", "")
+            .replaceAll("saves/", "")
             .replaceAll(".zip", "");
           // Check if there is an initialized dimension for the save file
           if (initializedDimensions.contains(dimensionKey)) {
@@ -73,12 +84,20 @@ public class DimensionManager {
     });
   }
 
+  public static Identifier getDefaultConfig(String defaultType) {
+    return sandboxDefaultIdentifiers.get(defaultType);
+  }
+
   public static Set<String> getDimensionList() {
     return dimensionSaves.keySet();
   }
 
   public static String getPackFolder(String dimensionId) {
     return sandboxDimensionWorldFiles.get(dimensionId);
+  }
+
+  public static HashSet<String> getPackFolders() {
+    return new HashSet<String>(sandboxDimensionWorldFiles.values());
   }
 
   public static Path getStorageFolder(ServerCommandSource source) {
