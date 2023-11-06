@@ -133,7 +133,7 @@ public class CreateCmd {
         Identifier dimensionIdentifier = new Identifier(namespace, dimensionName);
         try {
           InputStream dimensionTypeIntputStream = dimensionTypeResource.getInputStream();
-          InputStream worldIntputStream = worldResource.getInputStream();
+          InputStream worldInputStream = worldResource.getInputStream();
           Path dimensionConfigPath = Paths.get(datapackPath, datapackName, "data", namespace, "dimension", dimensionName + ".json");
           Path worldSavePath = Paths.get(datapackPath, datapackName, "data", namespace, DimensionSave.WORLD_SAVE_FOLDER, dimensionName + ".zip");
           System.out.println("WorldPath: " + worldSavePath.toString());
@@ -147,9 +147,9 @@ public class CreateCmd {
           }
           // copy over a default world save to use as default
           try {
-            Files.copy(worldIntputStream, worldSavePath, StandardCopyOption.REPLACE_EXISTING);
-            worldIntputStream.close();
-            // worldIntputStream.
+            Files.copy(worldInputStream, worldSavePath, StandardCopyOption.REPLACE_EXISTING);
+            worldInputStream.close();
+            // worldInputStream.
           } catch (IOException e) {
             e.printStackTrace();
           }
