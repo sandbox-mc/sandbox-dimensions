@@ -44,7 +44,7 @@ public class DownloadDimension {
     URL url;
     InputStream inputStream;
     try {
-      url = new URL("https://www.sand-box.io/dimensions/get/" + code);
+      url = new URL("https://www.sandboxmc.io/dimensions/" + code + "/download");
       inputStream = url.openStream();
     } catch (MalformedURLException e) {
       System.out.println("MalformedURL");
