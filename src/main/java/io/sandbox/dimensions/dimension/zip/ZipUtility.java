@@ -65,6 +65,10 @@ public class ZipUtility {
 
   public static void unzipFile(Path inputZip, Path targetDir) throws IOException {
     InputStream inStream = new FileInputStream(inputZip.toString());
+    ZipUtility.unzipInputStream(inStream, targetDir);
+  }
+
+  public static void unzipInputStream(InputStream inStream, Path targetDir) throws IOException {
     targetDir = targetDir.toAbsolutePath();
     try (ZipInputStream zipIn = new ZipInputStream(inStream)) {
       for (ZipEntry ze; (ze = zipIn.getNextEntry()) != null; ) {

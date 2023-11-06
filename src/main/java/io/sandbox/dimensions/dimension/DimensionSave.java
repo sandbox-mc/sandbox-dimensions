@@ -2,6 +2,7 @@ package io.sandbox.dimensions.dimension;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -26,8 +27,10 @@ import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionSave extends PersistentState {
-  private static String DIMENSION_IS_ACTIVE = "dimensionIsActive";
-  private static String DIMENSION_SAVE_LOADED = "dimensionSaveLoaded";
+  // Global Constants
+  public static final String WORLD_SAVE_FOLDER = "saves";
+
+  // Game Rules
   public static final String KEEP_INVENTORY_ON_DEATH = "keepInventoryOnDeath";
   public static final String KEEP_INVENTORY_ON_JOIN = "keepInventoryOnJoin";
   public static final String RESPAWN_IN_DIMENSION = "respawnInDimension";
@@ -36,11 +39,17 @@ public class DimensionSave extends PersistentState {
     KEEP_INVENTORY_ON_JOIN,
     RESPAWN_IN_DIMENSION
   );
+  
+  // World Data save names
+  private static String DIMENSION_IS_ACTIVE = "dimensionIsActive";
+  private static String DIMENSION_SAVE_LOADED = "dimensionSaveLoaded";
   private static String PLAYERS = "players";
   private static String SPAWN_ANGLE = "SpawnAngle";
   private static String SPAWN_X = "SpawnX";
   private static String SPAWN_Y = "SpawnY";
   private static String SPAWN_Z = "SpawnZ";
+
+  // Class props
   public Boolean dimensionIsActive = false;
   public Boolean dimensionSaveLoaded = false;
   public Boolean keepInventoryOnDeath = false;
@@ -152,12 +161,7 @@ public class DimensionSave extends PersistentState {
   }
 
   // datapackNameString is dataPack:dimension format (can be the same name)
-  public void loadDimensionFile(String dimensionIdentifierString, MinecraftServer server, Boolean override) {
-    if (this.dimensionSaveLoaded && !override) {
-      // If we have already loaded this saved world, ignore, unless it was overriden
-      return;
-    };
-
+  public static Boolean loadDimensionFile(String dimensionIdentifierString, MinecraftServer server) {
     String packName = DimensionManager.getPackFolder(dimensionIdentifierString);
 
     // The Session gets directory context into the specific save dir in run
@@ -174,6 +178,16 @@ public class DimensionSave extends PersistentState {
       dimensionNamespace,
       dimensionName
     );
+
+    System.out.println("Before");
+    // Create the path if it doesn't exist
+    File dimensionFile = dimensionSavePath.toFile();
+    if (!dimensionFile.exists()) {
+      Boolean success = dimensionFile.mkdirs();
+      if (success) {
+        System.out.println("Created");
+      }
+    }
     
     // Path to load dimension save
     Path datapackLoadFilePath = Paths.get(
@@ -181,10 +195,10 @@ public class DimensionSave extends PersistentState {
       packName,
       "data",
       dimensionNamespace,
-      "saves",
+      WORLD_SAVE_FOLDER,
       dimensionName + ".zip" // File name should be dimensionName + zip
     );
-        
+
     System.out.println("DataPack Dir: " + datapackLoadFilePath); // full path
 
     try {
@@ -197,13 +211,16 @@ public class DimensionSave extends PersistentState {
       System.out.println("Starting unzip");
       ZipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
       System.out.println("Done unzipping");
-      this.dimensionSaveLoaded = true;
-      // nbtCompound = NbtIo.readCompressed(path.toFile()); world.dat filepath
-      this.markDirty(); // flags the state change for save on server restart
+      return true;
+      // this.dimensionSaveLoaded = true;
+      // // nbtCompound = NbtIo.readCompressed(path.toFile()); world.dat filepath
+      // this.markDirty(); // flags the state change for save on server restart
     } catch (IOException e) {
       System.out.println("IO Exception");
       e.printStackTrace();
     }
+
+    return false;
   }
 
   public static void saveDimensionFile(ServerWorld dimension) {
@@ -231,7 +248,7 @@ public class DimensionSave extends PersistentState {
     
     // Next level create if it doesn't exist
     // Example: /datapacks/<datapackName>/data/<dataPackNamespace>/saves
-    saveZipFile = Paths.get(saveZipFile.toString(), "saves");
+    saveZipFile = Paths.get(saveZipFile.toString(), WORLD_SAVE_FOLDER);
     // make the dir if it doesn't exist
     if (!saveZipFile.toFile().exists()) {
       saveZipFile.toFile().mkdir();

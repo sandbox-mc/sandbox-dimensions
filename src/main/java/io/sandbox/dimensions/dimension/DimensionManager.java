@@ -30,6 +30,7 @@ public class DimensionManager {
   private static Map<String, String> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<String, DimensionSave> dimensionSaves = new HashMap<>();
   private static Path storageDirectory = null;
+  private static MinecraftServer minecraftServer = null;
 
   public static void init() {
     ResourceManagerHelper.get(ResourceType.SERVER_DATA)
@@ -46,7 +47,8 @@ public class DimensionManager {
         for (Identifier defaultIdentifier : defaults.keySet()) {
           String defaultType = defaultIdentifier.getPath()
             .replaceAll("sandbox-defaults/", "")
-            .replaceAll(".json", "");
+            .replaceAll(".json", "") // Remove file type .zip and .json
+            .replaceAll(".zip", "");
           sandboxDefaultIdentifiers.put(defaultType, defaultIdentifier);
         }
 
@@ -62,14 +64,14 @@ public class DimensionManager {
 
         // test_realm:world_saves/my_world.zip
         // Load all template pools for reference later
-        Map<Identifier, Resource> worldSaves = manager.findResources("saves", path -> true);
+        Map<Identifier, Resource> worldSaves = manager.findResources(DimensionSave.WORLD_SAVE_FOLDER, path -> true);
         for (Identifier resourceName : worldSaves.keySet()) {
           Resource resource = worldSaves.get(resourceName);
           String packName = resource.getResourcePackName().replaceAll("file/", "");
           System.out.println("Pathing: " + resourceName);
           // Pathing should match for Namespace and fileName
           String dimensionKey = resourceName.toString()
-            .replaceAll("saves/", "")
+            .replaceAll(DimensionSave.WORLD_SAVE_FOLDER + "/", "") // remove folder name
             .replaceAll(".zip", "");
           // Check if there is an initialized dimension for the save file
           if (initializedDimensions.contains(dimensionKey)) {
@@ -80,8 +82,20 @@ public class DimensionManager {
             System.out.println("WARNING: " + resourceName + " does not have a dimension");
           }
         }
+
+        if (DimensionManager.minecraftServer != null) {
+          DimensionManager.processSandboxDimensionFiles(DimensionManager.minecraftServer);
+        }
       }
     });
+  }
+
+  public static void addDimensionPackName(String dimensionKey, String packName) {
+    sandboxDimensionWorldFiles.put(dimensionKey, packName);
+  }
+
+  public static void addDimensionSave(String dimensionName, DimensionSave dimensionSave) {
+    dimensionSaves.put(dimensionName, dimensionSave);
   }
 
   public static Identifier getDefaultConfig(String defaultType) {
@@ -104,7 +118,7 @@ public class DimensionManager {
     if (storageDirectory != null) {
       return storageDirectory;
     }
-
+ 
     Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
 
     String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
@@ -127,6 +141,11 @@ public class DimensionManager {
   }
 
   public static void processSandboxDimensionFiles(MinecraftServer server) {
+    // Set the minecraftServer for /reload command
+    if (DimensionManager.minecraftServer == null) {
+      DimensionManager.minecraftServer = server;
+    }
+
     Map<String, ServerWorld> worldMap = new HashMap<>();
 
     // Get a mapping of the currently loaded worlds for persistent storage
@@ -139,13 +158,16 @@ public class DimensionManager {
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
         DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
-        System.out.println("Loading World File: " + dimensionIdString);
-        dimensionSave.loadDimensionFile(
-          dimensionIdString,
-          server,
-          false
-        );
-        dimensionSaves.put(dimensionIdString, dimensionSave);
+        if (!dimensionSave.dimensionSaveLoaded) {
+          System.out.println("Loading World File: " + dimensionIdString);
+          // Load datapack save zip and set as loaded
+          dimensionSave.dimensionSaveLoaded = DimensionSave.loadDimensionFile(dimensionIdString, server);
+        } else {
+          System.out.println("World Save files already loaded, Skipping: " + dimensionIdString);
+        }
+
+        // Add to list for auto-complete
+        DimensionManager.addDimensionSave(dimensionIdString, dimensionSave);
       } else {
         System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
       }

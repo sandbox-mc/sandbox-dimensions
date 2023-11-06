@@ -30,7 +30,9 @@ public class RestoreDimension {
   private static int execute(ServerWorld dimension, ServerCommandSource source) throws CommandSyntaxException {
     var dimensionSave = new DimensionSave();
     System.out.println("Restore Command not fully Implemented yet...");
-    dimensionSave.loadDimensionFile(dimension.getRegistryKey().getValue().toString(), source.getServer(), true);
+    // Forces datapack save zip to overwrite the current dimension save files
+    dimensionSave.dimensionSaveLoaded = DimensionSave.loadDimensionFile(
+      dimension.getRegistryKey().getValue().toString(), source.getServer());
 
     return 1;
   }
