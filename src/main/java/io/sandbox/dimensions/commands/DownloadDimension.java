@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -22,7 +21,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 public class DownloadDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -48,16 +51,12 @@ public class DownloadDimension {
           )
         )
         .executes(context -> {
-          context.getSource().sendFeedback(() -> {
-            return Text.literal("No dimension given.");
-          }, false);
+          sendFeedback(context.getSource(), Text.literal("No dimension given."));
           return 0;
         })
       )
       .executes(context -> {
-        context.getSource().sendFeedback(() -> {
-          return Text.literal("No creator or dimension given.");
-        }, false);
+        sendFeedback(context.getSource(), Text.literal("No creator or dimension given."));
         return 0;
       });
   }
@@ -72,9 +71,7 @@ public class DownloadDimension {
       url = new URL(dimensionShow + "/download");
       inputStream = url.openStream();
     } catch (IOException e) {
-      source.sendFeedback(() -> {
-        return Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?");
-      }, false);
+      sendFeedback(source, Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?"));
       return 0;
     }
 
@@ -94,7 +91,7 @@ public class DownloadDimension {
       fileOutputStream = new FileOutputStream(filePath);
     } catch (FileNotFoundException e) {
       // This can't actually happen, customFilePath and defaultFilePath both ensure everything.
-      System.out.println("DID WE GET HERE...?");
+      // Existing files are replaced.
       return 0;
     }
   
@@ -107,6 +104,13 @@ public class DownloadDimension {
       System.out.println("io exception reading file from channel");
       return 0;
     }
+
+    MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
+    MutableText creationText = Text.literal("[CLICK HERE TO CREATE IT]");
+    creationText.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dimension download awef awef")));
+    creationText.formatted(Formatting.UNDERLINE).formatted(Formatting.BLUE);
+    feedbackText.append(creationText);
+    sendFeedback(source, feedbackText);
 
     return 1;
   }
@@ -132,5 +136,11 @@ public class DownloadDimension {
     String filePath = Paths.get(storageFolder.toString(), customFileName).toString();
 
     return filePath;
+  }
+
+  private static void sendFeedback(ServerCommandSource source, Text feedbackText) {
+    source.sendFeedback(() -> {
+      return feedbackText;
+    }, false);
   }
 }
