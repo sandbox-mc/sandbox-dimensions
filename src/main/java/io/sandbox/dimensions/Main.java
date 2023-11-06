@@ -6,14 +6,14 @@ import net.minecraft.util.Identifier;
 import io.sandbox.dimensions.commands.CommandInit;
 import io.sandbox.dimensions.configs.PlayerRespawnConfig;
 import io.sandbox.dimensions.dimension.DimensionManager;
-import io.sandbox.lib.SandboxLogger;
+// import io.sandbox.lib.SandboxLogger;
 
 public class Main implements ModInitializer {
   public static final String modId = "sandbox-dimensions";
   // This logger is used to write text to the console and the log file.
   // It is considered best practice to use your mod id as the logger's name.
   // That way, it's clear which mod wrote info, warnings, and errors.
-  public static final SandboxLogger LOGGER = new SandboxLogger("SandboxDimensions");
+  // public static final SandboxLogger LOGGER = new SandboxLogger("SandboxDimensions");
 
   @Override
   public void onInitialize() {
