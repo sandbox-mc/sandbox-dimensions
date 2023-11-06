@@ -1,0 +1,15 @@
+{
+  "type": "test_realm:test_realm",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "minecraft:mushroom_fields",
+      "lakes": false,
+      "features": false,
+      "layers": [],
+      "structures": {
+        "structures": {}
+      }
+    }
+  }
+}
