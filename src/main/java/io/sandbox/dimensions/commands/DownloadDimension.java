@@ -22,6 +22,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 
 public class DownloadDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -47,28 +48,33 @@ public class DownloadDimension {
           )
         )
         .executes(context -> {
-          System.out.println("Download was called with creator but no dimension identifier.");
-          return 1;
+          context.getSource().sendFeedback(() -> {
+            return Text.literal("No dimension given.");
+          }, false);
+          return 0;
         })
       )
       .executes(context -> {
-        System.out.println("Download was called with no arguments.");
-        return 1;
+        context.getSource().sendFeedback(() -> {
+          return Text.literal("No creator or dimension given.");
+        }, false);
+        return 0;
       });
   }
 
   private static int performDownloadCmd(String creatorName, String identifier, @Nullable String customFileName, ServerCommandSource source) throws CommandSyntaxException {
     // Make sure the URL is formed properly and can be accessed as an InputStream.
+    String dimensionShow = "https://www.sandboxmc.io/dimensions/" + creatorName + "/" + identifier;
+
     URL url;
     InputStream inputStream;
     try {
-      url = new URL("https://www.sandboxmc.io/dimensions/" + creatorName + "/" + identifier + "/download");
+      url = new URL(dimensionShow + "/download");
       inputStream = url.openStream();
-    } catch (MalformedURLException e) {
-      System.out.println("MalformedURL");
-      return 0;
     } catch (IOException e) {
-      System.out.println("IOException from input stream");
+      source.sendFeedback(() -> {
+        return Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?");
+      }, false);
       return 0;
     }
 
