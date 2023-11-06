@@ -107,7 +107,9 @@ public class DownloadDimension {
 
     MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
     MutableText creationText = Text.literal("[CLICK HERE TO CREATE IT]");
-    creationText.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dimension download awef awef")));
+    // TODO: Need to run some sort of unpack method here.
+    ClickEvent unpackEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dimension download awef awef");
+    creationText.setStyle(Style.EMPTY.withClickEvent(unpackEvent));
     creationText.formatted(Formatting.UNDERLINE).formatted(Formatting.BLUE);
     feedbackText.append(creationText);
     sendFeedback(source, feedbackText);
