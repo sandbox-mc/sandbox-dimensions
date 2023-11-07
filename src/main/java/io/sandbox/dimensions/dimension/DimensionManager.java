@@ -10,10 +10,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
+
 import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
@@ -22,6 +27,12 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
+import net.minecraft.util.math.random.RandomSequencesState;
+import net.minecraft.world.SaveProperties;
+import net.minecraft.world.World;
+import net.minecraft.world.border.WorldBorderListener.WorldBorderSyncer;
+import net.minecraft.world.dimension.DimensionOptions;
+import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
@@ -98,6 +109,39 @@ public class DimensionManager {
     dimensionSaves.put(dimensionName, dimensionSave);
   }
 
+  // This will generate a dimension with not much there
+  // Note: the save.zip file needs to be placed prior to this for it to use that as it's default
+  // If the file is not there it will try to generate terrain
+  public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier) {
+    MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
+    Session session = serverAccess.getSession();
+    RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
+    SaveProperties saveProperties = server.getSaveProperties();
+    UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(saveProperties, saveProperties.getMainWorldProperties());
+
+    Registry<DimensionOptions> dimensionOptions = server.getRegistryManager().get(RegistryKeys.DIMENSION);
+    DimensionOptions dimensionOption = dimensionOptions.get(DimensionOptions.OVERWORLD);
+    
+    ServerWorld dimensionWorld = new ServerWorld(
+      server,
+      serverAccess.getWorkerExecutor(),
+      session,
+      unmodifiableLevelProperties,
+      registryKey,
+      dimensionOption,
+      serverAccess.getWorldGenerationProgressListenerFactory().create(11),
+      false,
+      1234L,
+      ImmutableList.of(),
+      true,
+      (RandomSequencesState)null
+    );
+    server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
+    serverAccess.getWorlds().put(registryKey, dimensionWorld);
+    DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
+    DimensionManager.addDimensionSave(dimensionIdentifier.toString(), dimensionSave);
+  }
+
   public static Identifier getDefaultConfig(String defaultType) {
     return sandboxDefaultIdentifiers.get(defaultType);
   }
@@ -114,12 +158,11 @@ public class DimensionManager {
     return new HashSet<String>(sandboxDimensionWorldFiles.values());
   }
 
-  public static Path getStorageFolder(ServerCommandSource source) {
+  // Using Session so this can be used outside commands
+  public static Path getStorageFolder(Session session) {
     if (storageDirectory != null) {
       return storageDirectory;
     }
- 
-    Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
 
     String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
 

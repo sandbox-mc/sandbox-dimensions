@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import com.google.common.collect.ImmutableList;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.sandbox.dimensions.commands.autoComplete.StringListAutoComplete;
@@ -19,24 +18,16 @@ import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.dimension.DimensionSave;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.Resource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.math.random.RandomSequencesState;
-import net.minecraft.world.SaveProperties;
-import net.minecraft.world.World;
-import net.minecraft.world.border.WorldBorderListener.WorldBorderSyncer;
-import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class CreateCmd {
@@ -122,7 +113,6 @@ public class CreateCmd {
     String datapackPath = session.getDirectory(WorldSavePath.DATAPACKS).toString();
     Identifier defaultDimensionType = DimensionManager.getDefaultConfig("dimension"); // Filename matches dimension.json
     Identifier defaultWorld = DimensionManager.getDefaultConfig("world"); // Filename matches world.json
-    System.out.println("defaults: " + defaultDimensionType + " : " + defaultWorld);
     if (defaultDimensionType != null && defaultWorld != null) {
       Optional<Resource> dimTypeResourceOptional = server.getResourceManager().getResource(defaultDimensionType);
       Optional<Resource> worldResourceOptional = server.getResourceManager().getResource(defaultWorld);
@@ -136,20 +126,19 @@ public class CreateCmd {
           InputStream worldInputStream = worldResource.getInputStream();
           Path dimensionConfigPath = Paths.get(datapackPath, datapackName, "data", namespace, "dimension", dimensionName + ".json");
           Path worldSavePath = Paths.get(datapackPath, datapackName, "data", namespace, DimensionSave.WORLD_SAVE_FOLDER, dimensionName + ".zip");
-          System.out.println("WorldPath: " + worldSavePath.toString());
 
           // Create new dimension.json file for the new dimension
+          // This will allow for reloading this world
           try {
             Files.copy(dimensionTypeIntputStream, dimensionConfigPath, StandardCopyOption.REPLACE_EXISTING);
-            dimensionTypeIntputStream.close();
           } catch (IOException e) {
             e.printStackTrace();
           }
-          // copy over a default world save to use as default
+
+          // Copy over a default world save to use as default
+          // This is the save file that will be used for the new dimension
           try {
             Files.copy(worldInputStream, worldSavePath, StandardCopyOption.REPLACE_EXISTING);
-            worldInputStream.close();
-            // worldInputStream.
           } catch (IOException e) {
             e.printStackTrace();
           }
@@ -164,37 +153,8 @@ public class CreateCmd {
             server
           );
 
-          // server.stop(false);
-
-          // ((MinecraftServerAccessor)(server)).invokeLoadWorld();
-
-          RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
-          SaveProperties saveProperties = server.getSaveProperties();
-          UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(saveProperties, saveProperties.getMainWorldProperties());
-
-          Registry<DimensionOptions> dimensionOptions = server.getRegistryManager().get(RegistryKeys.DIMENSION);
-          DimensionOptions dimensionOption = dimensionOptions.get(DimensionOptions.OVERWORLD);
-          // List<Spawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new ZombieSiegeManager(), new WanderingTraderManager(serverWorldProperties));
-          
-          ServerWorld dimensionWorld = new ServerWorld(
-            server,
-            serverAccess.getWorkerExecutor(),
-            session,
-            unmodifiableLevelProperties,
-            registryKey,
-            dimensionOption,
-            serverAccess.getWorldGenerationProgressListenerFactory().create(11),
-            false,
-            1234L,
-            ImmutableList.of(),
-            true,
-            (RandomSequencesState)null
-          );
-          server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
-          // worldBorder.addListener(new WorldBorderSyncer(serverWorld.getWorldBorder()));
-          serverAccess.getWorlds().put(registryKey, dimensionWorld);
-          DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
-          DimensionManager.addDimensionSave(dimensionIdString, dimensionSave);
+          // Create the dimension
+          DimensionManager.createDimensionWorld(server, dimensionIdentifier);
         } catch (IOException e) {
           // TODO Auto-generated catch block
           e.printStackTrace();
@@ -202,13 +162,8 @@ public class CreateCmd {
       }
     }
 
-    // Set<RegistryKey<DimensionType>> tests = source.getServer().getRegistryManager().get(RegistryKeys.DIMENSION_TYPE).getKeys();
-    // for (RegistryKey<DimensionType> test : tests) {
-    //   System.out.println("TEST: " + test.getValue().toString());    
-    // }
-    // System.out.println("Create: " + dimension + " : " + namespace);
     source.sendFeedback(() -> {
-      return Text.literal("Create new Dimension");
+      return Text.literal("Created new Dimension: " + dimensionName);
     }, false);
     return 1;
   }

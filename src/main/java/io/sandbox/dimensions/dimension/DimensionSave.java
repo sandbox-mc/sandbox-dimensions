@@ -161,31 +161,26 @@ public class DimensionSave extends PersistentState {
 
   // datapackNameString is dataPack:dimension format (can be the same name)
   public static Boolean loadDimensionFile(String dimensionIdentifierString, MinecraftServer server) {
-    String packName = DimensionManager.getPackFolder(dimensionIdentifierString);
-
     // The Session gets directory context into the specific save dir in run
     // /run/<my-save-name>
     Session session = ((MinecraftServerAccessor)server).getSession();
     Identifier dataPackId = new Identifier(dimensionIdentifierString);
     String dimensionNamespace = dataPackId.getNamespace();
     String dimensionName = dataPackId.getPath();
+    String packName = DimensionManager.getPackFolder(dimensionIdentifierString);
 
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
-      session.getDirectory(WorldSavePath.DATAPACKS).getParent().toString(),
+      session.getDirectory(WorldSavePath.ROOT).toString(),
       "dimensions",
       dimensionNamespace,
       dimensionName
     );
 
-    System.out.println("Before");
     // Create the path if it doesn't exist
     File dimensionFile = dimensionSavePath.toFile();
     if (!dimensionFile.exists()) {
-      Boolean success = dimensionFile.mkdirs();
-      if (success) {
-        System.out.println("Created");
-      }
+      dimensionFile.mkdirs();
     }
     
     // Path to load dimension save
@@ -210,10 +205,8 @@ public class DimensionSave extends PersistentState {
       System.out.println("Starting unzip");
       ZipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
       System.out.println("Done unzipping");
+
       return true;
-      // this.dimensionSaveLoaded = true;
-      // // nbtCompound = NbtIo.readCompressed(path.toFile()); world.dat filepath
-      // this.markDirty(); // flags the state change for save on server restart
     } catch (IOException e) {
       System.out.println("IO Exception");
       e.printStackTrace();

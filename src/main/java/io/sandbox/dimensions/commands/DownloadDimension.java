@@ -19,6 +19,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandbox.dimensions.dimension.DimensionManager;
+import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -26,6 +27,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DownloadDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -81,10 +83,11 @@ public class DownloadDimension {
     FileOutputStream fileOutputStream;
 
     String filePath;
+    Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
     if (customFileName == null) {
-      filePath = defaultFilePath(source, creatorName, identifier);
+      filePath = defaultFilePath(session, creatorName, identifier);
     } else {
-      filePath = customFilePath(source, customFileName);
+      filePath = customFilePath(session, customFileName);
     }
 
     try {
@@ -117,8 +120,8 @@ public class DownloadDimension {
     return 1;
   }
 
-  private static String defaultFilePath(ServerCommandSource source, String creatorName, String identifier) {
-    Path storageFolder = DimensionManager.getStorageFolder(source);
+  private static String defaultFilePath(Session session, String creatorName, String identifier) {
+    Path storageFolder = DimensionManager.getStorageFolder(session);
     String creatorFolderName = Paths.get(storageFolder.toString(), creatorName).toString();
     File creatorDirFile = new File(creatorFolderName);
     if (!creatorDirFile.exists()) {
@@ -128,8 +131,8 @@ public class DownloadDimension {
     return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip").toString();
   }
 
-  private static String customFilePath(ServerCommandSource source, String customFileName) {
-    Path storageFolder = DimensionManager.getStorageFolder(source);
+  private static String customFilePath(Session session, String customFileName) {
+    Path storageFolder = DimensionManager.getStorageFolder(session);
 
     if (!customFileName.endsWith(".zip")) {
       customFileName += ".zip";
