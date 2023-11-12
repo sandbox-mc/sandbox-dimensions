@@ -1,6 +1,7 @@
 package io.sandbox.dimensions.dimension;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -23,7 +24,6 @@ import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
@@ -36,6 +36,7 @@ import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
+  private static Set<String> datapackFolderSet = new HashSet<String>();
   private static Map<String, Identifier> sandboxDefaultIdentifiers = new HashMap<>();
   private static List<String> initializedDimensions = new ArrayList<>();
   private static Map<String, String> sandboxDimensionWorldFiles = new HashMap<>();
@@ -101,7 +102,7 @@ public class DimensionManager {
     });
   }
 
-  public static void addDimensionPackName(String dimensionKey, String packName) {
+  public static void addDimensionToPacknameMap(String dimensionKey, String packName) {
     sandboxDimensionWorldFiles.put(dimensionKey, packName);
   }
 
@@ -156,6 +157,19 @@ public class DimensionManager {
 
   public static HashSet<String> getPackFolders() {
     return new HashSet<String>(sandboxDimensionWorldFiles.values());
+  }
+
+  public static Set<String> getDatapackNames(Path datapackPath, Boolean folderOnly) throws IOException {
+    // Only adding folders for now, don't want to deal with unzipping and zipping again
+    File[] folderList = datapackPath.toFile().listFiles((dir, name) -> folderOnly ? dir.isDirectory() : true);
+    for (File file : folderList) {
+      String fileName = file.getName();
+      if(!datapackFolderSet.contains(fileName)) {
+        datapackFolderSet.add(fileName);
+      }
+    }
+
+    return datapackFolderSet;
   }
 
   // Using Session so this can be used outside commands

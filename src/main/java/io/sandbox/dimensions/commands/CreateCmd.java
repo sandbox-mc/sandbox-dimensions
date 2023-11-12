@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,7 +25,9 @@ import net.minecraft.resource.Resource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.dimension.DimensionType;
@@ -39,13 +42,16 @@ public class CreateCmd {
         Session session = ((MinecraftServerAccessor)(context.getSource().getServer())).getSession();
         Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
         File[] folderList = datapackPath.toFile().listFiles((dir, name) -> dir.isDirectory());
-        List<String> datapackDirectoryList = new ArrayList<>();
-
-        for (File datapackDir : folderList) {
-          datapackDirectoryList.add(datapackDir.getName());
+        List<String> datapackNames = new ArrayList<>();
+        for (File file : folderList) {
+          String fileName = file.getName();
+          // We want to ignore .zip files for now
+          if(!fileName.endsWith(".zip")) {
+            datapackNames.add(fileName);
+          }
         }
 
-        return datapackDirectoryList;
+        return datapackNames;
       }))
       .then(
         CommandManager
@@ -110,7 +116,34 @@ public class CreateCmd {
     MinecraftServer server = source.getServer();
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
     Session session = serverAccess.getSession();
-    String datapackPath = session.getDirectory(WorldSavePath.DATAPACKS).toString();
+    Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
+
+    // Build list of files/dirs in /datapacks directory
+    File[] folderList = datapackPath.toFile().listFiles((dir, name) -> dir.isDirectory());
+    List<String> datapackNames = new ArrayList<>();
+    for (File file : folderList) {
+      datapackNames.add(file.getName());
+    }
+
+    // Check if datapackName is usable
+    if (!datapackNames.contains(datapackName)) {
+      // datapackName doesn't have file extensions, so if it's a .zip datapack it will get here.
+      if (datapackNames.contains(datapackName + ".zip")) {
+        source.sendFeedback(() -> {
+          return Text.literal("Cannot add dimension to .zip datapack: " + dimensionName).formatted(Formatting.RED);
+        }, false);
+        return 0;
+      } else {
+        // Here were need to create the datapack...
+        source.sendFeedback(() -> {
+          return Text.literal("Creating new datapack: " + datapackName).formatted(Formatting.AQUA);
+        }, false);
+        return 1;
+        // createDataPack();
+      }
+    }
+
+    String datapackPathString = datapackPath.toString();
     Identifier defaultDimensionType = DimensionManager.getDefaultConfig("dimension"); // Filename matches dimension.json
     Identifier defaultWorld = DimensionManager.getDefaultConfig("world"); // Filename matches world.json
     if (defaultDimensionType != null && defaultWorld != null) {
@@ -124,8 +157,8 @@ public class CreateCmd {
         try {
           InputStream dimensionTypeIntputStream = dimensionTypeResource.getInputStream();
           InputStream worldInputStream = worldResource.getInputStream();
-          Path dimensionConfigPath = Paths.get(datapackPath, datapackName, "data", namespace, "dimension", dimensionName + ".json");
-          Path worldSavePath = Paths.get(datapackPath, datapackName, "data", namespace, DimensionSave.WORLD_SAVE_FOLDER, dimensionName + ".zip");
+          Path dimensionConfigPath = Paths.get(datapackPathString, datapackName, "data", namespace, "dimension", dimensionName + ".json");
+          Path worldSavePath = Paths.get(datapackPathString, datapackName, "data", namespace, DimensionSave.WORLD_SAVE_FOLDER, dimensionName + ".zip");
 
           // Create new dimension.json file for the new dimension
           // This will allow for reloading this world
@@ -144,10 +177,10 @@ public class CreateCmd {
           }
 
           // Process the save zip
-          // DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
           String dimensionIdString = dimensionIdentifier.toString();
           System.out.println("Loading World File: " + dimensionIdString);
-          DimensionManager.addDimensionPackName(dimensionIdString, datapackName);
+          // loadDimensionFile requires a reference to the packName
+          DimensionManager.addDimensionToPacknameMap(dimensionIdString, datapackName);
           DimensionSave.loadDimensionFile(
             dimensionIdString,
             server
