@@ -70,7 +70,7 @@ public class DownloadDimension {
     URL url;
     InputStream inputStream;
     try {
-      url = new URL(dimensionShow + "/download");
+      url = URI.create(dimensionShow + "/download");
       inputStream = url.openStream();
     } catch (IOException e) {
       sendFeedback(source, Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?"));
