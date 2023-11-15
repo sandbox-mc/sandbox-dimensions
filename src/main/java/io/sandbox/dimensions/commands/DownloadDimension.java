@@ -19,6 +19,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandbox.dimensions.commands.autoComplete.WebAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -35,6 +36,7 @@ public class DownloadDimension {
     return CommandManager.literal("download")
       .then(
         CommandManager.argument("creator", StringArgumentType.word())
+        .suggests(new WebAutoComplete("creators"))
         .then(
           CommandManager.argument("dimension", StringArgumentType.word())
           .then(
@@ -104,6 +106,7 @@ public class DownloadDimension {
     try {
       fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
       fileOutputStream.close();
+      inputStream.close();
     } catch (IOException e) {
       System.out.println("io exception reading file from channel");
       return 0;
