@@ -1,6 +1,5 @@
 package io.sandbox.dimensions.commands.autoComplete;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,11 +8,13 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
 import com.google.gson.stream.JsonReader;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -23,11 +24,19 @@ import net.minecraft.server.command.ServerCommandSource;
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
 
   public static ArrayList<String> VALID_TYPES = new ArrayList<String>(Arrays.asList("creators", "dimensions"));
-  private String type = "invalid";
+  private String urlPart = null;
 
   public WebAutoComplete(String autocompleteType) {
     if (VALID_TYPES.indexOf(autocompleteType) != -1) {
-      type = autocompleteType;
+      urlPart = autocompleteType;
+    }
+  }
+
+  public WebAutoComplete(String autocompleteType, String prefixType, String prefixValue) {
+    this(autocompleteType);
+
+    if (VALID_TYPES.indexOf(prefixType) != -1 && !prefixValue.matches("[^\\w-]")) {
+      urlPart = prefixType + "/" + prefixValue + "/" + urlPart;
     }
   }
 
@@ -36,10 +45,10 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     CommandContext<ServerCommandSource> context,
     SuggestionsBuilder builder
   ) throws CommandSyntaxException {
-    if (type == "invalid") {
+    if (urlPart.isBlank()) {
+      // Somehow we got a value we weren't expecting in the constructor!
       return builder.buildFuture();
     }
-    
 
     String remaining = builder.getRemaining();
 
@@ -49,9 +58,9 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
 
     URL url;
     InputStream inputStream;
-    ArrayList<String> valuesToSuggest = new ArrayList<String>();
+    ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
-      url = URI.create("https://www.sandboxmc.io/autocomplete/" + type + "?q=" + remaining).toURL();
+      url = URI.create("https://www.sandboxmc.io/autocomplete/" + urlPart + "?q=" + remaining).toURL();
       inputStream = url.openStream();
       readJSON(inputStream, valuesToSuggest);
       inputStream.close();
@@ -60,22 +69,20 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     }
 
     valuesToSuggest.forEach((valueToSuggest) -> {
-      builder.suggest(valueToSuggest);
+      builder.suggest(valueToSuggest.get("value"), new LiteralMessage(valueToSuggest.get("label")));
     });
 
     return builder.buildFuture();
   }
 
   // @see https://stackoverflow.com/questions/4308554/simplest-way-to-read-json-from-a-url-in-java
-  private void readJSON(InputStream inputStream, ArrayList<String> valuesToSuggest) throws IOException {
+  private void readJSON(InputStream inputStream, ArrayList<HashMap<String, String>> valuesToSuggest) throws IOException {
     InputStreamReader reader = new InputStreamReader(inputStream, Charset.forName("UTF-8"));
     JsonReader jsonReader = new JsonReader(reader);
 
-    System.out.println("STARTING JSON PARSING");
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String key = jsonReader.nextName();
-      System.out.println("KEY: " + key);
       switch (key) {
         case "total":
           jsonReader.skipValue(); // TODO: determine if the total count can be used
@@ -87,14 +94,19 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
           jsonReader.beginArray();
           while (jsonReader.hasNext()) {
             jsonReader.beginArray();
-            jsonReader.skipValue(); // display val TODO: can we use this?
-            valuesToSuggest.add(jsonReader.nextString()); // usable val
+
+            HashMap<String, String> suggestResult = new HashMap<>();
+            suggestResult.put("value", jsonReader.nextString());
+            suggestResult.put("label", jsonReader.nextString());
+            valuesToSuggest.add(suggestResult);
+
             jsonReader.endArray();
           }
           jsonReader.endArray();
           break;
         default:
-          // There are other names...
+          // Just ignore anything else
+          jsonReader.skipValue();
           break;
       }
     }
