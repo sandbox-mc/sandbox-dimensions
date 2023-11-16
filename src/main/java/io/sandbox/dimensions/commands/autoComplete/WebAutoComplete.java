@@ -15,6 +15,7 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -24,7 +25,10 @@ import net.minecraft.server.command.ServerCommandSource;
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
 
   public static ArrayList<String> VALID_TYPES = new ArrayList<String>(Arrays.asList("creators", "dimensions"));
+  public static String PREFIX_REPLACE_VAL = "__PREFIX_VALUE__";
+  public static String URL_REGEXP = "^[\\w-]+$";
   private String urlPart = null;
+  private String urlPrefixValue = "";
 
   public WebAutoComplete(String autocompleteType) {
     if (VALID_TYPES.indexOf(autocompleteType) != -1) {
@@ -35,8 +39,9 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
   public WebAutoComplete(String autocompleteType, String prefixType, String prefixValue) {
     this(autocompleteType);
 
-    if (VALID_TYPES.indexOf(prefixType) != -1 && !prefixValue.matches("[^\\w-]")) {
-      urlPart = prefixType + "/" + prefixValue + "/" + urlPart;
+    if (VALID_TYPES.indexOf(prefixType) != -1 && prefixValue.matches(URL_REGEXP)) {
+      urlPart = prefixType + "/" + PREFIX_REPLACE_VAL + "/" + urlPart;
+      urlPrefixValue = prefixValue;
     }
   }
 
@@ -51,8 +56,9 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     }
 
     String remaining = builder.getRemaining();
+    System.out.println("DID " + remaining + " MATCH MY REGEXP? " + !remaining.matches(URL_REGEXP));
 
-    if (remaining.length() == 0) {
+    if (remaining.length() == 0 || !remaining.matches(URL_REGEXP)) {
       return builder.buildFuture();
     }
 
@@ -60,7 +66,7 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     InputStream inputStream;
     ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
-      url = URI.create("https://www.sandboxmc.io/autocomplete/" + urlPart + "?q=" + remaining).toURL();
+      url = URI.create(buildUrl(context, remaining)).toURL();
       inputStream = url.openStream();
       readJSON(inputStream, valuesToSuggest);
       inputStream.close();
@@ -112,5 +118,14 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     }
     jsonReader.endObject();
     jsonReader.close();
+  }
+
+  private String buildUrl(CommandContext<ServerCommandSource> context, String remaining) {
+    String prefixVal = "";
+    if (!urlPrefixValue.isBlank()) {
+      prefixVal = StringArgumentType.getString(context, urlPrefixValue);
+    }
+    String replacedUrl = urlPart.replaceFirst(PREFIX_REPLACE_VAL, prefixVal);
+    return "https://www.sandboxmc.io/autocomplete/" + replacedUrl + "?q=" + remaining;
   }
 }

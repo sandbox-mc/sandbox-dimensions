@@ -39,8 +39,7 @@ public class DownloadDimension {
         .suggests(new WebAutoComplete("creators"))
         .then(
           CommandManager.argument("dimension", StringArgumentType.word())
-          // TODO: how to pull the creator value
-          .suggests(new WebAutoComplete("dimensions", "creators", "cardtable"))
+          .suggests(new WebAutoComplete("dimensions", "creators", "creator"))
           .then(
             CommandManager.argument("customFileName", StringArgumentType.word())
             .executes(context -> performDownloadCmd(
