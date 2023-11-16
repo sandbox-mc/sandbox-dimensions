@@ -56,7 +56,6 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     }
 
     String remaining = builder.getRemaining();
-    System.out.println("DID " + remaining + " MATCH MY REGEXP? " + !remaining.matches(URL_REGEXP));
 
     if (remaining.length() == 0 || !remaining.matches(URL_REGEXP)) {
       return builder.buildFuture();
