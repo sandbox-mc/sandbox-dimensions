@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -18,6 +19,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandbox.dimensions.commands.autoComplete.WebAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -34,8 +36,10 @@ public class DownloadDimension {
     return CommandManager.literal("download")
       .then(
         CommandManager.argument("creator", StringArgumentType.word())
+        .suggests(new WebAutoComplete("creators"))
         .then(
           CommandManager.argument("dimension", StringArgumentType.word())
+          .suggests(new WebAutoComplete("dimensions", "creators", "creator"))
           .then(
             CommandManager.argument("customFileName", StringArgumentType.word())
             .executes(context -> performDownloadCmd(
@@ -70,7 +74,7 @@ public class DownloadDimension {
     URL url;
     InputStream inputStream;
     try {
-      url = new URL(dimensionShow + "/download");
+      url = URI.create(dimensionShow + "/download").toURL();
       inputStream = url.openStream();
     } catch (IOException e) {
       sendFeedback(source, Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?"));
@@ -103,6 +107,7 @@ public class DownloadDimension {
     try {
       fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
       fileOutputStream.close();
+      inputStream.close();
     } catch (IOException e) {
       System.out.println("io exception reading file from channel");
       return 0;
