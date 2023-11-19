@@ -1,6 +1,8 @@
 package io.sandbox.dimensions.datapacks;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -16,10 +18,28 @@ public class Datapack {
     this.name = name;
   }
 
-  public void createDatapack(String name) {
+  public void addFolder(String folderPath) {
+    System.out.println(folderPath);
+    File newFolder = Paths.get(this.datapackPath.toString(), folderPath).toFile();
+    if (!newFolder.exists()) {
+      newFolder.mkdirs();
+    }
+  }
+
+  public void saveDatapack() {
     File datapackFolder = this.datapackPath.toFile();
-    if (datapackFolder.exists()) {
-      // if it exists, we should not create it, right?
+    if (!datapackFolder.exists()) {
+      // only create it if it doesn't exist
+      datapackFolder.mkdirs();
+    }
+
+    Path packMcmetaPath = Paths.get(this.datapackPath.toString(), "pack.mcmeta");
+    try {
+      FileWriter file = new FileWriter(packMcmetaPath.toString());
+      file.write(this.datapackMeta.convertToJsonString());
+      file.close();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 }

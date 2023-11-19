@@ -8,13 +8,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.sandbox.dimensions.commands.autoComplete.StringListAutoComplete;
+import io.sandbox.dimensions.datapacks.Datapack;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.dimension.DimensionSave;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
@@ -25,7 +25,6 @@ import net.minecraft.resource.Resource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -138,8 +137,12 @@ public class CreateCmd {
         source.sendFeedback(() -> {
           return Text.literal("Creating new datapack: " + datapackName).formatted(Formatting.AQUA);
         }, false);
-        return 1;
-        // createDataPack();
+        // Create the Datapack
+        Datapack datapack = new Datapack(datapackPath, datapackName);
+        datapack.saveDatapack();
+        // we need to make default folders for the dimension and the save
+        datapack.addFolder(Paths.get("data", namespace, "dimension").toString());
+        datapack.addFolder(Paths.get("data", namespace, DimensionSave.WORLD_SAVE_FOLDER).toString());
       }
     }
 

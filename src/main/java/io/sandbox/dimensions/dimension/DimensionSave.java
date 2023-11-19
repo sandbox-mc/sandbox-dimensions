@@ -168,10 +168,11 @@ public class DimensionSave extends PersistentState {
     String dimensionNamespace = dataPackId.getNamespace();
     String dimensionName = dataPackId.getPath();
     String packName = DimensionManager.getPackFolder(dimensionIdentifierString);
+    Path datapacksPath = session.getDirectory(WorldSavePath.DATAPACKS);
 
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
-      session.getDirectory(WorldSavePath.ROOT).toString(),
+      datapacksPath.getParent().toString(),
       "dimensions",
       dimensionNamespace,
       dimensionName
@@ -185,7 +186,7 @@ public class DimensionSave extends PersistentState {
     
     // Path to load dimension save
     Path datapackLoadFilePath = Paths.get(
-      session.getDirectory(WorldSavePath.DATAPACKS).toString(),
+      datapacksPath.toString(),
       packName,
       "data",
       dimensionNamespace,
