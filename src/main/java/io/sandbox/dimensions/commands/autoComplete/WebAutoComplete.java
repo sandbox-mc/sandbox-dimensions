@@ -20,6 +20,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
+import io.sandbox.dimensions.Main;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
@@ -125,6 +126,6 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       prefixVal = StringArgumentType.getString(context, urlPrefixValue);
     }
     String replacedUrl = urlPart.replaceFirst(PREFIX_REPLACE_VAL, prefixVal);
-    return "https://www.sandboxmc.io/autocomplete/" + replacedUrl + "?q=" + remaining;
+    return Main.WEB_DOMAIN + "/autocomplete/" + replacedUrl + "?q=" + remaining;
   }
 }
