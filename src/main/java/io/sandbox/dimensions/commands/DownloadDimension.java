@@ -19,6 +19,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.commands.autoComplete.WebAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
@@ -69,7 +70,7 @@ public class DownloadDimension {
 
   private static int performDownloadCmd(String creatorName, String identifier, @Nullable String customFileName, ServerCommandSource source) throws CommandSyntaxException {
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String dimensionShow = "https://www.sandboxmc.io/dimensions/" + creatorName + "/" + identifier;
+    String dimensionShow = Main.WEB_DOMAIN + "/dimensions/" + creatorName + "/" + identifier;
 
     URL url;
     InputStream inputStream;

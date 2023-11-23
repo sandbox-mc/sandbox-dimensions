@@ -3,6 +3,7 @@ package io.sandbox.dimensions;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.util.Identifier;
+
 import io.sandbox.dimensions.commands.CommandInit;
 import io.sandbox.dimensions.configs.PlayerRespawnConfig;
 import io.sandbox.dimensions.dimension.DimensionManager;
@@ -10,6 +11,7 @@ import io.sandbox.dimensions.dimension.DimensionManager;
 
 public class Main implements ModInitializer {
   public static final String modId = "sandbox-dimensions";
+  public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
   // This logger is used to write text to the console and the log file.
   // It is considered best practice to use your mod id as the logger's name.
   // That way, it's clear which mod wrote info, warnings, and errors.
