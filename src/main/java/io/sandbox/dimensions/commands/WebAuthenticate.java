@@ -7,6 +7,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.HashMap;
 
 import org.spongepowered.asm.util.JavaVersion;
 
@@ -26,8 +27,12 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 public class WebAuthenticate {
+  private static HashMap<String, String> authTokens = new HashMap<String, String>();
+  private static HashMap<String, String> bearerTokens = new HashMap<String, String>();
+
   public static String userAgent(CommandContext<ServerCommandSource> context) {
-    return "SandboxMC Agent (MODVERSION); Java (" + JavaVersion.current() + "); Minecraft (" + context.getSource().getServer().getVersion() + ")";
+    // TODO: determine how we're gonna do our mod version stuff...
+    return "SandboxMC Agent (MODVERSION); Minecraft (" + context.getSource().getServer().getVersion() + "); Java (" + JavaVersion.current() + ");";
   }
 
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -45,8 +50,9 @@ public class WebAuthenticate {
       .uri(URI.create(Main.WEB_DOMAIN + "/clients/auth/init"))
       .header("User-Agent", userAgent(context))
       .header("Content-Type", "application/json")
+      // TODO: figure out a "test env" situation for this
       .POST(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"uuid\": \"ea5a400f-678c-4fcb-853b-3d948476a0c6\"}}"))
-      // .POST(HttpRequest.BodyPublishers.ofString("{\"uuid\": \"" + context.getSource().getPlayer().getUuidAsString() + "\"}"))
+      // .POST(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"uuid\": \"" + context.getSource().getPlayer().getUuidAsString() + "\"}}"))
       .build();
 
     try {
@@ -75,6 +81,9 @@ public class WebAuthenticate {
         return 0;
       }
 
+      // Store this for the subsequent post in `submitAuthCode`, it can then be dropped after that.
+      authTokens.put(context.getSource().getPlayer().getUuidAsString(), authToken);
+
       MutableText authText = Text.literal("Please visit the following link to continue authentication\n");
       String authUrl = Main.WEB_DOMAIN + "/clients/auth/login/" + authToken;
       MutableText clickableUrl = Text.literal("[ " + authUrl + " ]");
@@ -97,21 +106,48 @@ public class WebAuthenticate {
   }
 
   private static int submitAuthCode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    String authToken = authTokens.get(context.getSource().getPlayer().getUuidAsString());
+    if (authToken == null) {
+      System.out.println("IS IT THIS?!");
+      printHelpMessage(context);
+      return 0;
+    }
+    
     String authCode = StringArgumentType.getString(context, "auth-code");
-    String authToken = "TODO";
 
     HttpRequest request = HttpRequest.newBuilder()
       .uri(URI.create(Main.WEB_DOMAIN + "/clients/auth/verify"))
       .header("User-Agent", userAgent(context))
       .header("Content-Type", "application/json")
-      .PUT(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"token\": \"" + authToken + "\", \"code\": \"" + authCode + "\"}}"))
+      .header("Authorization", "Bearer " + authToken)
+      .PUT(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"code\": \"" + authCode + "\"}}"))
       .build();
     
     try {
       HttpClient client = HttpClient.newHttpClient();
       HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-      System.out.println("RESPONSE BODY: " + response.body());
-      // JsonReader jsonReader = new JsonReader(new StringReader(response.body()));
+      JsonReader jsonReader = new JsonReader(new StringReader(response.body()));
+
+      jsonReader.beginObject();
+      while (jsonReader.hasNext()) {
+        String key = jsonReader.nextName();
+        switch (key) {
+          case "bearer_token":
+            String playerUUID = context.getSource().getPlayer().getUuidAsString();
+            bearerTokens.put(playerUUID, jsonReader.nextString());
+
+            // We're now effectively logged in, we can drop the auth token
+            // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
+            authTokens.remove(playerUUID);
+            break;
+          default:
+            // Just ignore anything else
+            jsonReader.skipValue();
+            break;
+        }
+      }
+      jsonReader.endObject();
+      jsonReader.close();
       
     } catch (InterruptedException e) {
       printHelpMessage(context);
