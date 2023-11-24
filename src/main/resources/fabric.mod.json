@@ -1,26 +1,27 @@
 {
 	"schemaVersion": 1,
-	"id": "sandbox-dimensions",
+	"id": "sandboxmc",
 	"version": "${version}",
-	"name": "Sandbox Dimensions",
-	"description": "Create custom dimensions",
+	"name": "SandboxMC",
+	"description": "Create custom worlds",
 	"authors": [
-		"product17"
+		"product17",
+		"cardtable"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://www.sandboxmc.io",
+		"sources": "https://github.com/sandboxmc/sandboxmc"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/sandbox-dimensions/icon.png",
+	"icon": "assets/sandboxmc/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"io.sandbox.dimensions.Main"
+			"io.sandboxmc.Main"
 		]
 	},
 	"mixins": [
-		"dimensions.mixins.json"
+		"sandboxmc.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.22",
