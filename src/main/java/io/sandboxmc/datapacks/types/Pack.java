@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.datapacks.types;
+package io.sandboxmc.datapacks.types;
 
 public class Pack {
   public Integer pack_format = 18;

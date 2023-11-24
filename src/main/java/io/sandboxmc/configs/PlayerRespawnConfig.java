@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.configs;
+package io.sandboxmc.configs;
 
 import io.sandbox.dimensions.dimension.DimensionSave;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;

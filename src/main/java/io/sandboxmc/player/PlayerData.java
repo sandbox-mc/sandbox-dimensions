@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.player;
+package io.sandboxmc.player;
 
 import java.util.ArrayList;
 import java.util.List;

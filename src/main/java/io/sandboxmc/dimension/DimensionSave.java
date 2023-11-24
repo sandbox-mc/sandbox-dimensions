@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.dimension;
+package io.sandboxmc.dimension;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,8 +10,8 @@ import java.util.UUID;
 
 import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.dimension.zip.ZipUtility;
-import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
-import io.sandbox.dimensions.player.PlayerData;
+import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.player.PlayerData;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.nbt.NbtCompound;

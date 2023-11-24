@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.player;
+package io.sandboxmc.player;
 
 public class PlayerPosition {
   public String dimension;

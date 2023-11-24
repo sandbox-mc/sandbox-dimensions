@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.dimension.zip;
+package io.sandboxmc.dimension.zip;
 
 import java.io.File;
 import java.io.FileInputStream;

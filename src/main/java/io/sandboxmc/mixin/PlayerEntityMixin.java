@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.mixin;
+package io.sandboxmc.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.mixin;
+package io.sandboxmc.mixin;
 
 import java.util.Map;
 import java.util.concurrent.Executor;

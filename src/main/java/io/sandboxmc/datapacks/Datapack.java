@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.datapacks;
+package io.sandboxmc.datapacks;
 
 import java.io.File;
 import java.io.FileWriter;

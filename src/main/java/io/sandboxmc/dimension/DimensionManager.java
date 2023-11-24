@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.dimension;
+package io.sandboxmc.dimension;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 
 import io.sandbox.dimensions.Main;
-import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
+import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.registry.Registry;

@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.datapacks.types;
+package io.sandboxmc.datapacks.types;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
