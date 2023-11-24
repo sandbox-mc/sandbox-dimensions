@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands;
+package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;

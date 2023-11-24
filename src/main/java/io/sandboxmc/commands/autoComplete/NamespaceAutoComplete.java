@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands.autoComplete;
+package io.sandboxmc.commands.autoComplete;
 
 import java.io.File;
 import java.nio.file.Path;

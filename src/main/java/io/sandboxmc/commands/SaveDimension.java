@@ -1,9 +1,9 @@
-package io.sandbox.dimensions.commands;
+package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import io.sandbox.dimensions.commands.autoComplete.DimensionAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionSave;
+import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;

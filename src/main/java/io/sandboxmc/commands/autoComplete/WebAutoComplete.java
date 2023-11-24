@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands.autoComplete;
+package io.sandboxmc.commands.autoComplete;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +20,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import io.sandbox.dimensions.Main;
+import io.sandboxmc.Main;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {

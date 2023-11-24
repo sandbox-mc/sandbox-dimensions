@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands;
+package io.sandboxmc.commands;
 
 import java.util.Set;
 
