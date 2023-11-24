@@ -1,5 +1,5 @@
 {
-  "type": "test_realm:test_realm",
+  "type": "minecraft:overworld",
   "generator": {
     "type": "minecraft:flat",
     "settings": {
