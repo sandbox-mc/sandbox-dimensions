@@ -1,9 +1,7 @@
-# Fabric Example Mod
+## SandboxMC Primary Repo
 
-## Setup
+This is our cool mod.
 
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
+# Versioning
 
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+Look for the comment `VERSIONING REFERENCE` for places that need to be checked/updated when changing Minecraft/Fabric versions.
