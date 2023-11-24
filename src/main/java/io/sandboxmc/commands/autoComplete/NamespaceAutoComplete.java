@@ -13,7 +13,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
+import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.level.storage.LevelStorage.Session;

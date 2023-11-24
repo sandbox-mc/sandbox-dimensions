@@ -13,7 +13,7 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 
-import io.sandbox.dimensions.Main;
+import io.sandboxmc.Main;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;

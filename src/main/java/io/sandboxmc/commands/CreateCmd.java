@@ -14,10 +14,10 @@ import java.util.Set;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import io.sandbox.dimensions.datapacks.Datapack;
-import io.sandbox.dimensions.dimension.DimensionManager;
-import io.sandbox.dimensions.dimension.DimensionSave;
-import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
+import io.sandboxmc.datapacks.Datapack;
+import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.dimension.DimensionSave;
+import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.registry.RegistryKey;

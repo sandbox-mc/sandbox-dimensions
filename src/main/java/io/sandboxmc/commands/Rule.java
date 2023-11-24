@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import io.sandbox.dimensions.dimension.DimensionSave;
+import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.commands.autoComplete.DimensionRulesAutoComplete;
 import net.minecraft.command.argument.DimensionArgumentType;

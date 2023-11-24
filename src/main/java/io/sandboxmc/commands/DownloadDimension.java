@@ -20,8 +20,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Main;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
-import io.sandbox.dimensions.dimension.DimensionManager;
-import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
+import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;

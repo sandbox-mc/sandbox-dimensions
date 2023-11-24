@@ -8,7 +8,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import io.sandbox.dimensions.dimension.DimensionSave;
+import io.sandboxmc.dimension.DimensionSave;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class DimensionRulesAutoComplete implements SuggestionProvider<ServerCommandSource> {

@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.sandbox.dimensions.datapacks.types.DatapackMeta;
+import io.sandboxmc.datapacks.types.DatapackMeta;
 
 public class Datapack {
   DatapackMeta datapackMeta = new DatapackMeta();

@@ -1,6 +1,6 @@
 package io.sandboxmc.configs;
 
-import io.sandbox.dimensions.dimension.DimensionSave;
+import io.sandboxmc.dimension.DimensionSave;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.server.network.ServerPlayerEntity;

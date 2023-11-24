@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import io.sandbox.dimensions.Main;
-import io.sandbox.dimensions.dimension.zip.ZipUtility;
+import io.sandboxmc.Main;
+import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.player.PlayerData;
 import net.minecraft.entity.player.PlayerEntity;

@@ -3,9 +3,9 @@ package io.sandboxmc.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import io.sandbox.dimensions.dimension.DimensionSave;
-import io.sandbox.dimensions.player.PlayerData;
-import io.sandbox.dimensions.player.PlayerPosition;
+import io.sandboxmc.dimension.DimensionSave;
+import io.sandboxmc.player.PlayerData;
+import io.sandboxmc.player.PlayerPosition;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
