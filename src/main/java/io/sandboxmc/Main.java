@@ -1,4 +1,4 @@
-package io.sandbox.dimensions;
+package io.sandboxmc;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -10,7 +10,7 @@ import io.sandbox.dimensions.dimension.DimensionManager;
 // import io.sandbox.lib.SandboxLogger;
 
 public class Main implements ModInitializer {
-  public static final String modId = "sandbox-dimensions";
+  public static final String modId = "sandboxmc";
   public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
   // This logger is used to write text to the console and the log file.
   // It is considered best practice to use your mod id as the logger's name.
