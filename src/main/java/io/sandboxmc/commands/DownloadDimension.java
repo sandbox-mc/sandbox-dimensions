@@ -18,10 +18,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import io.sandboxmc.Main;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.web.InfoManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -70,7 +70,7 @@ public class DownloadDimension {
     }
 
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String dimensionShow = Main.WEB_DOMAIN + "/dimensions/" + creatorName + "/" + identifier;
+    String dimensionShow = InfoManager.WEB_DOMAIN + "/dimensions/" + creatorName + "/" + identifier;
 
     URL url;
     InputStream inputStream;
