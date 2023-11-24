@@ -7,6 +7,9 @@ import net.minecraft.server.command.ServerCommandSource;
 
 public class CommandInit {
   public static void init () {
+		// TODO: get my custom argument type registered
+		// ArgumentTypeRegistry.registerArgumentType(new Identifier(Main.modId, "authcode"), AuthCodeArgumentType.class, ConstantArgumentSerializer.of(AuthCodeArgumentType::authCode));
+
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
 			LiteralArgumentBuilder.<ServerCommandSource>literal("dimension")
 				.requires((ctx) -> {
@@ -32,6 +35,7 @@ public class CommandInit {
 				.then(RestoreDimension.register())
 				.then(SaveDimension.register())
 				.then(SetSpawnDimension.register())
+				.then(WebAuthenticate.register())
 			)
 		);
   }

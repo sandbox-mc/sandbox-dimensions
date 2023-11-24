@@ -13,12 +13,12 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandbox.dimensions.Main;
 import io.sandbox.dimensions.commands.autoComplete.WebAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
@@ -42,19 +42,9 @@ public class DownloadDimension {
           .suggests(new WebAutoComplete("dimensions", "creators", "creator"))
           .then(
             CommandManager.argument("customFileName", StringArgumentType.word())
-            .executes(context -> performDownloadCmd(
-              StringArgumentType.getString(context, "creator"),
-              StringArgumentType.getString(context, "dimension"),
-              StringArgumentType.getString(context, "customFileName"),
-              context.getSource())
-            )
+            .executes(context -> performDownloadCmd(context))
           )
-          .executes(context -> performDownloadCmd(
-            StringArgumentType.getString(context, "creator"),
-            StringArgumentType.getString(context, "dimension"),
-            null,
-            context.getSource())
-          )
+          .executes(context -> performDownloadCmd(context))
         )
         .executes(context -> {
           sendFeedback(context.getSource(), Text.literal("No dimension given."));
@@ -67,9 +57,20 @@ public class DownloadDimension {
       });
   }
 
-  private static int performDownloadCmd(String creatorName, String identifier, @Nullable String customFileName, ServerCommandSource source) throws CommandSyntaxException {
+  private static int performDownloadCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    ServerCommandSource source = context.getSource();
+    String creatorName = StringArgumentType.getString(context, "creator");
+    String identifier = StringArgumentType.getString(context, "dimension");
+    String customFileName;
+    try {
+      customFileName = StringArgumentType.getString(context, "customFileName");
+    } catch (IllegalArgumentException e) {
+      // this is a nullable argument
+      customFileName = null;
+    }
+
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String dimensionShow = "https://www.sandboxmc.io/dimensions/" + creatorName + "/" + identifier;
+    String dimensionShow = Main.WEB_DOMAIN + "/dimensions/" + creatorName + "/" + identifier;
 
     URL url;
     InputStream inputStream;
