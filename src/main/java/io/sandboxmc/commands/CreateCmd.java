@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands;
+package io.sandboxmc.commands;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,11 +13,12 @@ import java.util.Optional;
 import java.util.Set;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import io.sandbox.dimensions.commands.autoComplete.StringListAutoComplete;
+
 import io.sandbox.dimensions.datapacks.Datapack;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.dimension.DimensionSave;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
+import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;

@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands;
+package io.sandboxmc.commands;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,8 +18,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import io.sandbox.dimensions.Main;
-import io.sandbox.dimensions.commands.autoComplete.WebAutoComplete;
+import io.sandboxmc.Main;
+import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandbox.dimensions.dimension.DimensionManager;
 import io.sandbox.dimensions.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;

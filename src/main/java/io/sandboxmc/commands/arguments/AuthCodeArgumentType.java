@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands.arguments;
+package io.sandboxmc.commands.arguments;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;

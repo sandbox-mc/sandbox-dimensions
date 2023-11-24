@@ -1,11 +1,12 @@
-package io.sandbox.dimensions.commands;
+package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.sandbox.dimensions.commands.autoComplete.DimensionAutoComplete;
+
 import io.sandbox.dimensions.dimension.DimensionSave;
 import io.sandbox.dimensions.player.PlayerData;
 import io.sandbox.dimensions.player.PlayerPosition;
+import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;

@@ -1,4 +1,4 @@
-package io.sandbox.dimensions.commands.autoComplete;
+package io.sandboxmc.commands.autoComplete;
 
 import java.util.ArrayList;
 import java.util.List;

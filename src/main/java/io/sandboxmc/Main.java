@@ -3,11 +3,10 @@ package io.sandboxmc;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.util.Identifier;
-
-import io.sandbox.dimensions.commands.CommandInit;
 import io.sandbox.dimensions.configs.PlayerRespawnConfig;
 import io.sandbox.dimensions.dimension.DimensionManager;
 // import io.sandbox.lib.SandboxLogger;
+import io.sandboxmc.commands.CommandInit;
 
 public class Main implements ModInitializer {
   public static final String modId = "sandboxmc";
