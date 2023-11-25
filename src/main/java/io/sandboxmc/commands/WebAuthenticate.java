@@ -10,7 +10,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HashMap;
 
 import com.google.gson.stream.JsonReader;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
