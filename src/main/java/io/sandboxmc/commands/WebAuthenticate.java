@@ -15,6 +15,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.commands.arguments.AuthCodeArgumentType;
 import io.sandboxmc.web.AuthManager;
 import io.sandboxmc.web.InfoManager;
 import net.minecraft.server.command.CommandManager;
@@ -31,8 +32,7 @@ public class WebAuthenticate {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("authenticate")
       .then(
-        // TODO: try and use the custom AuthCodeArgumentType so we can do custom validation...
-        CommandManager.argument("auth-code", StringArgumentType.string())
+        CommandManager.argument("auth-code", AuthCodeArgumentType.authCode())
         .executes(context -> submitAuthCode(context))
       )
       .executes(context -> getAuthToken(context));
@@ -105,7 +105,7 @@ public class WebAuthenticate {
       return 0;
     }
     
-    String authCode = StringArgumentType.getString(context, "auth-code");
+    String authCode = AuthCodeArgumentType.getAuthCode(context, "auth-code");
 
     HttpRequest request = HttpRequest.newBuilder()
       .uri(URI.create(InfoManager.WEB_DOMAIN + "/clients/auth/verify"))
