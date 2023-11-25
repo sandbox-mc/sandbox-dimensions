@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -39,43 +41,11 @@ public class CreateCmd {
     return CommandManager.literal("create").then(
       CommandManager
       .argument("datapack", StringArgumentType.word())
-      .suggests(new StringListAutoComplete((context) -> {
-        Session session = ((MinecraftServerAccessor)(context.getSource().getServer())).getSession();
-        Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
-        File[] folderList = datapackPath.toFile().listFiles((dir, name) -> dir.isDirectory());
-        List<String> datapackNames = new ArrayList<>();
-        for (File file : folderList) {
-          String fileName = file.getName();
-          // We want to ignore .zip files for now
-          if(!fileName.endsWith(".zip")) {
-            datapackNames.add(fileName);
-          }
-        }
-
-        return datapackNames;
-      }))
+      .suggests(new StringListAutoComplete(getDatapackAutoCompleteOptions()))
       .then(
         CommandManager
         .argument("namespace", StringArgumentType.word())
-        .suggests(new StringListAutoComplete((context) -> {
-          // Get previous argument to build the path to namespace inside datapack
-          String datapackName = context.getArgument("datapack", String.class);
-          Session session = ((MinecraftServerAccessor)(context.getSource().getServer())).getSession();
-          Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
-          File datapackDataDirectory = Paths.get(datapackPath.toString(), datapackName, "data").toFile();
-          List<String> namespaceFolderList = new ArrayList<>();
-
-          if (datapackDataDirectory.exists()) {
-            File[] folderList = datapackDataDirectory.listFiles((dir, name) -> dir.isDirectory());
-        
-            for (File datapackDir : folderList) {
-              // get the folder name
-              namespaceFolderList.add(datapackDir.getName());
-            }
-          }
-
-          return namespaceFolderList;
-        }))
+        .suggests(new StringListAutoComplete(getNamespaceAutoCompleteOptions()))
         .then(
           // This is the create command so dimensionName needs to be new for this namespace
           // can't auto-complete a new name
@@ -85,17 +55,7 @@ public class CreateCmd {
           .then(
             CommandManager
             .argument("dimensionType", IdentifierArgumentType.identifier())
-            .suggests(new StringListAutoComplete((context) -> {
-              Set<RegistryKey<DimensionType>> dimensionTypes = context.getSource().getServer()
-                .getRegistryManager().get(RegistryKeys.DIMENSION_TYPE).getKeys();
-              List<String> dimensionTypeList = new ArrayList<>();
-
-              for (RegistryKey<DimensionType> dimensionType : dimensionTypes) {
-                dimensionTypeList.add(dimensionType.getValue().toString());    
-              }
-
-              return dimensionTypeList;
-            })) 
+            .suggests(new StringListAutoComplete(getDimensionTypeAutoCompleteOptions())) 
             .executes(context -> createDimension(context))
           )
         )
@@ -105,6 +65,60 @@ public class CreateCmd {
       System.out.println("Fallback????");
       return 1;
     });
+  }
+
+  private static Function<CommandContext<ServerCommandSource>, List<String>> getDatapackAutoCompleteOptions() {
+    return (context) -> {
+      Session session = ((MinecraftServerAccessor)(context.getSource().getServer())).getSession();
+      Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
+      File[] folderList = datapackPath.toFile().listFiles((dir, name) -> dir.isDirectory());
+      List<String> datapackNames = new ArrayList<>();
+      for (File file : folderList) {
+        String fileName = file.getName();
+        // We want to ignore .zip files for now
+        if(!fileName.endsWith(".zip")) {
+          datapackNames.add(fileName);
+        }
+      }
+
+      return datapackNames;
+    };
+  }
+
+  private static Function<CommandContext<ServerCommandSource>, List<String>> getDimensionTypeAutoCompleteOptions() {
+    return (context) -> {
+      Set<RegistryKey<DimensionType>> dimensionTypes = context.getSource().getServer()
+        .getRegistryManager().get(RegistryKeys.DIMENSION_TYPE).getKeys();
+      List<String> dimensionTypeList = new ArrayList<>();
+
+      for (RegistryKey<DimensionType> dimensionType : dimensionTypes) {
+        dimensionTypeList.add(dimensionType.getValue().toString());    
+      }
+
+      return dimensionTypeList;
+    };
+  }
+
+  private static Function<CommandContext<ServerCommandSource>, List<String>> getNamespaceAutoCompleteOptions() {
+    return (context) -> {
+      // Get previous argument to build the path to namespace inside datapack
+      String datapackName = context.getArgument("datapack", String.class);
+      Session session = ((MinecraftServerAccessor)(context.getSource().getServer())).getSession();
+      Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
+      File datapackDataDirectory = Paths.get(datapackPath.toString(), datapackName, "data").toFile();
+      List<String> namespaceFolderList = new ArrayList<>();
+
+      if (datapackDataDirectory.exists()) {
+        File[] folderList = datapackDataDirectory.listFiles((dir, name) -> dir.isDirectory());
+    
+        for (File datapackDir : folderList) {
+          // get the folder name
+          namespaceFolderList.add(datapackDir.getName());
+        }
+      }
+
+      return namespaceFolderList;
+    };
   }
 
   private static int createDimension(CommandContext<ServerCommandSource> context) {
