@@ -1,6 +1,7 @@
 package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
@@ -16,10 +17,7 @@ public class RestoreDimension {
       .then(
         CommandManager.argument("dimension", DimensionArgumentType.dimension())
           .suggests(DimensionAutoComplete.Instance())
-          .executes(ctx -> execute(
-            DimensionArgumentType.getDimensionArgument(ctx, "dimension"),
-            ctx.getSource()
-          ))
+          .executes(context -> execute(context))
       )
       .executes(context -> {
         System.out.println("Fallback????");
@@ -27,12 +25,14 @@ public class RestoreDimension {
       });
   }
     
-  private static int execute(ServerWorld dimension, ServerCommandSource source) throws CommandSyntaxException {
+  private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
+
     var dimensionSave = new DimensionSave();
     System.out.println("Restore Command not fully Implemented yet...");
     // Forces datapack save zip to overwrite the current dimension save files
     dimensionSave.dimensionSaveLoaded = DimensionSave.loadDimensionFile(
-      dimension.getRegistryKey().getValue().toString(), source.getServer());
+      dimension.getRegistryKey().getValue().toString(), context.getSource().getServer());
 
     return 1;
   }

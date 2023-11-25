@@ -1,6 +1,7 @@
 package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
@@ -17,10 +18,7 @@ public class SetSpawnDimension {
       .then(
         CommandManager.argument("dimension", DimensionArgumentType.dimension())
           .suggests(DimensionAutoComplete.Instance())
-          .executes(ctx -> setSpawnDimensionPlayerPos(
-            DimensionArgumentType.getDimensionArgument(ctx, "dimension"),
-            ctx.getSource()
-          ))
+          .executes(context -> setSpawnDimensionPlayerPos(context))
       )
       // TODO: add specific blockPos as secondary argument
       .executes(context -> {
@@ -29,9 +27,10 @@ public class SetSpawnDimension {
       });
   }
 
-  private static int setSpawnDimensionPlayerPos(ServerWorld dimension, ServerCommandSource source) throws CommandSyntaxException {
+  private static int setSpawnDimensionPlayerPos(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
     // Set the spawn location of dimension
-    ServerPlayerEntity player = source.getPlayerOrThrow();
+    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
     DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
     dimensionSave.setSpawnPos(dimension, player.getBlockPos());
     return 1;

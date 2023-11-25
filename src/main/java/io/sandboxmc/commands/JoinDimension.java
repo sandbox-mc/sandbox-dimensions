@@ -1,6 +1,7 @@
 package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
@@ -24,10 +25,7 @@ public class JoinDimension {
       .then(
         CommandManager.argument("dimension", DimensionArgumentType.dimension())
           .suggests(DimensionAutoComplete.Instance())
-          .executes(ctx -> joinDimension(
-            DimensionArgumentType.getDimensionArgument(ctx, "dimension"),
-            ctx.getSource()
-          ))
+          .executes(context -> joinDimension(context))
       )
       .executes(context -> {
         System.out.println("Fallback????");
@@ -35,7 +33,9 @@ public class JoinDimension {
       });
   }
 
-  private static int joinDimension(ServerWorld dimension, ServerCommandSource source) throws CommandSyntaxException {
+  private static int joinDimension(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    ServerCommandSource source = context.getSource();
+    ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
     ServerPlayerEntity player;
     try {
       player = source.getPlayerOrThrow();

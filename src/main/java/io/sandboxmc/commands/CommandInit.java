@@ -11,7 +11,7 @@ public class CommandInit {
 		// ArgumentTypeRegistry.registerArgumentType(new Identifier(Main.modId, "authcode"), AuthCodeArgumentType.class, ConstantArgumentSerializer.of(AuthCodeArgumentType::authCode));
 
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
-			LiteralArgumentBuilder.<ServerCommandSource>literal("dimension")
+			LiteralArgumentBuilder.<ServerCommandSource>literal("sb")
 				.requires((ctx) -> {
 					try {
 						// This is command auth, should look into this at some point

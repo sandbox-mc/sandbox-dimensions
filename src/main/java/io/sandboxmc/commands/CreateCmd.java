@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 
 import io.sandboxmc.datapacks.Datapack;
 import io.sandboxmc.dimension.DimensionManager;
@@ -95,13 +96,7 @@ public class CreateCmd {
 
               return dimensionTypeList;
             })) 
-            .executes(ctx -> createDimension(
-              StringArgumentType.getString(ctx, "datapack"),
-              StringArgumentType.getString(ctx, "namespace"),
-              StringArgumentType.getString(ctx, "dimensionName"),
-              IdentifierArgumentType.getIdentifier(ctx, "dimensionType"),
-              ctx.getSource()
-            ))
+            .executes(context -> createDimension(context))
           )
         )
       )
@@ -112,7 +107,13 @@ public class CreateCmd {
     });
   }
 
-  private static int createDimension(String datapackName, String namespace, String dimensionName, Identifier dimensionType, ServerCommandSource source) {
+  private static int createDimension(CommandContext<ServerCommandSource> context) {
+    String datapackName = StringArgumentType.getString(context, "datapack");
+    String namespace = StringArgumentType.getString(context, "namespace");
+    String dimensionName = StringArgumentType.getString(context, "dimensionName");
+    // Identifier dimensionType = IdentifierArgumentType.getIdentifier(context, "dimensionType");
+    ServerCommandSource source = context.getSource();
+
     MinecraftServer server = source.getServer();
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
     Session session = serverAccess.getSession();

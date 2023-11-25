@@ -1,6 +1,7 @@
 package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
@@ -22,12 +23,11 @@ import net.minecraft.world.World;
 public class LeaveDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("leave")
-      .executes(ctx -> {
-        return leaveDimension(ctx.getSource());
-      });
+      .executes(context -> leaveDimension(context));
   }
 
-  private static int leaveDimension(ServerCommandSource source) throws CommandSyntaxException {
+  private static int leaveDimension(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    ServerCommandSource source = context.getSource();
     ServerPlayerEntity player = source.getPlayerOrThrow();
     ServerWorld overworld = source.getServer().getWorld(World.OVERWORLD);
     PlayerData overworldPlayerData = DimensionSave.getDimensionState(overworld).getPlayerData(player);

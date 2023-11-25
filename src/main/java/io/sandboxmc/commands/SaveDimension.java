@@ -1,6 +1,8 @@
 package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
@@ -15,10 +17,7 @@ public class SaveDimension {
       .then(
         CommandManager.argument("dimension", DimensionArgumentType.dimension())
           .suggests(DimensionAutoComplete.Instance())
-          .executes(ctx -> saveDimension(
-            DimensionArgumentType.getDimensionArgument(ctx, "dimension"),
-            ctx.getSource()
-          ))
+          .executes(context -> saveDimension(context))
       )
       .executes(context -> {
         System.out.println("Fallback????");
@@ -26,7 +25,8 @@ public class SaveDimension {
       });
   }
 
-  private static int saveDimension(ServerWorld dimension, ServerCommandSource source) {
+  private static int saveDimension(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
     DimensionSave.saveDimensionFile(dimension);
     return 1;
   }
