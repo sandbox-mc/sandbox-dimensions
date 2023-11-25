@@ -3,7 +3,7 @@
 	"id": "sandboxmc",
 	"version": "${version}",
 	"name": "SandboxMC",
-	"description": "Create custom worlds",
+	"description": "Create and manage your worlds!",
 	"authors": [
 		"product17",
 		"cardtable"
