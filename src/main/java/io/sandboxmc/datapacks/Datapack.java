@@ -88,6 +88,16 @@ public class Datapack {
     }
   }
 
+  public void zipDatapackFiles() {
+    // Should zip everything in the datapack
+    // Should return Stream?
+    // Basically this is the pre-upload action
+    // Example:
+    // Player runs: /sb upload datapackName
+    // the command will get this data pack and run this command
+    // the output will then be uploaded to the site
+  }
+
   public void zipWorldfilesToDatapack(ServerWorld dimension) {
     Identifier dimensionId = dimension.getRegistryKey().getValue();
     Session session = ((MinecraftServerAccessor)(dimension.getServer())).getSession();
