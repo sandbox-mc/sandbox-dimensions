@@ -216,45 +216,6 @@ public class DimensionSave extends PersistentState {
     return false;
   }
 
-  public static void saveDimensionFile(ServerWorld dimension) {
-    Session session = ((MinecraftServerAccessor)(dimension.getServer())).getSession();
-    Path dimensionPath = session.getWorldDirectory(dimension.getRegistryKey());
-    Identifier dimensionId = dimension.getRegistryKey().getValue();
-    String dimensionNamespace = dimensionId.getNamespace();
-    String dataPackFolder = DimensionManager.getPackFolder(dimensionId.toString());
-    String dimensionFileName = dimensionId.getPath() + ".zip";
-
-    // Build sandboxPath
-    // Example: /datapacks/<datapackName>/data/<dataPackNamespace>
-    Path saveZipFile = Paths.get(
-      session.getDirectory(WorldSavePath.DATAPACKS).toString(),
-      dataPackFolder,
-      "data",
-      dimensionNamespace
-    );
-    
-    File asFile = saveZipFile.toFile();
-    // make the dir if it doesn't exist
-    if (!asFile.exists()) {
-      asFile.mkdir();
-    }
-    
-    // Next level create if it doesn't exist
-    // Example: /datapacks/<datapackName>/data/<dataPackNamespace>/saves
-    saveZipFile = Paths.get(saveZipFile.toString(), WORLD_SAVE_FOLDER);
-    // make the dir if it doesn't exist
-    if (!saveZipFile.toFile().exists()) {
-      saveZipFile.toFile().mkdir();
-    }
-
-    // Example: /datapacks/<datapackName>/data/<dataPackNamespace>/saves/<datapackNamespace>_<dimensionName>.zip
-    saveZipFile = Paths.get(saveZipFile.toString(), dimensionFileName);
-
-    System.out.println("Save: " + saveZipFile);
-
-    ZipUtility.zipDirectory(dimensionPath.toFile(), saveZipFile.toString());
-  }
-
   public void setPlayerData(UUID uuid, PlayerData playerData) {
     players.put(uuid, playerData);
   }

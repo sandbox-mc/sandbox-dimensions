@@ -96,6 +96,7 @@ public class Datapack {
     // Player runs: /sb upload datapackName
     // the command will get this data pack and run this command
     // the output will then be uploaded to the site
+    // DatapackManager.getDatapack(datapackNameArg);
   }
 
   public void zipWorldfilesToDatapack(ServerWorld dimension) {
