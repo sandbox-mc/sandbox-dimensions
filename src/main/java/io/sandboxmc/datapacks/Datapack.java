@@ -11,6 +11,11 @@ import java.nio.file.StandardCopyOption;
 
 import io.sandboxmc.datapacks.types.DatapackMeta;
 import io.sandboxmc.dimension.DimensionSave;
+import io.sandboxmc.dimension.zip.ZipUtility;
+import io.sandboxmc.mixin.MinecraftServerAccessor;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
+import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class Datapack {
   DatapackMeta datapackMeta = new DatapackMeta();
@@ -31,6 +36,9 @@ public class Datapack {
     // This will allow for reloading this world
     try {
       Files.copy(fileStream, dimensionConfigPath, StandardCopyOption.REPLACE_EXISTING);
+
+      // Register the new dimension
+      DatapackManager.registerDatapackDimension(dimensionName, new Identifier(namespace, dimensionName));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -45,9 +53,7 @@ public class Datapack {
   }
 
   public void addWorldSaveFile(String namespace, String dimensionName, InputStream fileStream) {
-    Path worldSavePath = Paths.get("data", namespace, DimensionSave.WORLD_SAVE_FOLDER);
-    this.addFolder(worldSavePath.toString());
-    worldSavePath = Paths.get(datapackPath.toString(), worldSavePath.toString(), dimensionName + ".zip");
+    Path worldSavePath = buildWorldSavePath(namespace, dimensionName);
 
     // Copy over a default world save to use as default
     // This is the save file that will be used for the new dimension
@@ -56,6 +62,13 @@ public class Datapack {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  // Creates the world folder if it doesn't exist and returns .zip path
+  private Path buildWorldSavePath(String namespace, String dimensionName) {
+    Path worldSavePath = Paths.get("data", namespace, DimensionSave.WORLD_SAVE_FOLDER);
+    this.addFolder(worldSavePath.toString());
+    return Paths.get(datapackPath.toString(), worldSavePath.toString(), dimensionName + ".zip");
   }
 
   public void saveDatapack() {
@@ -73,5 +86,15 @@ public class Datapack {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  public void zipWorldfilesToDatapack(ServerWorld dimension) {
+    Identifier dimensionId = dimension.getRegistryKey().getValue();
+    Session session = ((MinecraftServerAccessor)(dimension.getServer())).getSession();
+    Path dimensionPath = session.getWorldDirectory(dimension.getRegistryKey());
+    Path worldSavePath = buildWorldSavePath(dimensionId.getNamespace(), dimensionId.getPath());
+
+    System.out.println("Zipping files for: " + dimensionId);
+    ZipUtility.zipDirectory(dimensionPath.toFile(), worldSavePath.toString());
   }
 }

@@ -4,12 +4,15 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
+import io.sandboxmc.datapacks.Datapack;
+import io.sandboxmc.datapacks.DatapackManager;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class SaveDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -20,14 +23,22 @@ public class SaveDimension {
           .executes(context -> saveDimension(context))
       )
       .executes(context -> {
-        System.out.println("Fallback????");
+        context.getSource().sendFeedback(() -> {
+          return Text.literal("Please select a valid Dimension");
+        }, false);
         return 1;
       });
   }
 
   private static int saveDimension(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
-    DimensionSave.saveDimensionFile(dimension);
+    Identifier dimensionId = dimension.getRegistryKey().getValue();
+    String datapackName = DatapackManager.getDatapackName(dimensionId);
+    Datapack datapack = DatapackManager.getDatapack(datapackName);
+    datapack.zipWorldfilesToDatapack(dimension);
+    context.getSource().sendFeedback(() -> {
+      return Text.literal("Saved Dimension: " + dimensionId);
+    }, false);
     return 1;
   }
 }

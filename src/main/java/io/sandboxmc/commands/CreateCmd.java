@@ -127,7 +127,7 @@ public class CreateCmd {
     ServerCommandSource source = context.getSource();
     MinecraftServer server = source.getServer();
 
-    Datapack datapack = DatapackManager.geDatapack(datapackName);
+    Datapack datapack = DatapackManager.getDatapack(datapackName);
     if (datapack == null) {
       datapack = DatapackManager.createDatapack(datapackName);
       // if it doesn't exist we need to create the default files for it

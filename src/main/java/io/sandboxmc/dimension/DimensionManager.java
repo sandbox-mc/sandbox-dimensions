@@ -14,6 +14,7 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 
 import io.sandboxmc.Main;
+import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -212,8 +213,12 @@ public class DimensionManager {
 
     // Loop through all the saves that are found
     for (String dimensionIdString : sandboxDimensionWorldFiles.keySet()) {
+      Identifier dimensionId = new Identifier(dimensionIdString);
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
+        // Register dimension to datapack
+        System.out.println("Register: " + dimensionId + " : " + sandboxDimensionWorldFiles.get(dimensionIdString));
+        DatapackManager.registerDatapackDimension(sandboxDimensionWorldFiles.get(dimensionIdString), dimensionId);
         DimensionSave dimensionSave = DimensionSave.getDimensionState(dimensionWorld);
         if (!dimensionSave.dimensionSaveLoaded) {
           System.out.println("Loading World File: " + dimensionIdString);

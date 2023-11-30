@@ -7,12 +7,14 @@ import java.util.Map;
 
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DatapackManager {
   private static Path datapackPath;
   private static Map<String, Datapack> datapackCache = new HashMap<>();
+  private static Map<String, String> dimensionToDatapackMap = new HashMap<>();
 
   public static void init(MinecraftServer server) {
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
@@ -35,7 +37,15 @@ public class DatapackManager {
     return datapack;
   }
 
-  public static Datapack geDatapack(String datapackName) {
+  public static Datapack getDatapack(String datapackName) {
     return datapackCache.get(datapackName);
+  }
+
+  public static String getDatapackName(Identifier dimensionId) {
+    return dimensionToDatapackMap.get(dimensionId.toString());
+  }
+
+  public static void registerDatapackDimension(String datapackName, Identifier dimensionId) {
+    dimensionToDatapackMap.put(dimensionId.toString(), datapackName);
   }
 }
