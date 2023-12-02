@@ -149,6 +149,7 @@ public class DownloadDimension {
     return filePath;
   }
 
+  // TODO: Pull this into a more globally available helper...
   private static void sendFeedback(ServerCommandSource source, Text feedbackText) {
     source.sendFeedback(() -> {
       return feedbackText;
