@@ -48,6 +48,26 @@ public class UploadDimension {
   }
 
   private static int performUploadCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    // // EXAMPLE CODE: for building the tmpZip file for upload
+    // // Step 1) Create a world
+    // // Step 2) Save that world
+    // // Step 3) this command...
+    //
+    // ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
+    // Identifier dimensionId = dimension.getRegistryKey().getValue();
+    // String datapackName = DatapackManager.getDatapackName(dimensionId);
+    // Datapack datapack = DatapackManager.getDatapack(datapackName);
+    // datapack.zipWorldfilesToDatapack(dimension);
+
+    // Path tmpZipPath; // This is the path to the .zip file
+    // try {
+    //   tmpZipPath = datapack.createTmpZip();
+    // } catch(IOException ex) {
+    //   ex.printStackTrace();
+    // }
+
+    // // Should be able to run datapack.deleteTmpZipFile(); when you're done with the tmpFile
+
     String creatorName = StringArgumentType.getString(context, "creator");
     // String identifier = StringArgumentType.getString(context, "dimension");
     Session session = ((MinecraftServerAccessor)context.getSource().getServer()).getSession();

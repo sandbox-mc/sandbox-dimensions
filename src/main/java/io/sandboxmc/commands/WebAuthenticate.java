@@ -1,7 +1,6 @@
 package io.sandboxmc.commands;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
 
 import com.google.gson.stream.JsonReader;

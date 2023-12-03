@@ -20,7 +20,9 @@ import net.minecraft.world.level.storage.LevelStorage.Session;
 public class Datapack {
   DatapackMeta datapackMeta = new DatapackMeta();
   Path datapackPath;
-  String name;
+  public String name;
+  Path tmpDirectory;
+  Path tmpFile;
 
   public Datapack(Path datapackPath, String name) {
     this.datapackPath = Paths.get(datapackPath.toString(), name);
@@ -38,7 +40,7 @@ public class Datapack {
       Files.copy(fileStream, dimensionConfigPath, StandardCopyOption.REPLACE_EXISTING);
 
       // Register the new dimension
-      DatapackManager.registerDatapackDimension(dimensionName, new Identifier(namespace, dimensionName));
+      DatapackManager.registerDatapackDimension(this.name, new Identifier(namespace, dimensionName));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -71,6 +73,27 @@ public class Datapack {
     return Paths.get(datapackPath.toString(), worldSavePath.toString(), dimensionName + ".zip");
   }
 
+  public Path createTmpZip() throws IOException {
+    // Cleanup any previous tmpDirs
+    deleteTmpZipFile();
+
+    // Create and assign tmpDir for serving to the webclient
+    this.tmpDirectory = Files.createTempDirectory(datapackPath.getParent(), name);
+    this.tmpFile = Paths.get(this.tmpDirectory.toString(), name + ".zip");
+    ZipUtility.zipDirectory(this.datapackPath.toFile(), this.tmpFile.toString());
+
+    // Queue tmpfiles to be deleted on server restart
+    this.tmpDirectory.toFile().deleteOnExit();
+    this.tmpFile.toFile().deleteOnExit();
+    return tmpFile;
+  }
+
+  public void deleteTmpZipFile() throws IOException {
+    if (this.tmpDirectory != null) {
+      ZipUtility.deleteDirectory(this.tmpDirectory);
+    }
+  }
+
   public void saveDatapack() {
     File datapackFolder = this.datapackPath.toFile();
     if (!datapackFolder.exists()) {
@@ -86,17 +109,6 @@ public class Datapack {
     } catch (IOException e) {
       e.printStackTrace();
     }
-  }
-
-  public void zipDatapackFiles() {
-    // Should zip everything in the datapack
-    // Should return Stream?
-    // Basically this is the pre-upload action
-    // Example:
-    // Player runs: /sb upload datapackName
-    // the command will get this data pack and run this command
-    // the output will then be uploaded to the site
-    // DatapackManager.getDatapack(datapackNameArg);
   }
 
   public void zipWorldfilesToDatapack(ServerWorld dimension) {
