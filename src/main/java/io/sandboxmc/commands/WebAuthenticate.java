@@ -38,7 +38,7 @@ public class WebAuthenticate {
     // web.setPostBody("{\"auth\": {\"uuid\": \"" + context.getSource().getPlayer().getUuidAsString() + "\"}}");
 
     try {
-      JsonReader jsonReader = new JsonReader(new StringReader(web.getString()));
+      JsonReader jsonReader = web.getJson();
       String authToken = null;
 
       jsonReader.beginObject();
@@ -55,7 +55,6 @@ public class WebAuthenticate {
         }
       }
       jsonReader.endObject();
-      jsonReader.close();
 
       if (authToken == null) {
         return 0;
@@ -80,6 +79,8 @@ public class WebAuthenticate {
     } catch (IOException e) {
       printHelpMessage(context);
       return 0;
+    } finally {
+      web.closeReaders();
     }
 
     return 1;
@@ -98,7 +99,7 @@ public class WebAuthenticate {
     web.setPutBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
     
     try {
-      JsonReader jsonReader = new JsonReader(new StringReader(web.getString()));
+      JsonReader jsonReader = web.getJson();
 
       jsonReader.beginObject();
       while (jsonReader.hasNext()) {
@@ -120,14 +121,12 @@ public class WebAuthenticate {
         }
       }
       jsonReader.endObject();
-      jsonReader.close();
-      
-    } catch (InterruptedException e) {
+    } catch (IOException | InterruptedException e) {
       printHelpMessage(context);
       return 0;
-    } catch (IOException e) {
-      printHelpMessage(context);
-      return 0;
+    } finally {
+      // Always ensure we're closing our readers.
+      web.closeReaders();
     }
 
     return 1;

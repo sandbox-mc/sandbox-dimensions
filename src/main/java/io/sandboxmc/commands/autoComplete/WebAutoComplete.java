@@ -1,9 +1,6 @@
 package io.sandboxmc.commands.autoComplete;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -75,13 +72,19 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
 
     Web web = new Web(context.getSource(), buildPath(context, remaining), restrictToAuth);
 
+    if (restrictToAuth && !web.hasAuth()) {
+      // If we're TRYING to restrict to auth and there IS no auth then let's not just hammer our own API...
+      System.out.println("Leaving autocomplete early, no authentication!");
+      return builder.buildFuture();
+    }
+
     ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
-      InputStream response = web.getInputStream();
-      readJSON(response, valuesToSuggest);
-      response.close();
+      readJSON(web.getJson(), valuesToSuggest);
     } catch (IOException | InterruptedException e) {
       System.out.println("Error: " + e.getClass().toString() + " - " + e.getMessage());
+    } finally {
+      web.closeReaders();
     }
 
     valuesToSuggest.forEach((valueToSuggest) -> {
@@ -92,10 +95,7 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
   }
 
   // @see https://stackoverflow.com/questions/4308554/simplest-way-to-read-json-from-a-url-in-java
-  private void readJSON(InputStream inputStream, ArrayList<HashMap<String, String>> valuesToSuggest) throws IOException {
-    InputStreamReader reader = new InputStreamReader(inputStream, Charset.forName("UTF-8"));
-    JsonReader jsonReader = new JsonReader(reader);
-
+  private void readJSON(JsonReader jsonReader, ArrayList<HashMap<String, String>> valuesToSuggest) throws IOException {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String key = jsonReader.nextName();
@@ -127,7 +127,6 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       }
     }
     jsonReader.endObject();
-    jsonReader.close();
   }
 
   private String buildPath(CommandContext<ServerCommandSource> context, String remaining) {

@@ -77,6 +77,7 @@ public class DownloadDimension {
       inputStream = web.getInputStream();
     } catch (IOException | InterruptedException e) {
       sendFeedback(source, Text.literal("No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?"));
+      web.closeReaders();
       return 0;
     }
 
@@ -98,6 +99,7 @@ public class DownloadDimension {
     } catch (FileNotFoundException e) {
       // This can't actually happen, customFilePath and defaultFilePath both ensure everything.
       // Existing files are replaced.
+      web.closeReaders();
       return 0;
     }
   
@@ -106,10 +108,11 @@ public class DownloadDimension {
     try {
       fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
       fileOutputStream.close();
-      inputStream.close();
     } catch (IOException e) {
-      System.out.println("io exception reading file from channel");
+      System.out.println("io exception reading file from channel or attempting to close stream");
       return 0;
+    } finally {
+      web.closeReaders();
     }
 
     MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
