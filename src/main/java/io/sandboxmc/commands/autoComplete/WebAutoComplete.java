@@ -3,8 +3,6 @@ package io.sandboxmc.commands.autoComplete;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +18,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import io.sandboxmc.web.InfoManager;
+import io.sandboxmc.Web;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
@@ -30,11 +28,18 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
   public static String URL_REGEXP = "^[\\w-]+$";
   private String urlPart = null;
   private String urlPrefixValue = "";
+  private Boolean restrictToAuth = false;
 
   public WebAutoComplete(String autocompleteType) {
     if (VALID_TYPES.indexOf(autocompleteType) != -1) {
       urlPart = autocompleteType;
     }
+  }
+
+  public WebAutoComplete(String autocompleteType, Boolean onlyAuthed) {
+    this(autocompleteType);
+
+    restrictToAuth = onlyAuthed;
   }
 
   public WebAutoComplete(String autocompleteType, String prefixType, String prefixValue) {
@@ -44,6 +49,12 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       urlPart = prefixType + "/" + PREFIX_REPLACE_VAL + "/" + urlPart;
       urlPrefixValue = prefixValue;
     }
+  }
+
+  public WebAutoComplete(String autocompleteType, String prefixType, String prefixValue, Boolean onlyAuthed) {
+    this(autocompleteType, prefixType, prefixValue);
+  
+    restrictToAuth = onlyAuthed;
   }
 
   @Override
@@ -62,15 +73,14 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       return builder.buildFuture();
     }
 
-    URL url;
-    InputStream inputStream;
+    Web web = new Web(context.getSource(), buildUrl(context, remaining), restrictToAuth);
+
     ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
-      url = URI.create(buildUrl(context, remaining)).toURL();
-      inputStream = url.openStream();
-      readJSON(inputStream, valuesToSuggest);
-      inputStream.close();
-    } catch (IOException e) {
+      InputStream response = web.getInputStream();
+      readJSON(response, valuesToSuggest);
+      response.close();
+    } catch (IOException | InterruptedException e) {
       System.out.println("GOT AN ERROR\n" + e.getMessage());
     }
 
@@ -126,6 +136,6 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       prefixVal = StringArgumentType.getString(context, urlPrefixValue);
     }
     String replacedUrl = urlPart.replaceFirst(PREFIX_REPLACE_VAL, prefixVal);
-    return InfoManager.WEB_DOMAIN + "/autocomplete/" + replacedUrl + "?q=" + remaining;
+    return Web.WEB_DOMAIN + "/autocomplete/" + replacedUrl + "?q=" + remaining;
   }
 }

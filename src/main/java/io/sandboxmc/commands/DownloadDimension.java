@@ -5,8 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -18,6 +16,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
@@ -72,12 +71,12 @@ public class DownloadDimension {
     // Make sure the URL is formed properly and can be accessed as an InputStream.
     String dimensionShow = InfoManager.WEB_DOMAIN + "/dimensions/" + creatorName + "/" + identifier;
 
-    URL url;
+    Web web = new Web(context.getSource(), dimensionShow + "/download");
+
     InputStream inputStream;
     try {
-      url = URI.create(dimensionShow + "/download").toURL();
-      inputStream = url.openStream();
-    } catch (IOException e) {
+      inputStream = web.getInputStream();
+    } catch (IOException | InterruptedException e) {
       sendFeedback(source, Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?"));
       return 0;
     }
@@ -149,6 +148,7 @@ public class DownloadDimension {
     return filePath;
   }
 
+  // TODO: Pull this into a more globally available helper...
   private static void sendFeedback(ServerCommandSource source, Text feedbackText) {
     source.sendFeedback(() -> {
       return feedbackText;
