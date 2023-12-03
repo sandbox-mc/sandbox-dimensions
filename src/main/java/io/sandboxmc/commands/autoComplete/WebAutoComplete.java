@@ -3,10 +3,6 @@ package io.sandboxmc.commands.autoComplete;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +19,6 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.web.InfoManager;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
@@ -78,16 +73,11 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       return builder.buildFuture();
     }
 
-    Builder requestBuilder = Web.initHttpRequest(context, buildUrl(context, remaining));
-    if (restrictToAuth) {
-      requestBuilder = Web.authHttpRequest(requestBuilder, context);
-    }
-    HttpRequest request = requestBuilder.build();
-    HttpClient client = HttpClient.newHttpClient();
+    Web web = new Web(context.getSource(), buildUrl(context, remaining), restrictToAuth);
 
     ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
-      InputStream response = client.send(request, BodyHandlers.ofInputStream()).body();
+      InputStream response = web.getInputStream();
       readJSON(response, valuesToSuggest);
       response.close();
     } catch (IOException | InterruptedException e) {
@@ -146,6 +136,6 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       prefixVal = StringArgumentType.getString(context, urlPrefixValue);
     }
     String replacedUrl = urlPart.replaceFirst(PREFIX_REPLACE_VAL, prefixVal);
-    return InfoManager.WEB_DOMAIN + "/autocomplete/" + replacedUrl + "?q=" + remaining;
+    return Web.WEB_DOMAIN + "/autocomplete/" + replacedUrl + "?q=" + remaining;
   }
 }

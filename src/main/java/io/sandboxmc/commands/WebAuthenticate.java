@@ -2,11 +2,6 @@ package io.sandboxmc.commands;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HashMap;
 
 import com.google.gson.stream.JsonReader;
@@ -14,6 +9,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.Web;
 import io.sandboxmc.commands.arguments.AuthCodeArgumentType;
 import io.sandboxmc.web.AuthManager;
 import io.sandboxmc.web.InfoManager;
@@ -38,19 +34,13 @@ public class WebAuthenticate {
   }
 
   private static int getAuthToken(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    HttpRequest request = HttpRequest.newBuilder()
-      .uri(URI.create(InfoManager.WEB_DOMAIN + "/clients/auth/init"))
-      .header("User-Agent", InfoManager.userAgent(context.getSource().getServer()))
-      .header("Content-Type", "application/json")
-      // TODO: figure out a "test env" situation for this
-      .POST(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"uuid\": \"ea5a400f-678c-4fcb-853b-3d948476a0c6\"}}"))
-      // .POST(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"uuid\": \"" + context.getSource().getPlayer().getUuidAsString() + "\"}}"))
-      .build();
+    Web web = new Web(context.getSource(), "/clients/auth/init");
+    // TODO: figure out a "test env" situation for this
+    web.setPostBody("{\"auth\": {\"uuid\": \"ea5a400f-678c-4fcb-853b-3d948476a0c6\"}}");
+    // web.setPostBody("{\"auth\": {\"uuid\": \"" + context.getSource().getPlayer().getUuidAsString() + "\"}}");
 
     try {
-      HttpClient client = HttpClient.newHttpClient();
-      HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-      JsonReader jsonReader = new JsonReader(new StringReader(response.body()));
+      JsonReader jsonReader = new JsonReader(new StringReader(web.getString()));
       String authToken = null;
 
       jsonReader.beginObject();
@@ -106,18 +96,11 @@ public class WebAuthenticate {
     
     String authCode = AuthCodeArgumentType.getAuthCode(context, "auth-code");
 
-    HttpRequest request = HttpRequest.newBuilder()
-      .uri(URI.create(InfoManager.WEB_DOMAIN + "/clients/auth/verify"))
-      .header("User-Agent", InfoManager.userAgent(context.getSource().getServer()))
-      .header("Content-Type", "application/json")
-      .header("Authorization", "Bearer " + authToken)
-      .PUT(HttpRequest.BodyPublishers.ofString("{\"auth\": {\"code\": \"" + authCode + "\"}}"))
-      .build();
+    Web web = new Web(context.getSource(), "/clients/auth/verify", authToken);
+    web.setPutBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
     
     try {
-      HttpClient client = HttpClient.newHttpClient();
-      HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-      JsonReader jsonReader = new JsonReader(new StringReader(response.body()));
+      JsonReader jsonReader = new JsonReader(new StringReader(web.getString()));
 
       jsonReader.beginObject();
       while (jsonReader.hasNext()) {
