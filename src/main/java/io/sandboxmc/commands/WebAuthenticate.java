@@ -11,8 +11,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
 import io.sandboxmc.commands.arguments.AuthCodeArgumentType;
-import io.sandboxmc.web.AuthManager;
-import io.sandboxmc.web.InfoManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -67,7 +65,7 @@ public class WebAuthenticate {
       authTokens.put(context.getSource().getPlayer().getUuidAsString(), authToken);
 
       MutableText authText = Text.literal("Please visit the following link to continue authentication\n");
-      String authUrl = InfoManager.WEB_DOMAIN + "/clients/auth/login/" + authToken;
+      String authUrl = Web.WEB_DOMAIN + "/clients/auth/login/" + authToken;
       MutableText clickableUrl = Text.literal("[ " + authUrl + " ]");
       ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, authUrl);
       clickableUrl.setStyle(Style.EMPTY.withClickEvent(clickEvent));
@@ -108,7 +106,7 @@ public class WebAuthenticate {
         switch (key) {
           case "bearer_token":
             String playerUUID = context.getSource().getPlayer().getUuidAsString();
-            AuthManager.setBearerToken(playerUUID, jsonReader.nextString());
+            Web.setBearerToken(playerUUID, jsonReader.nextString());
 
             // We're now effectively logged in, we can drop the auth token
             // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
@@ -136,8 +134,8 @@ public class WebAuthenticate {
 
   private static void printHelpMessage(CommandContext<ServerCommandSource> context) {
     MutableText helpText = Text.literal("Something went wrong. Please visit ");
-    MutableText helpURL = Text.literal("[ " + InfoManager.WEB_DOMAIN + "/clients/auth/help ]");
-    ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, InfoManager.WEB_DOMAIN + "/clients/auth/help");
+    MutableText helpURL = Text.literal("[ " + Web.WEB_DOMAIN + "/clients/auth/help ]");
+    ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, Web.WEB_DOMAIN + "/clients/auth/help");
     helpURL.setStyle(Style.EMPTY.withClickEvent(clickEvent));
     helpURL.formatted(Formatting.UNDERLINE).formatted(Formatting.AQUA);
     helpText.append(helpURL);

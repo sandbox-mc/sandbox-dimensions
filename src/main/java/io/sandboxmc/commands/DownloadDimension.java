@@ -20,7 +20,6 @@ import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
-import io.sandboxmc.web.InfoManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -69,15 +68,15 @@ public class DownloadDimension {
     }
 
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String dimensionShow = InfoManager.WEB_DOMAIN + "/dimensions/" + creatorName + "/" + identifier;
+    String dimensionPath = "/dimensions/" + creatorName + "/" + identifier;
 
-    Web web = new Web(context.getSource(), dimensionShow + "/download");
+    Web web = new Web(context.getSource(), dimensionPath + "/download");
 
     InputStream inputStream;
     try {
       inputStream = web.getInputStream();
     } catch (IOException | InterruptedException e) {
-      sendFeedback(source, Text.literal("No dimension found at\n" + dimensionShow + "\nDid you misstype it?"));
+      sendFeedback(source, Text.literal("No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?"));
       return 0;
     }
 

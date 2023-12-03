@@ -19,7 +19,7 @@ public class UploadDimension {
         .suggests(new WebAutoComplete("creators", true))
         .then(
           CommandManager.argument("dimension", StringArgumentType.word())
-          .suggests(new WebAutoComplete("dimensions", "creators", "creator"))
+          .suggests(new WebAutoComplete("dimensions", "creators", "creator", true))
           .then(
             CommandManager.argument("version", StringArgumentType.word())
             .executes(context -> performUploadCmd(context))

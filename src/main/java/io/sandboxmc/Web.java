@@ -10,13 +10,27 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.HashMap;
 
-import io.sandboxmc.web.AuthManager;
-import io.sandboxmc.web.InfoManager;
+import com.google.gson.internal.JavaVersion;
+
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class Web {
   public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
+  public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.modId).get().toString().replace("sandboxmc ", "");
+
+  private static HashMap<String, String> bearerTokens = new HashMap<String, String>();
+
+  public static String getBearerToken(String key) {
+    // TODO: handle inactivity timeouts
+    return bearerTokens.get(key);
+  }
+
+  public static void setBearerToken(String key, String value) {
+    bearerTokens.put(key, value);
+  }
 
   private ServerCommandSource source;
   private Builder requestBuilder;
@@ -25,7 +39,7 @@ public class Web {
     source = commandSource;
     requestBuilder = HttpRequest.newBuilder()
       // Always want to specify our user agent
-      .header("User-Agent", InfoManager.userAgent(source.getServer()))
+      .header("User-Agent", userAgent())
       // NORMALLY we're interacting with a JSON endpoint, let's just default to that.
       .header("Content-Type", "application/json");
   }
@@ -40,7 +54,7 @@ public class Web {
     this(commandSource, path);
 
     if (withAuth) {
-      setAuth(AuthManager.getBearerToken(source.getPlayer().getUuidAsString()));
+      setAuth(getBearerToken(source.getPlayer().getUuidAsString()));
     }
   }
 
@@ -77,5 +91,9 @@ public class Web {
 
   public String getString() throws IOException, InterruptedException {
     return HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofString()).body();
+  }
+
+  public String userAgent() {
+    return "SandboxMC Agent (" + MOD_VERSION + "); Minecraft (" + source.getServer().getVersion() + "); Java (" + JavaVersion.getMajorJavaVersion() + ");";
   }
 }
