@@ -73,7 +73,7 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       return builder.buildFuture();
     }
 
-    Web web = new Web(context.getSource(), buildUrl(context, remaining), restrictToAuth);
+    Web web = new Web(context.getSource(), buildPath(context, remaining), restrictToAuth);
 
     ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
@@ -81,7 +81,7 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       readJSON(response, valuesToSuggest);
       response.close();
     } catch (IOException | InterruptedException e) {
-      System.out.println("GOT AN ERROR\n" + e.getMessage());
+      System.out.println("Error: " + e.getClass().toString() + " - " + e.getMessage());
     }
 
     valuesToSuggest.forEach((valueToSuggest) -> {
@@ -130,12 +130,12 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     jsonReader.close();
   }
 
-  private String buildUrl(CommandContext<ServerCommandSource> context, String remaining) {
+  private String buildPath(CommandContext<ServerCommandSource> context, String remaining) {
     String prefixVal = "";
     if (!urlPrefixValue.isBlank()) {
       prefixVal = StringArgumentType.getString(context, urlPrefixValue);
     }
     String replacedUrl = urlPart.replaceFirst(PREFIX_REPLACE_VAL, prefixVal);
-    return Web.WEB_DOMAIN + "/autocomplete/" + replacedUrl + "?q=" + remaining;
+    return "/autocomplete/" + replacedUrl + "?q=" + remaining;
   }
 }

@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -15,7 +16,7 @@ public class UploadDimension {
     return CommandManager.literal("upload")
       .then(
         CommandManager.argument("creator", StringArgumentType.word())
-        .suggests(new WebAutoComplete("creators"))
+        .suggests(new WebAutoComplete("creators", true))
         .then(
           CommandManager.argument("dimension", StringArgumentType.word())
           .suggests(new WebAutoComplete("dimensions", "creators", "creator"))
@@ -37,7 +38,12 @@ public class UploadDimension {
   }
 
   private static int performUploadCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    
+    String creatorName = StringArgumentType.getString(context, "creator");
+    String identifier = StringArgumentType.getString(context, "dimension");
+
+    Web web = new Web(context.getSource(), "/creators/" + creatorName + "/dimensions/upload", true);
+
+
     return 1;
   }
 

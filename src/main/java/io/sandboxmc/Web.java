@@ -1,9 +1,13 @@
 package io.sandboxmc;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse.BodyHandlers;
 
@@ -15,14 +19,14 @@ public class Web {
   public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
 
   private ServerCommandSource source;
-  private String url;
   private Builder requestBuilder;
 
   public Web(ServerCommandSource commandSource) {
     source = commandSource;
-    // We always want to specify our user agent and the API is always JSON.
     requestBuilder = HttpRequest.newBuilder()
+      // Always want to specify our user agent
       .header("User-Agent", InfoManager.userAgent(source.getServer()))
+      // NORMALLY we're interacting with a JSON endpoint, let's just default to that.
       .header("Content-Type", "application/json");
   }
 
@@ -47,19 +51,20 @@ public class Web {
   }
 
   public void setPath(String path) {
-    url = WEB_DOMAIN + path;
-  }
-
-  public String getPath() {
-    return url;
+    requestBuilder = requestBuilder.uri(URI.create(WEB_DOMAIN + path));
   }
 
   public void setPostBody(String json) {
-    requestBuilder = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(json));
+    requestBuilder = requestBuilder.POST(BodyPublishers.ofString(json));
+  }
+
+  public void setPostBody(File file) throws FileNotFoundException {
+    requestBuilder = requestBuilder.header("Content-Type", "multipart/form-data");
+    requestBuilder = requestBuilder.POST(BodyPublishers.ofFile(file.toPath()));
   }
 
   public void setPutBody(String json) {
-    requestBuilder = requestBuilder.PUT(HttpRequest.BodyPublishers.ofString(json));
+    requestBuilder = requestBuilder.PUT(BodyPublishers.ofString(json));
   }
 
   public void setAuth(String authToken) {
