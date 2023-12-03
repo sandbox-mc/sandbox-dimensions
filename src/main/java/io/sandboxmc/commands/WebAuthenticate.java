@@ -110,6 +110,7 @@ public class WebAuthenticate {
 
             // We're now effectively logged in, we can drop the auth token
             // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
+            // The server will have dropped the authCode from the record on its side and therefore we'd need to regenerate all of this anyway.
             authTokens.remove(playerUUID);
             break;
           default:

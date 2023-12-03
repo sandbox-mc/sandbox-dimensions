@@ -16,11 +16,19 @@ import com.google.gson.internal.JavaVersion;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 public class Web {
   public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
   public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.modId).get().toString().replace("sandboxmc ", "");
 
+  //==============================================================
+  //
+  // Static definition of Web.
+  // Purely used for storing session information (bearer tokens).
+  // TODO: need to write a loader so we can boot sessions up on server load when configed.
+  //
+  //==============================================================
   private static HashMap<String, String> bearerTokens = new HashMap<String, String>();
 
   public static String getBearerToken(String key) {
@@ -28,10 +36,24 @@ public class Web {
     return bearerTokens.get(key);
   }
 
-  public static void setBearerToken(String key, String value) {
-    bearerTokens.put(key, value);
+  public static String getBearerToken(ServerPlayerEntity player) {
+    return getBearerToken(player.getUuidAsString());
   }
 
+  public static String getBearerToken(ServerCommandSource source) {
+    return getBearerToken(source.getPlayer());
+  }
+
+  public static void setBearerToken(String key, String token) {
+    bearerTokens.put(key, token);
+  }
+
+  //==============================================================
+  //
+  // Instance definition of Web.
+  // Used for building API requests.
+  //
+  //==============================================================
   private ServerCommandSource source;
   private Builder requestBuilder;
 
@@ -54,7 +76,7 @@ public class Web {
     this(commandSource, path);
 
     if (withAuth) {
-      setAuth(getBearerToken(source.getPlayer().getUuidAsString()));
+      setAuth(getBearerToken(commandSource));
     }
   }
 
