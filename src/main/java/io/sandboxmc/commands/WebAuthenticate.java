@@ -129,6 +129,11 @@ public class WebAuthenticate {
       web.closeReaders();
     }
 
+    // We're now authed, tell the user.
+    context.getSource().sendFeedback(() -> {
+      return Text.literal("Authentication successful!");
+    }, false);
+
     return 1;
   }
 

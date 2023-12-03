@@ -58,18 +58,17 @@ public class Web {
   //==============================================================
   private ServerCommandSource source;
   private Builder requestBuilder;
+  private Boolean hasAuth = false;
+  // Readers for fetching data.
   private JsonReader jsonReader = null;
   private StringReader stringReader = null;
   private InputStream inputStream = null;
-  private Boolean hasAuth = false;
 
   public Web(ServerCommandSource commandSource) {
     source = commandSource;
     requestBuilder = HttpRequest.newBuilder()
-      // Always want to specify our user agent
       .header("User-Agent", userAgent())
-      // NORMALLY we're interacting with a JSON endpoint, let's just default to that.
-      .header("Content-Type", "application/json");
+      .header("Accept", "*/*");
   }
 
   public Web(ServerCommandSource commandSource, String path) {
@@ -97,22 +96,24 @@ public class Web {
   }
 
   public void setPostBody(String json) {
+    requestBuilder = requestBuilder.setHeader("Content-Type", "application/json");
     requestBuilder = requestBuilder.POST(BodyPublishers.ofString(json));
   }
 
   public void setPostBody(File file) throws FileNotFoundException {
-    requestBuilder = requestBuilder.header("Content-Type", "multipart/form-data");
+    requestBuilder = requestBuilder.setHeader("Content-Type", "multipart/form-data");
     requestBuilder = requestBuilder.POST(BodyPublishers.ofFile(file.toPath()));
   }
 
   public void setPutBody(String json) {
+    requestBuilder = requestBuilder.setHeader("Content-Type", "application/json");
     requestBuilder = requestBuilder.PUT(BodyPublishers.ofString(json));
   }
 
   public void setAuth(String authToken) {
     if (authToken != null && authToken.length() > 0) {
       hasAuth = true;
-      requestBuilder = requestBuilder.header("Authorization", "Bearer " + authToken);
+      requestBuilder = requestBuilder.setHeader("Authorization", "Bearer " + authToken);
     }
   }
 
