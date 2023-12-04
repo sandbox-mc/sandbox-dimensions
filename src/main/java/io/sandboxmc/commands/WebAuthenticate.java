@@ -91,6 +91,10 @@ public class WebAuthenticate {
       printHelpMessage(context);
       return 0;
     }
+
+    context.getSource().sendFeedback(() -> {
+      return Text.literal("Authenticating with SandboxMC...");
+    }, false);
     
     String authCode = AuthCodeArgumentType.getAuthCode(context, "auth-code");
 
