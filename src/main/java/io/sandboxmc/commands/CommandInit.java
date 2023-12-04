@@ -41,6 +41,7 @@ public class CommandInit {
 				.then(SaveDimension.register())
 				.then(SetSpawnDimension.register())
 				.then(WebAuthenticate.register())
+				.then(WebLogout.register())
 			)
 		);
   }

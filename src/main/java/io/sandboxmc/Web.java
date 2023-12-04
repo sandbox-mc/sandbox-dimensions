@@ -50,6 +50,18 @@ public class Web {
     bearerTokens.put(key, token);
   }
 
+  public static void removeBearerToken(String key) {
+    bearerTokens.remove(key);
+  }
+
+  public static void removeBearerToken(ServerPlayerEntity player) {
+    removeBearerToken(player.getUuidAsString());
+  }
+
+  public static void removeBearerToken(ServerCommandSource source) {
+    removeBearerToken(source.getPlayer());
+  }
+
   //==============================================================
   //
   // Instance definition of Web.
@@ -108,6 +120,10 @@ public class Web {
   public void setPutBody(String json) {
     requestBuilder = requestBuilder.setHeader("Content-Type", "application/json");
     requestBuilder = requestBuilder.PUT(BodyPublishers.ofString(json));
+  }
+
+  public void setDeleteBody() {
+    requestBuilder = requestBuilder.DELETE();
   }
 
   public void setAuth(String authToken) {
