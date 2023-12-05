@@ -21,7 +21,6 @@ public class WebLogout {
     ServerCommandSource source = context.getSource();
 
     String bearerToken = Web.getBearerToken(source);
-    System.out.println("BEARER TOKEN: " + bearerToken);
     if (bearerToken == null) {
       sendFeedback(source, "Not currently logged in.");
       return 1;
