@@ -7,11 +7,15 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Optional;
 
 import com.google.gson.internal.JavaVersion;
 import com.google.gson.stream.JsonReader;
@@ -21,7 +25,9 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class Web {
-  public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
+  // public static final String WEB_DOMAIN = "http://127.0.0.1:3000";
+  // public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
+  public static final String WEB_DOMAIN = "https://www.sandboxmc.io";
   public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.modId).get().toString().replace("sandboxmc ", "");
 
   //==============================================================
@@ -75,6 +81,10 @@ public class Web {
   private JsonReader jsonReader = null;
   private StringReader stringReader = null;
   private InputStream inputStream = null;
+  private Object responseClass = null; // generic, this is literally just for determining which response var to use.
+  private HttpResponse<String> stringResponse = null;
+  private HttpResponse<InputStream> inputStreamResponse = null;
+  private HttpResponse<Path> pathResponse = null;
 
   public Web(ServerCommandSource commandSource) {
     source = commandSource;
@@ -112,8 +122,9 @@ public class Web {
     requestBuilder = requestBuilder.POST(BodyPublishers.ofString(json));
   }
 
-  public void setPostBody(File file) throws FileNotFoundException {
-    requestBuilder = requestBuilder.setHeader("Content-Type", "multipart/form-data");
+  public void setPostBody(String fileParam, File file) throws IOException, FileNotFoundException {
+    System.out.println("FILE HAS LENGTH: " + file.length());
+    requestBuilder = requestBuilder.setHeader("Content-Type", "multipart/form-data;");
     requestBuilder = requestBuilder.POST(BodyPublishers.ofFile(file.toPath()));
   }
 
@@ -138,18 +149,48 @@ public class Web {
   }
 
   public String getString() throws IOException, InterruptedException {
-    return HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofString()).body();
+    responseClass = String.class;
+    stringResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofString());
+    return stringResponse.body();
   }
 
   public InputStream getInputStream() throws IOException, InterruptedException {
-    inputStream = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofInputStream()).body();
-    return inputStream;
+    responseClass = InputStream.class;
+    inputStreamResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofInputStream());
+    return inputStreamResponse.body();
+  }
+
+  public Path getFile(Path filePath) throws IOException, InterruptedException{
+    responseClass = Path.class;
+    pathResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofFile(filePath));
+    Path path = pathResponse.body();
+    if (pathResponse.statusCode() == 301 || pathResponse.statusCode() == 302) {
+      // Have to follow the redirect...
+      Optional<String> redirectUrl = pathResponse.headers().firstValue("location");
+      if (redirectUrl.isPresent()) {
+        requestBuilder = requestBuilder.uri(URI.create(redirectUrl.get()));
+        // TODO: handle infinite redirect loops.
+        return getFile(filePath); // Recurse into the redirect...
+      }
+    }
+    return path;
   }
 
   public JsonReader getJson() throws IOException, InterruptedException {
     stringReader = new StringReader(getString());
     jsonReader = new JsonReader(stringReader);
     return jsonReader;
+  }
+
+  public HttpHeaders getResponseHeaders() {
+    if (responseClass == String.class) {
+      return stringResponse.headers();
+    } else if (responseClass == InputStream.class) {
+      return inputStreamResponse.headers();
+    } else if (responseClass == Path.class) {
+      return pathResponse.headers();
+    }
+    return null;
   }
 
   public void closeReaders() {

@@ -1,8 +1,8 @@
 package io.sandboxmc.commands;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.http.HttpHeaders;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -13,7 +13,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -26,10 +25,10 @@ public class UploadDimension {
     return CommandManager.literal("upload")
       .then(
         CommandManager.argument("creator", StringArgumentType.word())
-        .suggests(new WebAutoComplete("creators", true))
+        // .suggests(new WebAutoComplete("creators", true))
         .then(
           CommandManager.argument("dimension", StringArgumentType.word())
-          .suggests(new WebAutoComplete("dimensions", "creators", "creator", true))
+          // .suggests(new WebAutoComplete("dimensions", "creators", "creator", true))
           .then(
             CommandManager.argument("version", StringArgumentType.word())
             .executes(context -> performUploadCmd(context))
@@ -74,16 +73,17 @@ public class UploadDimension {
 
     Web web = new Web(context.getSource(), "/dimensions/" + creatorName + "/upload", true);
     try {
-      File file = new File(defaultFilePath(session, creatorName, "uploadworld"));
-      web.setPostBody(file);
-    } catch (FileNotFoundException e) {
+      File file = new File(defaultFilePath(session, creatorName, "icon"));
+      web.setPostBody("dimension", file);
+    } catch (IOException e) {
       sendFeedback(context.getSource(), Text.literal("File not found dummy."));
       return 0;
     }
 
     try {
       JsonReader jsonReader = web.getJson();
-      sendFeedback(context.getSource(), Text.literal("got through the process"));
+      HttpHeaders headers = web.getResponseHeaders();
+      sendFeedback(context.getSource(), Text.literal("Successfully pinged UPLOAD!\nstatus: " + headers.firstValue("status") + "\ncontent type: " + headers.firstValue("content-type")));
     } catch (IOException | InterruptedException e) {
       return 0;
     } finally {
@@ -101,7 +101,7 @@ public class UploadDimension {
       creatorDirFile.mkdir();
     }
 
-    return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip").toString();
+    return Paths.get(storageFolder.toString(), creatorName, identifier + ".png").toString();
   }
 
   // TODO: Pull this into a more globally available helper...

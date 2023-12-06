@@ -1,13 +1,7 @@
 package io.sandboxmc.commands;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -72,44 +66,17 @@ public class DownloadDimension {
 
     Web web = new Web(context.getSource(), dimensionPath + "/download");
 
-    InputStream inputStream;
-    try {
-      inputStream = web.getInputStream();
-    } catch (IOException | InterruptedException e) {
-      sendFeedback(source, Text.literal("No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?"));
-      web.closeReaders();
-      return 0;
-    }
-
-    // Pull the URL into a channel
-    ReadableByteChannel readableByteChannel = Channels.newChannel(inputStream);
-
-    FileOutputStream fileOutputStream;
-
-    String filePath;
+    Path filePath;
     Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
     if (customFileName == null) {
       filePath = defaultFilePath(session, creatorName, identifier);
     } else {
       filePath = customFilePath(session, customFileName);
     }
-
     try {
-      fileOutputStream = new FileOutputStream(filePath);
-    } catch (FileNotFoundException e) {
-      // This can't actually happen, customFilePath and defaultFilePath both ensure everything.
-      // Existing files are replaced.
-      web.closeReaders();
-      return 0;
-    }
-  
-    FileChannel fileChannel = fileOutputStream.getChannel();
-
-    try {
-      fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-      fileOutputStream.close();
-    } catch (IOException e) {
-      System.out.println("io exception reading file from channel or attempting to close stream");
+      web.getFile(filePath);
+    } catch (IOException | InterruptedException e) {
+      sendFeedback(source, Text.literal("No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?"));
       return 0;
     } finally {
       web.closeReaders();
@@ -127,7 +94,7 @@ public class DownloadDimension {
     return 1;
   }
 
-  private static String defaultFilePath(Session session, String creatorName, String identifier) {
+  private static Path defaultFilePath(Session session, String creatorName, String identifier) {
     Path storageFolder = DimensionManager.getStorageFolder(session);
     String creatorFolderName = Paths.get(storageFolder.toString(), creatorName).toString();
     File creatorDirFile = new File(creatorFolderName);
@@ -135,19 +102,17 @@ public class DownloadDimension {
       creatorDirFile.mkdir();
     }
 
-    return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip").toString();
+    return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip");
   }
 
-  private static String customFilePath(Session session, String customFileName) {
+  private static Path customFilePath(Session session, String customFileName) {
     Path storageFolder = DimensionManager.getStorageFolder(session);
 
     if (!customFileName.endsWith(".zip")) {
       customFileName += ".zip";
     }
 
-    String filePath = Paths.get(storageFolder.toString(), customFileName).toString();
-
-    return filePath;
+    return Paths.get(storageFolder.toString(), customFileName);
   }
 
   // TODO: Pull this into a more globally available helper...
