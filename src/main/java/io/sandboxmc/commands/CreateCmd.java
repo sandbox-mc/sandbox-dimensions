@@ -168,7 +168,6 @@ public class CreateCmd {
           // Create the dimension
           DimensionManager.createDimensionWorld(server, dimensionIdentifier);
         } catch (IOException e) {
-          // TODO Auto-generated catch block
           e.printStackTrace();
         }
       }

@@ -12,6 +12,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
+import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -21,6 +22,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DownloadDimension {
@@ -90,6 +92,15 @@ public class DownloadDimension {
     creationText.formatted(Formatting.UNDERLINE).formatted(Formatting.BLUE);
     feedbackText.append(creationText);
     sendFeedback(source, feedbackText);
+
+    // Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
+    // datapackPath = Paths.get(datapackPath.toString(), identifier);
+    // try {
+    //   DatapackManager.installDatapackFromZip(filePath, datapackPath);
+    // } catch (IOException e) {
+    //   // TODO Auto-generated catch block
+    //   e.printStackTrace();
+    // }
 
     return 1;
   }

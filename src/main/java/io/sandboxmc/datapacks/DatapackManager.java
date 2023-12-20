@@ -1,10 +1,12 @@
 package io.sandboxmc.datapacks;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
@@ -43,6 +45,16 @@ public class DatapackManager {
 
   public static String getDatapackName(Identifier dimensionId) {
     return dimensionToDatapackMap.get(dimensionId.toString());
+  }
+
+  public static void installDatapackFromZip(Path zipFilePath, Path targetDatapackPath) throws IOException {
+    if (targetDatapackPath.toFile().exists()) {
+      // Clear the original datapack
+      // TODO: offer to create a new version of it?
+      ZipUtility.deleteDirectory(targetDatapackPath);
+    }
+
+    ZipUtility.unzipFile(zipFilePath, targetDatapackPath);
   }
 
   public static void registerDatapackDimension(String datapackName, Identifier dimensionId) {

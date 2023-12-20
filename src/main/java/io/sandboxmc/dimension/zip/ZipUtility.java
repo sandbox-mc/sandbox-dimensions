@@ -114,7 +114,7 @@ public class ZipUtility {
         // We skip datapacks dir, if we are saving the overworld
         // this would be the folder we save into...
         // TODO: create filter for correct files
-        if (file.toString().endsWith("datapacks")) {
+        if (file.toString().equals("datapacks")) {
           continue;
         }
 
