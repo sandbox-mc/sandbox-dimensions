@@ -14,7 +14,7 @@ import com.google.gson.stream.JsonReader;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import okhttp3.Call;
+import net.minecraft.text.Text;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -82,7 +82,7 @@ public class Web {
   private Request.Builder requestBuilder;
   private MultipartBody.Builder formBuilder = null;
   private Response response;
-  private ResponseBody responseBody;
+  private ResponseBody responseBody = null;
   private Boolean hasAuth = false;
   // Readers for fetching data.
   private JsonReader jsonReader = null;
@@ -170,11 +170,17 @@ public class Web {
     return hasAuth;
   }
 
-  public String getString() throws IOException {
+  public void executeRequest() throws IOException {
     request = requestBuilder.build();
-    Call call = client.newCall(request);
-    response = call.execute();
+    response = client.newCall(request).execute();
     responseBody = response.body();
+  }
+
+  public String getString() throws IOException {
+    if (responseBody == null) {
+      executeRequest();
+    }
+
     return responseBody.string();
   }
 
@@ -195,13 +201,53 @@ public class Web {
   }
 
   public JsonReader getJson() throws IOException {
+    if (jsonReader != null) {
+      return jsonReader;
+    }
+
     stringReader = new StringReader(getString());
     jsonReader = new JsonReader(stringReader);
     return jsonReader;
   }
 
+  public void printJsonMessages() throws IOException {
+    // just ensuring we have the reader, in case something other than getJson() was called to send the request.
+    getJson();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      switch (jsonReader.nextName()) {
+        case "message":
+          printMessage(jsonReader.nextString());
+          break;
+        case "messages":
+          jsonReader.beginArray();
+          while (jsonReader.hasNext()) {
+            printMessage(jsonReader.nextString());
+          }
+          jsonReader.endArray();
+          break;
+      default:
+        // Just ignore anything else
+        jsonReader.skipValue();
+        break;
+      }
+    }
+    jsonReader.endObject();
+  }
+
+  public void printJsonMessages(String initialMessage) throws IOException {
+    printMessage(initialMessage);
+
+    printJsonMessages();
+  }
+
   public Headers getResponseHeaders() {
     return response.headers();
+  }
+
+  public int getStatusCode() {
+    return response.code();
   }
 
   public void closeReaders() {
@@ -230,5 +276,11 @@ public class Web {
 
   public String userAgent() {
     return "SandboxMC Agent (" + MOD_VERSION + "); Minecraft (" + source.getServer().getVersion() + "); Java (" + JavaVersion.getMajorJavaVersion() + ");";
+  }
+
+  public void printMessage(String feedbackText) {
+    source.sendFeedback(() -> {
+      return Text.literal(feedbackText);
+    }, false);
   }
 }

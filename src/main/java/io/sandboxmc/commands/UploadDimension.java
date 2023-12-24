@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.google.gson.stream.JsonReader;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -19,7 +20,7 @@ import net.minecraft.text.Text;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 import okhttp3.Headers;
 
-public class UploadDimension {
+public class UploadDimension implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("upload")
       .then(
@@ -35,15 +36,14 @@ public class UploadDimension {
           .executes(context -> performUploadCmd(context))
         )
         .executes(context -> {
-          sendFeedback(context.getSource(), Text.literal("No dimension given."));
+          sendFeedback(context.getSource(), "No dimension given.");
           return 0;
         })
       )
-      .executes(context -> performUploadCmd(context));
-      // .executes(context -> {
-      //   sendFeedback(context.getSource(), Text.literal("No creator or dimension given."));
-      //   return 0;
-      // });
+      .executes(context -> {
+        sendFeedback(context.getSource(), "No creator or dimension given.");
+        return 0;
+      });
   }
 
   private static int performUploadCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -67,31 +67,50 @@ public class UploadDimension {
 
     // // Should be able to run datapack.deleteTmpZipFile(); when you're done with the tmpFile
 
-    String creatorName = "cardtable"; // StringArgumentType.getString(context, "creator");
-    // String identifier = StringArgumentType.getString(context, "dimension");
-    Session session = ((MinecraftServerAccessor)context.getSource().getServer()).getSession();
+    ServerCommandSource source = context.getSource();
+    String creatorName = StringArgumentType.getString(context, "creator");
+    String identifier = StringArgumentType.getString(context, "dimension");
+    
+    Runnable uploadThread = new UploadDimension(source, creatorName, identifier);
+    new Thread(uploadThread).start();
 
-    Web web = new Web(context.getSource(), "/dimensions/" + creatorName + "/upload", false);
-    File file = new File(defaultFilePath(session, creatorName, "world1.zip"));
+    return 1;
+  }
+
+  private ServerCommandSource source;
+  private Session session;
+  private String creator;
+  private String identifier;
+
+  public UploadDimension(ServerCommandSource commandSource, String creatorName, String dimensionName) {
+    source = commandSource;
+    session = ((MinecraftServerAccessor)commandSource.getServer()).getSession();
+    creator = creatorName;
+    identifier = dimensionName;
+  }
+
+  public void run() {
+    Web web = new Web(source, "/dimensions/" + creator + "/upload", false);
+    File file = new File(defaultFilePath(session, creator, identifier + ".zip"));
     if (!file.exists()) {
-      sendFeedback(context.getSource(), Text.literal("Dimension not found!"));
-      return 1;
+      sendFeedback(source, "Dimension not found!");
     }
 
     web.setFormField("dimension", file);
     web.finalizeFormAsPostBody();
 
     try {
-      web.getJson();
-      Headers headers = web.getResponseHeaders();
-      sendFeedback(context.getSource(), Text.literal("Successfully pinged UPLOAD!\nstatus: " + headers.get("status") + "\ncontent type: " + headers.get("content-type")));
+      web.executeRequest();
+      if (web.getStatusCode() == 200) {
+        sendFeedback(source, "Dimension successfully uploaded!");
+      } else {
+        web.printJsonMessages("Upload failed!");
+      }
     } catch (IOException e) {
-      return 0;
+      sendFeedback(source, "Something went wrong, failed to upload dimension.");
     } finally {
       web.closeReaders();
     }
-
-    return 1;
   }
 
   private static String defaultFilePath(Session session, String creatorName, String fileName) {
@@ -106,9 +125,9 @@ public class UploadDimension {
   }
 
   // TODO: Pull this into a more globally available helper...
-  private static void sendFeedback(ServerCommandSource source, Text feedbackText) {
+  private static void sendFeedback(ServerCommandSource source, String feedbackText) {
     source.sendFeedback(() -> {
-      return feedbackText;
+      return Text.literal(feedbackText);
     }, false);
   }
 }
