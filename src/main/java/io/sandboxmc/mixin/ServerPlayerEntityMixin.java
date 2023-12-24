@@ -37,7 +37,7 @@ public abstract class ServerPlayerEntityMixin extends Entity {
     try {
       web.getString(); // we don't even need to do anything with this...
       Web.removeBearerToken(source);
-    } catch (IOException | InterruptedException e) {
+    } catch (IOException e) {
       // I don't think we care?
     } finally {
       web.closeReaders();

@@ -81,7 +81,7 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
     ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
     try {
       readJSON(web.getJson(), valuesToSuggest);
-    } catch (IOException | InterruptedException e) {
+    } catch (IOException e) {
       System.out.println("Error: " + e.getClass().toString() + " - " + e.getMessage());
     } finally {
       web.closeReaders();

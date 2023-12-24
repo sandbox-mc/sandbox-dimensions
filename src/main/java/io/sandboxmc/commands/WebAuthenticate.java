@@ -72,9 +72,6 @@ public class WebAuthenticate {
       context.getSource().sendFeedback(() -> {
         return authText;
       }, false);
-    } catch (InterruptedException e) {
-      printHelpMessage(context);
-      return 0;
     } catch (IOException e) {
       printHelpMessage(context);
       return 0;
@@ -99,7 +96,7 @@ public class WebAuthenticate {
     String authCode = AuthCodeArgumentType.getAuthCode(context, "auth-code");
 
     Web web = new Web(context.getSource(), "/clients/auth/verify", authToken);
-    web.setPutBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
+    web.setPatchBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
     
     try {
       JsonReader jsonReader = web.getJson();
@@ -124,7 +121,7 @@ public class WebAuthenticate {
         }
       }
       jsonReader.endObject();
-    } catch (IOException | InterruptedException e) {
+    } catch (IOException e) {
       printHelpMessage(context);
       return 0;
     } finally {

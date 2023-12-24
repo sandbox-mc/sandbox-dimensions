@@ -1,21 +1,12 @@
 package io.sandboxmc;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Optional;
 
 import com.google.gson.internal.JavaVersion;
 import com.google.gson.stream.JsonReader;
@@ -23,6 +14,16 @@ import com.google.gson.stream.JsonReader;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import okhttp3.Call;
+import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class Web {
   // public static final String WEB_DOMAIN = "http://127.0.0.1:3000";
@@ -75,20 +76,23 @@ public class Web {
   //
   //==============================================================
   private ServerCommandSource source;
-  private Builder requestBuilder;
+  private MediaType jsonMediaType = MediaType.get("application/json");
+  private OkHttpClient client;
+  private Request request;
+  private Request.Builder requestBuilder;
+  private MultipartBody.Builder formBuilder = null;
+  private Response response;
+  private ResponseBody responseBody;
   private Boolean hasAuth = false;
   // Readers for fetching data.
   private JsonReader jsonReader = null;
   private StringReader stringReader = null;
   private InputStream inputStream = null;
-  private Object responseClass = null; // generic, this is literally just for determining which response var to use.
-  private HttpResponse<String> stringResponse = null;
-  private HttpResponse<InputStream> inputStreamResponse = null;
-  private HttpResponse<Path> pathResponse = null;
 
   public Web(ServerCommandSource commandSource) {
     source = commandSource;
-    requestBuilder = HttpRequest.newBuilder()
+    client = new OkHttpClient();
+    requestBuilder = new Request.Builder()
       .header("User-Agent", userAgent())
       .header("Accept", "*/*");
   }
@@ -114,33 +118,51 @@ public class Web {
   }
 
   public void setPath(String path) {
-    requestBuilder = requestBuilder.uri(URI.create(WEB_DOMAIN + path));
+    requestBuilder = requestBuilder.url(HttpUrl.get(URI.create(WEB_DOMAIN + path)));
   }
 
   public void setPostBody(String json) {
-    requestBuilder = requestBuilder.setHeader("Content-Type", "application/json");
-    requestBuilder = requestBuilder.POST(BodyPublishers.ofString(json));
+    requestBuilder = requestBuilder.post(RequestBody.create(json, jsonMediaType));
   }
 
-  public void setPostBody(String fileParam, File file) throws IOException, FileNotFoundException {
-    System.out.println("FILE HAS LENGTH: " + file.length());
-    requestBuilder = requestBuilder.setHeader("Content-Type", "multipart/form-data;");
-    requestBuilder = requestBuilder.POST(BodyPublishers.ofFile(file.toPath()));
+  // Note: This is the MultiPart version of setPostBody and requires that setFormField has been called at least once.
+  public void finalizeFormAsPostBody() {
+    if (formBuilder == null) {
+      throw new NullPointerException("`setFormField` was never called!");
+    }
+
+    requestBuilder = requestBuilder.post(formBuilder.build());
   }
 
-  public void setPutBody(String json) {
-    requestBuilder = requestBuilder.setHeader("Content-Type", "application/json");
-    requestBuilder = requestBuilder.PUT(BodyPublishers.ofString(json));
+  public void setPatchBody(String json) {
+    requestBuilder = requestBuilder.patch(RequestBody.create(json, jsonMediaType));
+  }
+
+  // Note: This is the MultiPart version of setPatchBody and requires that setFormField has been called at least once.
+  public void finalizeFormAsPatchBody() {
+    if (formBuilder == null) {
+      throw new NullPointerException("`setFormField` was never called!");
+    }
+
+    requestBuilder = requestBuilder.patch(formBuilder.build());
   }
 
   public void setDeleteBody() {
-    requestBuilder = requestBuilder.DELETE();
+    requestBuilder = requestBuilder.delete();
+  }
+
+  public void setFormField(String fieldName, File file) {
+    if (formBuilder == null) {
+      formBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+    }
+    
+    formBuilder = formBuilder.addFormDataPart(fieldName, file.getName(), RequestBody.create(file, MediaType.parse("text/plain")));
   }
 
   public void setAuth(String authToken) {
     if (authToken != null && authToken.length() > 0) {
       hasAuth = true;
-      requestBuilder = requestBuilder.setHeader("Authorization", "Bearer " + authToken);
+      requestBuilder = requestBuilder.addHeader("Authorization", "Bearer " + authToken);
     }
   }
 
@@ -148,49 +170,38 @@ public class Web {
     return hasAuth;
   }
 
-  public String getString() throws IOException, InterruptedException {
-    responseClass = String.class;
-    stringResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofString());
-    return stringResponse.body();
+  public String getString() throws IOException {
+    request = requestBuilder.build();
+    Call call = client.newCall(request);
+    response = call.execute();
+    responseBody = response.body();
+    return responseBody.string();
   }
 
-  public InputStream getInputStream() throws IOException, InterruptedException {
-    responseClass = InputStream.class;
-    inputStreamResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofInputStream());
-    return inputStreamResponse.body();
+  public Path getFile(Path filePath) throws IOException {
+    // pathResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofFile(filePath));
+    // Path path = pathResponse.body();
+    // if (pathResponse.statusCode() == 301 || pathResponse.statusCode() == 302) {
+    //   // Have to follow the redirect...
+    //   Optional<String> redirectUrl = pathResponse.headers().firstValue("location");
+    //   if (redirectUrl.isPresent()) {
+    //     requestBuilder = requestBuilder.uri(URI.create(redirectUrl.get()));
+    //     // TODO: handle infinite redirect loops.
+    //     return getFile(filePath); // Recurse into the redirect...
+    //   }
+    // }
+    // return path;
+    return Path.of("");
   }
 
-  public Path getFile(Path filePath) throws IOException, InterruptedException{
-    responseClass = Path.class;
-    pathResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofFile(filePath));
-    Path path = pathResponse.body();
-    if (pathResponse.statusCode() == 301 || pathResponse.statusCode() == 302) {
-      // Have to follow the redirect...
-      Optional<String> redirectUrl = pathResponse.headers().firstValue("location");
-      if (redirectUrl.isPresent()) {
-        requestBuilder = requestBuilder.uri(URI.create(redirectUrl.get()));
-        // TODO: handle infinite redirect loops.
-        return getFile(filePath); // Recurse into the redirect...
-      }
-    }
-    return path;
-  }
-
-  public JsonReader getJson() throws IOException, InterruptedException {
+  public JsonReader getJson() throws IOException {
     stringReader = new StringReader(getString());
     jsonReader = new JsonReader(stringReader);
     return jsonReader;
   }
 
-  public HttpHeaders getResponseHeaders() {
-    if (responseClass == String.class) {
-      return stringResponse.headers();
-    } else if (responseClass == InputStream.class) {
-      return inputStreamResponse.headers();
-    } else if (responseClass == Path.class) {
-      return pathResponse.headers();
-    }
-    return null;
+  public Headers getResponseHeaders() {
+    return response.headers();
   }
 
   public void closeReaders() {
