@@ -18,7 +18,7 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-public class WebAuthenticate {
+public class WebAuthenticate implements Runnable {
   private static final String AUTH_CODE_REGEX = "^\\d{6}$";
   private static HashMap<String, String> authTokens = new HashMap<String, String>();
 
@@ -32,6 +32,39 @@ public class WebAuthenticate {
   }
 
   private static int getAuthToken(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    Runnable webAuthThread = new WebAuthenticate(context, "getAuthToken");
+    new Thread(webAuthThread).start();
+
+    return 1;
+  }
+
+  private static int submitAuthCode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    Runnable webAuthThread = new WebAuthenticate(context, "submitAuthCode");
+    new Thread(webAuthThread).start();
+
+    return 1;
+  }
+
+  private CommandContext<ServerCommandSource> context;
+  private String mode;
+
+  public WebAuthenticate(CommandContext<ServerCommandSource> theContext, String theMode) {
+    context = theContext;
+    mode = theMode;
+  }
+
+  public void run() {
+    switch (mode) {
+      case "getAuthToken":
+        getAuthTokenThread();
+        break;
+      case "submitAuthCode":
+        submitAuthCodeThread();
+        break;
+    }
+  }
+
+  private void getAuthTokenThread() {
     Web web = new Web(context.getSource(), "/clients/auth/init");
     String playerUUID = context.getSource().getPlayer().getUuidAsString();
     // Uncomment if using the test client that boots with a made up user.
@@ -58,7 +91,7 @@ public class WebAuthenticate {
       jsonReader.endObject();
 
       if (authToken == null) {
-        return 0;
+        return;
       }
 
       // Store this for the subsequent post in `submitAuthCode`, it can then be dropped after that.
@@ -71,84 +104,79 @@ public class WebAuthenticate {
       clickableUrl.setStyle(Style.EMPTY.withClickEvent(clickEvent));
       clickableUrl.formatted(Formatting.UNDERLINE).formatted(Formatting.DARK_AQUA);
       authText.append(clickableUrl);
-      printMessage(context, authText);
+      printMessage(authText);
     } catch (IOException e) {
-      printHelpMessage(context);
-      return 0;
+      printHelpMessage();
+      return;
     } finally {
       web.closeReaders();
     }
-
-    return 1;
   }
 
-  private static int submitAuthCode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+  private void submitAuthCodeThread() {
     String authToken = authTokens.get(context.getSource().getPlayer().getUuidAsString());
     if (authToken == null) {
-      printMessage(context, "Please run `/sandboxmc authenticate` first!");
-      return 0;
+      printMessage("Please run `/sandboxmc authenticate` first!");
+      return;
     }
     
     String authCode = StringArgumentType.getString(context, "auth-code");
     if (!authCode.matches(AUTH_CODE_REGEX)) {
-      printMessage(context, "Invalid auth-code, must be exactly 6 digits. (Example: 056345)");
-      return 0;
+      printMessage("Invalid auth-code, must be exactly 6 digits. (Example: 056345)");
+      return;
     }
 
-    printMessage(context, "Authenticating with SandboxMC...");
+    printMessage("Authenticating with SandboxMC...");
 
-    // TODO: put this in a thread!
-    // Web web = new Web(context.getSource(), "/clients/auth/verify", authToken);
-    // web.setPatchBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
+    Web web = new Web(context.getSource(), "/clients/auth/verify", authToken);
+    web.setPatchBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
     
-    // try {
-    //   JsonReader jsonReader = web.getJson();
+    try {
+      JsonReader jsonReader = web.getJson();
 
-    //   jsonReader.beginObject();
-    //   while (jsonReader.hasNext()) {
-    //     String key = jsonReader.nextName();
-    //     switch (key) {
-    //       case "bearer_token":
-    //         String playerUUID = context.getSource().getPlayer().getUuidAsString();
-    //         Web.setBearerToken(playerUUID, jsonReader.nextString());
+      jsonReader.beginObject();
+      while (jsonReader.hasNext()) {
+        String key = jsonReader.nextName();
+        switch (key) {
+          case "bearer_token":
+            String playerUUID = context.getSource().getPlayer().getUuidAsString();
+            Web.setBearerToken(playerUUID, jsonReader.nextString());
 
-    //         // We're now effectively logged in, we can drop the auth token
-    //         // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
-    //         // The server will have dropped the authCode from the record on its side and therefore we'd need to regenerate all of this anyway.
-    //         authTokens.remove(playerUUID);
-    //         break;
-    //       default:
-    //         // Just ignore anything else
-    //         jsonReader.skipValue();
-    //         break;
-    //     }
-    //   }
-    //   jsonReader.endObject();
-    // } catch (IOException e) {
-    //   printHelpMessage(context);
-    //   return 0;
-    // } finally {
-    //   // Always ensure we're closing our readers.
-    //   web.closeReaders();
-    // }
+            // We're now effectively logged in, we can drop the auth token
+            // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
+            // The server will have dropped the authCode from the record on its side and therefore we'd need to regenerate all of this anyway.
+            authTokens.remove(playerUUID);
+            break;
+          default:
+            // Just ignore anything else
+            jsonReader.skipValue();
+            break;
+        }
+      }
+      jsonReader.endObject();
+    } catch (IOException e) {
+      printHelpMessage();
+      return;
+    } finally {
+      // Always ensure we're closing our readers.
+      web.closeReaders();
+    }
 
     // We're now authed, tell the user.
-    printMessage(context, "Authentication successful!");
-
-    return 1;
+    printMessage("Authentication successful!");
   }
 
-  private static void printMessage(CommandContext<ServerCommandSource> context, MutableText message) {
+  private void printMessage(MutableText message) {
     context.getSource().sendFeedback(() -> {
       return message;
     }, false);
   }
 
-  private static void printMessage(CommandContext<ServerCommandSource> context, String message) {
-    printMessage(context, Text.literal(message));
+  private void printMessage(String message) {
+    printMessage(Text.literal(message));
   }
 
-  private static void printHelpMessage(CommandContext<ServerCommandSource> context) {
+  private void printHelpMessage() {
     MutableText helpText = Text.literal("Something went wrong. Please visit ");
     MutableText helpURL = Text.literal("[ " + Web.WEB_DOMAIN + "/clients/auth/help ]");
     ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, Web.WEB_DOMAIN + "/clients/auth/help");
@@ -156,6 +184,6 @@ public class WebAuthenticate {
     helpURL.formatted(Formatting.UNDERLINE).formatted(Formatting.AQUA);
     helpText.append(helpURL);
     helpText.append(Text.literal(" for more instructions on how to authenticate your client."));
-    printMessage(context, helpText);
+    printMessage(helpText);
   }
 }
