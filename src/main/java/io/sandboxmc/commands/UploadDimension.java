@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.google.gson.stream.JsonReader;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -18,7 +17,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.world.level.storage.LevelStorage.Session;
-import okhttp3.Headers;
 
 public class UploadDimension implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -36,12 +34,12 @@ public class UploadDimension implements Runnable {
           .executes(context -> performUploadCmd(context))
         )
         .executes(context -> {
-          sendFeedback(context.getSource(), "No dimension given.");
+          printMessage(context.getSource(), "No dimension given.");
           return 0;
         })
       )
       .executes(context -> {
-        sendFeedback(context.getSource(), "No creator or dimension given.");
+        printMessage(context.getSource(), "No creator or dimension given.");
         return 0;
       });
   }
@@ -93,7 +91,7 @@ public class UploadDimension implements Runnable {
     Web web = new Web(source, "/dimensions/" + creator + "/upload", false);
     File file = new File(defaultFilePath(session, creator, identifier + ".zip"));
     if (!file.exists()) {
-      sendFeedback(source, "Dimension not found!");
+      printMessage(source, "Dimension not found!");
     }
 
     web.setFormField("dimension", file);
@@ -102,12 +100,12 @@ public class UploadDimension implements Runnable {
     try {
       web.executeRequest();
       if (web.getStatusCode() == 200) {
-        sendFeedback(source, "Dimension successfully uploaded!");
+        printMessage(source, "Dimension successfully uploaded!");
       } else {
         web.printJsonMessages("Upload failed!");
       }
     } catch (IOException e) {
-      sendFeedback(source, "Something went wrong, failed to upload dimension.");
+      printMessage(source, "Something went wrong, failed to upload dimension.");
     } finally {
       web.closeReaders();
     }
@@ -124,8 +122,7 @@ public class UploadDimension implements Runnable {
     return Paths.get(storageFolder.toString(), creatorName, fileName).toString();
   }
 
-  // TODO: Pull this into a more globally available helper...
-  private static void sendFeedback(ServerCommandSource source, String feedbackText) {
+  private static void printMessage(ServerCommandSource source, String feedbackText) {
     source.sendFeedback(() -> {
       return Text.literal(feedbackText);
     }, false);

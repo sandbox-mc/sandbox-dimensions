@@ -2,18 +2,11 @@ package io.sandboxmc.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import io.sandboxmc.Main;
-import io.sandboxmc.commands.arguments.AuthCodeArgumentType;
-import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.argument.serialize.ConstantArgumentSerializer;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.Identifier;
 
 public class CommandInit {
   public static void init () {
-		ArgumentTypeRegistry.registerArgumentType(new Identifier(Main.modId, "authcode"), AuthCodeArgumentType.class, ConstantArgumentSerializer.of(AuthCodeArgumentType::authCode));
-
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
 			LiteralArgumentBuilder.<ServerCommandSource>literal("sandboxmc")
 				.requires((ctx) -> {

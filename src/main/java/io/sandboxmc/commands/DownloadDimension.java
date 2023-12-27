@@ -11,7 +11,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -23,73 +22,85 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class DownloadDimension {
+public class DownloadDimension implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("download")
       .then(
-        CommandManager.argument("creator", StringArgumentType.word())
-        .suggests(new WebAutoComplete("creators"))
-        .then(
-          CommandManager.argument("dimension", StringArgumentType.word())
-          .suggests(new WebAutoComplete("dimensions", "creators", "creator"))
-          .then(
-            CommandManager.argument("customFileName", StringArgumentType.word())
-            .executes(context -> performDownloadCmd(context))
-          )
-          .executes(context -> performDownloadCmd(context))
-        )
-        .executes(context -> {
-          sendFeedback(context.getSource(), Text.literal("No dimension given."));
-          return 0;
-        })
+        CommandManager.argument("dimension-identifier", StringArgumentType.greedyString())
+        // .suggests(new WebAutoComplete("dimensions"))
+        .executes(context -> performDownloadCmd(context))
       )
       .executes(context -> {
-        sendFeedback(context.getSource(), Text.literal("No creator or dimension given."));
+        printMessage(context.getSource(), "No dimension specified.");
         return 0;
       });
   }
 
   private static int performDownloadCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerCommandSource source = context.getSource();
-    String creatorName = StringArgumentType.getString(context, "creator");
-    String identifier = StringArgumentType.getString(context, "dimension");
-    String customFileName;
-    try {
-      customFileName = StringArgumentType.getString(context, "customFileName");
-    } catch (IllegalArgumentException e) {
-      // this is a nullable argument
-      customFileName = null;
-    }
+    String fullIdentifier = StringArgumentType.getString(context, "dimension-identifier");
+
+    Runnable downloadThread = new DownloadDimension(source, fullIdentifier);
+    new Thread(downloadThread).start();
+
+    return 1;
+  }
+
+  private ServerCommandSource source;
+  private String fullIdentifier;
+
+  public DownloadDimension(ServerCommandSource theSource, String theFullIdentifier) {
+    source = theSource;
+    fullIdentifier = theFullIdentifier;
+  }
+
+  public void run() {
+    String[] creatorDimensionAry = fullIdentifier.split(":");
 
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String dimensionPath = "/dimensions/" + creatorName + "/" + identifier;
+    String[] pathParts = { "", "dimensions" };
 
-    Web web = new Web(context.getSource(), dimensionPath + "/download");
-
-    Path filePath;
-    Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
-    if (customFileName == null) {
-      filePath = defaultFilePath(session, creatorName, identifier);
-    } else {
-      filePath = customFilePath(session, customFileName);
+    // Full identifiers must be formatted as:
+    // (creator:)dimension
+    // TODO: creators are currently not supported by the web app. This also might share a namespace with "group"?
+    // TODO: allow (:version) also? What would this look like? "vX", a timestamp, custom (parameterized) string?
+    // If no creator is specified then the dimension must exist in the user's personal collection.
+    switch (creatorDimensionAry.length) {
+      case 0:
+        printMessage(source, "TODO: I don't think this is possible... maybe try to test?");
+        return;
+      case 1:
+        pathParts[2] = creatorDimensionAry[0];
+        break;
+      // case 2:
+      //   pathParts[2] = creatorDimensionAry[0];
+      //   pathParts[3] = creatorDimensionAry[1];
+      //   break;
+      default:
+        printMessage(source, "Wrong number of identifier parts. Must be `(group:)dimension(:version)`.");
+        return;
     }
+
+    String dimensionPath = String.join("/", pathParts);
+    Web web = new Web(source, dimensionPath + "/download");
+    Path filePath = defaultFilePath(); // Currently not supporting anything but default.
     try {
       web.getFile(filePath);
     } catch (IOException e) {
-      sendFeedback(source, Text.literal("No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?"));
-      return 0;
+      printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?");
     } finally {
       web.closeReaders();
     }
 
     MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
-    MutableText creationText = Text.literal("[CLICK HERE TO CREATE IT]");
-    // TODO: Need to run some sort of unpack method here.
-    ClickEvent unpackEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dimension download awef awef");
+    MutableText creationText = Text.literal("[CLICK HERE TO INSTALL IT]");
+    // TODO: We need an "install" command which installs from a downloaded file.
+    // Start with the commented code block below...
+    ClickEvent unpackEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dimension install xyz");
     creationText.setStyle(Style.EMPTY.withClickEvent(unpackEvent));
     creationText.formatted(Formatting.UNDERLINE).formatted(Formatting.BLUE);
     feedbackText.append(creationText);
-    sendFeedback(source, feedbackText);
+    printMessage(source, feedbackText);
 
     // Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
     // datapackPath = Paths.get(datapackPath.toString(), identifier);
@@ -99,35 +110,33 @@ public class DownloadDimension {
     //   // TODO Auto-generated catch block
     //   e.printStackTrace();
     // }
-
-    return 1;
   }
 
-  private static Path defaultFilePath(Session session, String creatorName, String identifier) {
+  private Path defaultFilePath() {
+    Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
     Path storageFolder = DimensionManager.getStorageFolder(session);
-    String creatorFolderName = Paths.get(storageFolder.toString(), creatorName).toString();
-    File creatorDirFile = new File(creatorFolderName);
-    if (!creatorDirFile.exists()) {
-      creatorDirFile.mkdir();
+    String[] pathParts = fullIdentifier.split(":");
+
+    Path currentPath = storageFolder;
+    // all but last item, that would be the actual file name
+    for (int i = 0; i < pathParts.length - 1; i++) {
+      currentPath = Paths.get(currentPath.toString(), pathParts[i]);
+      File dirFile = new File(currentPath.toString());
+      if (!dirFile.exists()) {
+        dirFile.mkdir();
+      }
     }
 
-    return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip");
+    return Paths.get(currentPath.toString(), pathParts[pathParts.length - 1] + ".zip");
   }
 
-  private static Path customFilePath(Session session, String customFileName) {
-    Path storageFolder = DimensionManager.getStorageFolder(session);
-
-    if (!customFileName.endsWith(".zip")) {
-      customFileName += ".zip";
-    }
-
-    return Paths.get(storageFolder.toString(), customFileName);
-  }
-
-  // TODO: Pull this into a more globally available helper...
-  private static void sendFeedback(ServerCommandSource source, Text feedbackText) {
+  private static void printMessage(ServerCommandSource source, MutableText message) {
     source.sendFeedback(() -> {
-      return feedbackText;
+      return message;
     }, false);
+  }
+
+  private static void printMessage(ServerCommandSource source, String message) {
+    printMessage(source, Text.literal(message));
   }
 }
