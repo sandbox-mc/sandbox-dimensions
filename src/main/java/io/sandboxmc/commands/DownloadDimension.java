@@ -1,9 +1,18 @@
 package io.sandboxmc.commands;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.apache.commons.io.FileUtils;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -58,19 +67,19 @@ public class DownloadDimension implements Runnable {
     String[] creatorDimensionAry = fullIdentifier.split(":");
 
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String[] pathParts = { "", "dimensions" };
+    String fileUrl = "/dimensions";
 
     // Full identifiers must be formatted as:
     // (creator:)dimension
     // TODO: creators are currently not supported by the web app. This also might share a namespace with "group"?
     // TODO: allow (:version) also? What would this look like? "vX", a timestamp, custom (parameterized) string?
-    // If no creator is specified then the dimension must exist in the user's personal collection.
+    // If no creator/group is specified then the dimension must exist in the user's personal collection.
     switch (creatorDimensionAry.length) {
       case 0:
         printMessage(source, "TODO: I don't think this is possible... maybe try to test?");
         return;
       case 1:
-        pathParts[2] = creatorDimensionAry[0];
+        fileUrl += "/" + creatorDimensionAry[0];
         break;
       // case 2:
       //   pathParts[2] = creatorDimensionAry[0];
@@ -81,13 +90,28 @@ public class DownloadDimension implements Runnable {
         return;
     }
 
-    String dimensionPath = String.join("/", pathParts);
-    Web web = new Web(source, dimensionPath + "/download");
+    // TODO: don't require auth if there's a creator
+    Web web = new Web(source, fileUrl + "/download", true);
     Path filePath = defaultFilePath(); // Currently not supporting anything but default.
     try {
-      web.getFile(filePath);
+      // This is closed by web.closeReaders()
+      BufferedInputStream inputStream = web.getInputStream();
+      if (web.getStatusCode() != 200) {
+        printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
+        return;
+      }
+
+      File newFile = new File(filePath.toString());
+      if (newFile.exists()) {
+        // TODO: user feedback to overwrite file.
+        newFile.delete();
+        // TODO: do I have to re-initialize it after deletion?
+        newFile = new File(filePath.toString());
+      }
+
+      FileUtils.copyInputStreamToFile(inputStream, newFile);
     } catch (IOException e) {
-      printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + dimensionPath + "\nDid you misstype it?");
+      printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
     } finally {
       web.closeReaders();
     }

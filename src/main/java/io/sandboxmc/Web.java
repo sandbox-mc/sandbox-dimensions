@@ -1,11 +1,11 @@
 package io.sandboxmc;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.HashMap;
 
 import com.google.gson.internal.JavaVersion;
@@ -88,6 +88,7 @@ public class Web {
   private JsonReader jsonReader = null;
   private StringReader stringReader = null;
   private InputStream inputStream = null;
+  private BufferedInputStream bufferedInputStream = null;
 
   public Web(ServerCommandSource commandSource) {
     source = commandSource;
@@ -184,20 +185,19 @@ public class Web {
     return responseBody.string();
   }
 
-  public Path getFile(Path filePath) throws IOException {
-    // pathResponse = HttpClient.newHttpClient().send(requestBuilder.build(), BodyHandlers.ofFile(filePath));
-    // Path path = pathResponse.body();
-    // if (pathResponse.statusCode() == 301 || pathResponse.statusCode() == 302) {
-    //   // Have to follow the redirect...
-    //   Optional<String> redirectUrl = pathResponse.headers().firstValue("location");
-    //   if (redirectUrl.isPresent()) {
-    //     requestBuilder = requestBuilder.uri(URI.create(redirectUrl.get()));
-    //     // TODO: handle infinite redirect loops.
-    //     return getFile(filePath); // Recurse into the redirect...
-    //   }
-    // }
-    // return path;
-    return Path.of("");
+  public BufferedInputStream getInputStream() throws IOException {
+    executeRequest(); // this HAS to actually execute every time for recursion.
+
+    // TODO: handle redirect loops
+    if (getStatusCode() == 301 || getStatusCode() == 302) {
+      String redirectUrl = response.header("location");
+      requestBuilder.url(redirectUrl);
+      return getInputStream();
+    }
+
+    inputStream = responseBody.byteStream();
+    bufferedInputStream = new BufferedInputStream(inputStream);
+    return bufferedInputStream;
   }
 
   public JsonReader getJson() throws IOException {
