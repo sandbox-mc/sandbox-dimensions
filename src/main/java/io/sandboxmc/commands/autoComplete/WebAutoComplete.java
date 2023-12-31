@@ -1,12 +1,10 @@
 package io.sandboxmc.commands.autoComplete;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
-import com.google.gson.stream.JsonReader;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.LiteralMessage;
@@ -15,7 +13,6 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import io.sandboxmc.Web;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
@@ -70,63 +67,21 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
       return builder.buildFuture();
     }
 
-    Web web = new Web(context.getSource(), buildPath(context, remaining), restrictToAuth);
+    String path = buildPath(context, remaining);
 
-    if (restrictToAuth && !web.hasAuth()) {
-      // If we're TRYING to restrict to auth and there IS no auth then let's not just hammer our own API...
-      System.out.println("Leaving autocomplete early, no authentication!");
+    WebAutoCompleteWorker thread = new WebAutoCompleteWorker(context.getSource(), path, restrictToAuth);
+    ArrayList<HashMap<String, String>> valuesToSuggest = thread.getFromCache();
+    if (valuesToSuggest == null) {
+      // No value found in cache, let's start the worker and return nothing.
+      new Thread(thread).start();
       return builder.buildFuture();
     }
-
-    ArrayList<HashMap<String, String>> valuesToSuggest = new ArrayList<>();
-    try {
-      readJSON(web.getJson(), valuesToSuggest);
-    } catch (IOException e) {
-      System.out.println("Error: " + e.getClass().toString() + " - " + e.getMessage());
-    } finally {
-      web.closeReaders();
-    }
-
+    
     valuesToSuggest.forEach((valueToSuggest) -> {
       builder.suggest(valueToSuggest.get("value"), new LiteralMessage(valueToSuggest.get("label")));
     });
 
     return builder.buildFuture();
-  }
-
-  // @see https://stackoverflow.com/questions/4308554/simplest-way-to-read-json-from-a-url-in-java
-  private void readJSON(JsonReader jsonReader, ArrayList<HashMap<String, String>> valuesToSuggest) throws IOException {
-    jsonReader.beginObject();
-    while (jsonReader.hasNext()) {
-      String key = jsonReader.nextName();
-      switch (key) {
-        case "total":
-          jsonReader.skipValue(); // TODO: determine if the total count can be used
-          break;
-        case "message":
-          jsonReader.skipValue(); // TODO: determine if error messages can be used
-          break;
-        case "results":
-          jsonReader.beginArray();
-          while (jsonReader.hasNext()) {
-            jsonReader.beginArray();
-
-            HashMap<String, String> suggestResult = new HashMap<>();
-            suggestResult.put("value", jsonReader.nextString());
-            suggestResult.put("label", jsonReader.nextString());
-            valuesToSuggest.add(suggestResult);
-
-            jsonReader.endArray();
-          }
-          jsonReader.endArray();
-          break;
-        default:
-          // Just ignore anything else
-          jsonReader.skipValue();
-          break;
-      }
-    }
-    jsonReader.endObject();
   }
 
   private String buildPath(CommandContext<ServerCommandSource> context, String remaining) {

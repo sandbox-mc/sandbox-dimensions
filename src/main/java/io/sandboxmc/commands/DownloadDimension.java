@@ -1,14 +1,8 @@
 package io.sandboxmc.commands;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -20,6 +14,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
+import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -36,7 +31,7 @@ public class DownloadDimension implements Runnable {
     return CommandManager.literal("download")
       .then(
         CommandManager.argument("dimension-identifier", StringArgumentType.greedyString())
-        // .suggests(new WebAutoComplete("dimensions"))
+        .suggests(new WebAutoComplete("dimensions", true))
         .executes(context -> performDownloadCmd(context))
       )
       .executes(context -> {

@@ -81,7 +81,7 @@ public class Web {
   private Request request;
   private Request.Builder requestBuilder;
   private MultipartBody.Builder formBuilder = null;
-  private Response response;
+  private Response response = null;
   private ResponseBody responseBody = null;
   private Boolean hasAuth = false;
   // Readers for fetching data.
@@ -271,6 +271,11 @@ public class Web {
     // We do want to make sure we close it though.
     if (stringReader != null) {
       stringReader.close();
+    }
+
+    // Make sure we actually close out the connection.
+    if (response != null) {
+      response.close();
     }
   }
 
