@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
+import io.sandboxmc.web.BearerToken;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -20,17 +21,17 @@ public class WebLogout {
   private static int logoutCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerCommandSource source = context.getSource();
 
-    String bearerToken = Web.getBearerToken(source);
+    BearerToken bearerToken = Web.getBearerToken(source);
     if (bearerToken == null) {
       sendFeedback(source, "Not currently logged in.");
       return 1;
     }
 
-    Web web = new Web(source, "/clients/auth/logout", bearerToken);
+    Web web = new Web(source, "/clients/auth/logout", bearerToken.getToken());
     web.setDeleteBody();
 
     try {
-      web.getString(); // we don't even need to do anything with this...
+      web.executeRequest(); // we don't even need to do anything with this...
     } catch (IOException e) {
       // I don't think we care?
     } finally {

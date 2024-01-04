@@ -31,15 +31,17 @@ public abstract class ServerPlayerEntityMixin extends Entity {
       return;
     }
 
+    // This is the one place where it's OK to make a web request NOT in a thread.
+    // We need to ensure everyone is properly logged out that should be before the server shuts down.
     Web web = new Web(source, "/clients/auth/logout", true);
     web.setDeleteBody();
 
     try {
-      web.getString(); // we don't even need to do anything with this...
-      Web.removeBearerToken(source);
+      web.executeRequest();
     } catch (IOException e) {
-      // I don't think we care?
+      // If it fails it fails, doesn't matter.
     } finally {
+      Web.removeBearerToken(source);
       web.closeReaders();
     }
   }

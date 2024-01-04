@@ -10,6 +10,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
+import io.sandboxmc.web.PlayerIdentifier;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -31,6 +32,8 @@ public class WebAuthenticate implements Runnable {
       .executes(context -> getAuthToken(context));
   }
 
+  // Very basic wrapper around the thread.
+  // This is a blind function and does not know the outcome of the thread at the time of command completion.
   private static int getAuthToken(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     Runnable webAuthThread = new WebAuthenticate(context, "getAuthToken");
     new Thread(webAuthThread).start();
@@ -38,6 +41,8 @@ public class WebAuthenticate implements Runnable {
     return 1;
   }
 
+  // Very basic wrapper around the thread.
+  // This is a blind function and does not know the outcome of the thread at the time of command completion.
   private static int submitAuthCode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     Runnable webAuthThread = new WebAuthenticate(context, "submitAuthCode");
     new Thread(webAuthThread).start();
@@ -46,14 +51,23 @@ public class WebAuthenticate implements Runnable {
   }
 
   private CommandContext<ServerCommandSource> context;
+  private ServerCommandSource source;
+  private PlayerIdentifier playerID;
   private String mode;
 
   public WebAuthenticate(CommandContext<ServerCommandSource> theContext, String theMode) {
     context = theContext;
+    source = context.getSource();
+    playerID = new PlayerIdentifier(source.getPlayer());
     mode = theMode;
   }
 
   public void run() {
+    if (Web.getBearerToken(source) != null) {
+      printMessage("Already authenticated.");
+      return;
+    }
+
     switch (mode) {
       case "getAuthToken":
         getAuthTokenThread();
@@ -65,11 +79,10 @@ public class WebAuthenticate implements Runnable {
   }
 
   private void getAuthTokenThread() {
-    Web web = new Web(context.getSource(), "/clients/auth/init");
-    String playerUUID = context.getSource().getPlayer().getUuidAsString();
+    Web web = new Web(source, "/clients/auth/init");
     // Uncomment if using the test client that boots with a made up user.
     // playerUUID = "ea5a400f-678c-4fcb-853b-3d948476a0c6"; // Cardtable
-    web.setPostBody("{\"auth\": {\"uuid\": \"" + playerUUID + "\"}}");
+    web.setPostBody("{\"auth\": " + playerID.getJSON() + "}");
 
     try {
       JsonReader jsonReader = web.getJson();
@@ -94,8 +107,8 @@ public class WebAuthenticate implements Runnable {
         return;
       }
 
-      // Store this for the subsequent post in `submitAuthCode`, it can then be dropped after that.
-      authTokens.put(context.getSource().getPlayer().getUuidAsString(), authToken);
+      // Store this for the subsequent post in `submitAuthCode`, it should then be dropped.
+      authTokens.put(playerID.getIdentifier(), authToken);
 
       MutableText authText = Text.literal("Please visit the following link to continue authentication\n");
       String authUrl = Web.WEB_DOMAIN + "/clients/auth/login/" + authToken;
@@ -114,7 +127,7 @@ public class WebAuthenticate implements Runnable {
   }
 
   private void submitAuthCodeThread() {
-    String authToken = authTokens.get(context.getSource().getPlayer().getUuidAsString());
+    String authToken = authTokens.get(playerID.getIdentifier());
     if (authToken == null) {
       printMessage("Please run `/sandboxmc authenticate` first!");
       return;
@@ -128,7 +141,7 @@ public class WebAuthenticate implements Runnable {
 
     printMessage("Authenticating with SandboxMC...");
 
-    Web web = new Web(context.getSource(), "/clients/auth/verify", authToken);
+    Web web = new Web(source, "/clients/auth/verify", authToken);
     web.setPatchBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
     
     try {
@@ -139,13 +152,12 @@ public class WebAuthenticate implements Runnable {
         String key = jsonReader.nextName();
         switch (key) {
           case "bearer_token":
-            String playerUUID = context.getSource().getPlayer().getUuidAsString();
-            Web.setBearerToken(playerUUID, jsonReader.nextString());
+            Web.setBearerToken(playerID.getIdentifier(), jsonReader.nextString());
 
             // We're now effectively logged in, we can drop the auth token
             // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
             // The server will have dropped the authCode from the record on its side and therefore we'd need to regenerate all of this anyway.
-            authTokens.remove(playerUUID);
+            authTokens.remove(playerID.getIdentifier());
             break;
           default:
             // Just ignore anything else

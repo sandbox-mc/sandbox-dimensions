@@ -11,6 +11,8 @@ import java.util.HashMap;
 import com.google.gson.internal.JavaVersion;
 import com.google.gson.stream.JsonReader;
 
+import io.sandboxmc.web.BearerToken;
+import io.sandboxmc.web.PlayerIdentifier;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -27,8 +29,8 @@ import okhttp3.ResponseBody;
 
 public class Web {
   // public static final String WEB_DOMAIN = "http://127.0.0.1:3000";
-  // public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
-  public static final String WEB_DOMAIN = "https://www.sandboxmc.io";
+  public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
+  // public static final String WEB_DOMAIN = "https://www.sandboxmc.io";
   public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.modId).get().toString().replace("sandboxmc ", "");
 
   //==============================================================
@@ -38,23 +40,35 @@ public class Web {
   // TODO: need to write a loader so we can boot sessions up on server load when configed.
   //
   //==============================================================
-  private static HashMap<String, String> bearerTokens = new HashMap<String, String>();
+  private static HashMap<String, BearerToken> bearerTokens = new HashMap<>();
+  // TODO: inactivity should MAYBE be configable via the web app on an account-by-account basis and then stored in the BearerToken?
+  private static final long INACTIVITY_TIMEOUT_MILLIS = 1000 * 60 * 30; // 30 minutes
 
-  public static String getBearerToken(String key) {
-    // TODO: handle inactivity timeouts
-    return bearerTokens.get(key);
+  public static BearerToken getBearerToken(String key) {
+    if (!bearerTokens.containsKey(key)) {
+      return null;
+    }
+
+    long thirtyMinsAgo = System.currentTimeMillis() - INACTIVITY_TIMEOUT_MILLIS;
+    BearerToken bearerToken = bearerTokens.get(key);
+    if (bearerToken.getLastAccessed() > thirtyMinsAgo) {
+      return bearerToken;
+    }
+
+    removeBearerToken(key);
+    return null;
   }
 
-  public static String getBearerToken(ServerPlayerEntity player) {
-    return getBearerToken(player.getUuidAsString());
+  public static BearerToken getBearerToken(ServerPlayerEntity player) {
+    return getBearerToken(new PlayerIdentifier(player).getIdentifier());
   }
 
-  public static String getBearerToken(ServerCommandSource source) {
+  public static BearerToken getBearerToken(ServerCommandSource source) {
     return getBearerToken(source.getPlayer());
   }
 
   public static void setBearerToken(String key, String token) {
-    bearerTokens.put(key, token);
+    bearerTokens.put(key, new BearerToken(token, System.currentTimeMillis()));
   }
 
   public static void removeBearerToken(String key) {
@@ -62,7 +76,7 @@ public class Web {
   }
 
   public static void removeBearerToken(ServerPlayerEntity player) {
-    removeBearerToken(player.getUuidAsString());
+    removeBearerToken(new PlayerIdentifier(player).getIdentifier());
   }
 
   public static void removeBearerToken(ServerCommandSource source) {
@@ -108,7 +122,10 @@ public class Web {
     this(commandSource, path);
 
     if (withAuth) {
-      setAuth(getBearerToken(commandSource));
+      BearerToken bearerToken = getBearerToken(commandSource);
+      if (bearerToken != null) {
+        setAuth(bearerToken.getToken());
+      }
     }
   }
 
@@ -188,11 +205,10 @@ public class Web {
   public BufferedInputStream getInputStream() throws IOException {
     executeRequest(); // this HAS to actually execute every time for recursion.
 
-    // TODO: handle redirect loops
     if (getStatusCode() == 301 || getStatusCode() == 302) {
       String redirectUrl = response.header("location");
       requestBuilder.url(redirectUrl);
-      return getInputStream();
+      executeRequest(); // We only expect ONE redirect from our system.
     }
 
     inputStream = responseBody.byteStream();
