@@ -23,8 +23,8 @@ public class WebAuthenticate implements Runnable {
   private static final String AUTH_CODE_REGEX = "^\\d{6}$";
   private static HashMap<String, String> authTokens = new HashMap<String, String>();
 
-  public static LiteralArgumentBuilder<ServerCommandSource> register() {
-    return CommandManager.literal("authenticate")
+  public static LiteralArgumentBuilder<ServerCommandSource> register(String commandName) {
+    return CommandManager.literal(commandName)
       .then(
         CommandManager.argument("auth-code", StringArgumentType.word())
         .executes(context -> submitAuthCode(context))
@@ -110,7 +110,7 @@ public class WebAuthenticate implements Runnable {
 
       MutableText authText = Text.literal("Please visit the following link to continue authentication\n");
       String authUrl = Web.WEB_DOMAIN + "/clients/auth/login/" + authToken;
-      MutableText clickableUrl = Text.literal("[ " + authUrl + " ]");
+      MutableText clickableUrl = Text.literal(authUrl);
       ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, authUrl);
       clickableUrl.setStyle(Style.EMPTY.withClickEvent(clickEvent));
       clickableUrl.formatted(Formatting.UNDERLINE).formatted(Formatting.DARK_AQUA);
@@ -187,13 +187,14 @@ public class WebAuthenticate implements Runnable {
   }
 
   private void printHelpMessage() {
-    MutableText helpText = Text.literal("Something went wrong. Please visit ");
-    MutableText helpURL = Text.literal("[ " + Web.WEB_DOMAIN + "/clients/auth/help ]");
-    ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, Web.WEB_DOMAIN + "/clients/auth/help");
+    MutableText helpText = Text.literal("Something went wrong. Please visit\n");
+    String helpUrl = Web.WEB_DOMAIN + "/clients/auth/help";
+    MutableText helpURL = Text.literal(helpUrl);
+    ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, helpUrl);
     helpURL.setStyle(Style.EMPTY.withClickEvent(clickEvent));
     helpURL.formatted(Formatting.UNDERLINE).formatted(Formatting.AQUA);
     helpText.append(helpURL);
-    helpText.append(Text.literal(" for more instructions on how to authenticate your client."));
+    helpText.append(Text.literal("\nfor more instructions on how to authenticate your client."));
     printMessage(helpText);
   }
 }
