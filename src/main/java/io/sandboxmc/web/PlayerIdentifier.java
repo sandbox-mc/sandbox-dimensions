@@ -31,13 +31,13 @@ public class PlayerIdentifier {
       return jsonAuthString;
     }
 
-    String jsonString = "{";
-    jsonString += "\"uuid\": \"" + playerUUID + "\",";
-    jsonString += "\"player_ip\": \"" + playerIP + "\",";
-    jsonString += "\"server_address\": \"" + serverAddress + "\",";
-    jsonString += "\"server_name\": \"" + serverName + "\"";
-    jsonString += "}";
-    jsonAuthString = jsonString;
+    StringBuilder jsonString = new StringBuilder("{");
+    jsonString.append("\"uuid\": \"" + playerUUID + "\",");
+    jsonString.append("\"player_ip\": \"" + playerIP + "\",");
+    jsonString.append("\"server_address\": \"" + serverAddress + "\",");
+    jsonString.append("\"server_name\": \"" + serverName + "\"");
+    jsonString.append("}");
+    jsonAuthString = jsonString.toString();
     return jsonAuthString;
   }
 }
