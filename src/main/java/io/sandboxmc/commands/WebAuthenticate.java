@@ -53,13 +53,13 @@ public class WebAuthenticate implements Runnable {
   private CommandContext<ServerCommandSource> context;
   private ServerCommandSource source;
   private PlayerIdentifier playerID;
-  private String mode;
+  private String authStage;
 
-  public WebAuthenticate(CommandContext<ServerCommandSource> theContext, String theMode) {
+  public WebAuthenticate(CommandContext<ServerCommandSource> theContext, String stage) {
     context = theContext;
     source = context.getSource();
     playerID = new PlayerIdentifier(source.getPlayer());
-    mode = theMode;
+    authStage = stage;
   }
 
   public void run() {
@@ -68,7 +68,7 @@ public class WebAuthenticate implements Runnable {
       return;
     }
 
-    switch (mode) {
+    switch (authStage) {
       case "getAuthToken":
         getAuthTokenThread();
         break;
@@ -80,8 +80,6 @@ public class WebAuthenticate implements Runnable {
 
   private void getAuthTokenThread() {
     Web web = new Web(source, "/clients/auth/init");
-    // Uncomment if using the test client that boots with a made up user.
-    // playerUUID = "ea5a400f-678c-4fcb-853b-3d948476a0c6"; // Cardtable
     web.setPostBody("{\"auth\": " + playerID.getJSON() + "}");
 
     try {
