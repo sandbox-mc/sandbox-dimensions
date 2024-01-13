@@ -26,6 +26,7 @@ public class CommandInit {
 				.then(CreateCmd.register())
 				.then(Rule.register())
 				.then(DownloadDimension.register())
+				.then(InstallDatapack.register())
 				.then(UploadDimension.register())
 				.then(JoinDimension.register())
 				.then(LeaveDimension.register())

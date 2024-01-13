@@ -1,5 +1,8 @@
 package io.sandboxmc.commands;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -36,12 +39,12 @@ public class SaveDimension {
     Datapack datapack = DatapackManager.getDatapack(datapackName);
     datapack.zipWorldfilesToDatapack(dimension);
 
-    // Path tmpZipPath; // This is the path to the .zip file
-    // try {
-    //   tmpZipPath = datapack.createTmpZip();
-    // } catch(IOException ex) {
-    //   ex.printStackTrace();
-    // }
+    Path tmpZipPath; // This is the path to the .zip file
+    try {
+      tmpZipPath = datapack.createTmpZip();
+    } catch(IOException ex) {
+      ex.printStackTrace();
+    }
 
     context.getSource().sendFeedback(() -> {
       return Text.literal("Saved Dimension: " + dimensionId);

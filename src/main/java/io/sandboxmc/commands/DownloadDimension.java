@@ -129,7 +129,20 @@ public class DownloadDimension implements Runnable {
     //   // TODO Auto-generated catch block
     //   e.printStackTrace();
     // }
+
+    // return 1;
   }
+
+  // private static Path defaultFilePath(Session session, String creatorName, String identifier) {
+  //   Path storageFolder = DimensionManager.getStorageFolder(session);
+  //   String creatorFolderName = Paths.get(storageFolder.toString(), creatorName).toString();
+  //   File creatorDirFile = new File(creatorFolderName);
+  //   if (!creatorDirFile.exists()) {
+  //     creatorDirFile.mkdir();
+  //   }
+
+  //   return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip");
+  // }
 
   private Path defaultFilePath() {
     Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
