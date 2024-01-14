@@ -15,6 +15,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
+import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -75,6 +76,7 @@ public class DownloadDimension implements Runnable {
         return;
       case 1:
         fileUrl += "/" + creatorDimensionAry[0];
+        System.out.println("Stuff: " + creatorDimensionAry[0]);
         break;
       // case 2:
       //   pathParts[2] = creatorDimensionAry[0];
@@ -107,9 +109,12 @@ public class DownloadDimension implements Runnable {
       FileUtils.copyInputStreamToFile(inputStream, newFile);
     } catch (IOException e) {
       printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
+      return; // end early if error
     } finally {
       web.closeReaders();
     }
+
+    // DatapackManager.addDownloadedDatapack(fileUrl, filePath);
 
     MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
     MutableText creationText = Text.literal("[CLICK HERE TO INSTALL IT]");
@@ -129,7 +134,20 @@ public class DownloadDimension implements Runnable {
     //   // TODO Auto-generated catch block
     //   e.printStackTrace();
     // }
+
+    // return 1;
   }
+
+  // private static Path defaultFilePath(Session session, String creatorName, String identifier) {
+  //   Path storageFolder = DimensionManager.getStorageFolder(session);
+  //   String creatorFolderName = Paths.get(storageFolder.toString(), creatorName).toString();
+  //   File creatorDirFile = new File(creatorFolderName);
+  //   if (!creatorDirFile.exists()) {
+  //     creatorDirFile.mkdir();
+  //   }
+
+  //   return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip");
+  // }
 
   private Path defaultFilePath() {
     Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
