@@ -10,9 +10,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import io.sandboxmc.datapacks.types.DatapackMeta;
+import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage.Session;
@@ -94,7 +96,7 @@ public class Datapack {
     }
   }
 
-  public void saveDatapack() {
+  public void initializeDatapack(MinecraftServer server) {
     File datapackFolder = this.datapackPath.toFile();
     if (!datapackFolder.exists()) {
       // only create it if it doesn't exist
@@ -102,12 +104,44 @@ public class Datapack {
     }
 
     Path packMcmetaPath = Paths.get(this.datapackPath.toString(), "pack.mcmeta");
-    try {
-      FileWriter file = new FileWriter(packMcmetaPath.toString());
-      file.write(this.datapackMeta.convertToJsonString());
-      file.close();
-    } catch (IOException e) {
-      e.printStackTrace();
+    if (!packMcmetaPath.toFile().exists()) {
+      // If this doesn't exist we are generating a new datapack and need to create files
+      try {
+        FileWriter file = new FileWriter(packMcmetaPath.toString());
+        file.write(this.datapackMeta.convertToJsonString());
+        file.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else {
+      // this is a loaded datapack
+      // we need to read through the files and process
+      File dataFolder = Paths.get(datapackFolder.toString(), "data").toFile();
+      File[] namespaces = dataFolder.listFiles((dir, name) -> dir.isDirectory());
+      for (File namespaceFile : namespaces) {
+        String namespace = namespaceFile.getName();
+        File namespaceDimensionFolder = Paths.get(namespaceFile.toString(), "dimension").toFile();
+        
+        File[] dimensionsInNamespace = namespaceDimensionFolder.listFiles((dir, name) -> {
+          return name.endsWith(".json");
+        });
+
+        for (File dimensionFile : dimensionsInNamespace) {
+          Identifier dimensionIdentifier = new Identifier(
+            namespace,
+            dimensionFile.getName().replaceAll(".json", "")
+          );
+          String dimensionIdString = dimensionIdentifier.toString();
+  
+          // Create the dimension
+          DimensionManager.addDimensionToPacknameMap(dimensionIdString, this.name);
+          DimensionSave.loadDimensionFile(
+            dimensionIdString,
+            server
+          );
+          DimensionManager.createDimensionWorld(server, dimensionIdentifier);
+        }
+      }
     }
   }
 

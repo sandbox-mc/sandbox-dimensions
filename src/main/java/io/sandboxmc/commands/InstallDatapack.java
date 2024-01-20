@@ -11,29 +11,31 @@ import com.mojang.brigadier.context.CommandContext;
 
 import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import io.sandboxmc.datapacks.DatapackManager;
+import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class InstallDatapack {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("install").then(
       CommandManager
-      .argument("datapack", StringArgumentType.word())
+      .argument("datapack", IdentifierArgumentType.identifier())
       .suggests(new StringListAutoComplete(getDownloadedDatapackAutocomplete()))
       .then(
         CommandManager
         .argument("overwrite", BoolArgumentType.bool())
         .executes(context -> installDatapack(
           context,
-          StringArgumentType.getString(context, "datapack"),
+          IdentifierArgumentType.getIdentifier(context, "datapack"),
           BoolArgumentType.getBool(context, "overwrite"))
         )
       )
       .executes(context -> installDatapack(
         context,
-        StringArgumentType.getString(context, "datapack"),
-        null
+        IdentifierArgumentType.getIdentifier(context, "datapack"),
+        false // default to false
       ))
     ).executes(context -> {
       // TODO: add fallback messaging
@@ -53,13 +55,14 @@ public class InstallDatapack {
     };
   }
 
-  private static int installDatapack(CommandContext<ServerCommandSource> context, String datapackName, Boolean shouldOverwrite) {
+  private static int installDatapack(CommandContext<ServerCommandSource> context, Identifier datapackIdentifier, Boolean shouldOverwrite) {
     ServerCommandSource source = context.getSource();
     System.out.println("Testing...");
-    System.out.println("OUT: " + datapackName + " : " + shouldOverwrite);
-    // System.out.println("OUT: " + datapackName);
+    System.out.println("OUT: " + datapackIdentifier + " : " + shouldOverwrite);
+    DatapackManager.installDownloadedDatapack(source.getServer(), datapackIdentifier.toString());
+    // System.out.println("OUT: " + datapackIdentifier);
     source.sendFeedback(() -> {
-      return Text.literal("Installed Dimension: " + datapackName);
+      return Text.literal("Installed Dimension: " + datapackIdentifier);
     }, false);
     return 1;
   }

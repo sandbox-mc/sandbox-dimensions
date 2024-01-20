@@ -132,7 +132,7 @@ public class CreateCmd {
       datapack = DatapackManager.createDatapack(datapackName);
       // if it doesn't exist we need to create the default files for it
       // This is actually for server restarts
-      datapack.saveDatapack();
+      datapack.initializeDatapack(server);
     }
 
     Identifier defaultDimensionType = DimensionManager.getDefaultConfig("dimension"); // Filename matches dimension.json

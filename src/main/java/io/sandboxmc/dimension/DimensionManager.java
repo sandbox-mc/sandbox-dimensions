@@ -123,7 +123,7 @@ public class DimensionManager {
 
     Registry<DimensionOptions> dimensionOptions = server.getRegistryManager().get(RegistryKeys.DIMENSION);
     DimensionOptions dimensionOption = dimensionOptions.get(DimensionOptions.OVERWORLD);
-    
+
     ServerWorld dimensionWorld = new ServerWorld(
       server,
       serverAccess.getWorkerExecutor(),
@@ -133,7 +133,7 @@ public class DimensionManager {
       dimensionOption,
       serverAccess.getWorldGenerationProgressListenerFactory().create(11),
       false,
-      1234L,
+      server.getWorld(World.OVERWORLD).getSeed(),
       ImmutableList.of(),
       true,
       (RandomSequencesState)null
