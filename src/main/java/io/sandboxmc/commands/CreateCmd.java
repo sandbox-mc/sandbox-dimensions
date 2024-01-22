@@ -59,9 +59,8 @@ public class CreateCmd {
         )
       )
     ).executes(context -> {
-      // TODO: add fallback messaging
-      System.out.println("Fallback????");
-      return 1;
+      // No arguments given, do nothing.
+      return 0;
     });
   }
 

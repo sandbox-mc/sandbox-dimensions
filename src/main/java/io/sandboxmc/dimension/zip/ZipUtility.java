@@ -46,13 +46,13 @@ public class ZipUtility {
   }
 
   public static void unzipInputStream(InputStream inStream, Path targetDir) throws IOException {
-    targetDir = targetDir.toAbsolutePath();
+    targetDir = targetDir.toAbsolutePath().normalize();
     try (ZipInputStream zipIn = new ZipInputStream(inStream)) {
       for (ZipEntry ze; (ze = zipIn.getNextEntry()) != null; ) {
         Path resolvedPath = targetDir.resolve(ze.getName()).normalize();
         if (!resolvedPath.startsWith(targetDir)) {
           // see: https://snyk.io/research/zip-slip-vulnerability
-          throw new RuntimeException("Entry with an illegal path: " + ze.getName());
+          throw new RuntimeException("Attempting to create file with an illegal path!\nzeName: " + ze.getName() + "\ntargetDir: " + targetDir.toString() + "\nresolvedPath: " + resolvedPath.toString());
         }
 
         if (ze.isDirectory()) {
