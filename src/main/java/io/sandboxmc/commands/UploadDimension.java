@@ -11,7 +11,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -98,7 +98,7 @@ public class UploadDimension implements Runnable {
   }
 
   private static String defaultFilePath(Session session, String fileName) {
-    Path storageFolder = DimensionManager.getStorageFolder(session);
+    Path storageFolder = DatapackManager.getStorageFolder(session);
     return Paths.get(storageFolder.toString(), fileName).toString();
   }
 

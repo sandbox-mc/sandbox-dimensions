@@ -16,7 +16,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.WebAutoComplete;
 import io.sandboxmc.datapacks.DatapackManager;
-import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -133,7 +132,7 @@ public class DownloadDimension implements Runnable {
 
   private Path defaultFilePath() {
     Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
-    Path storageFolder = DimensionManager.getStorageFolder(session);
+    Path storageFolder = DatapackManager.getStorageFolder(session);
     String[] pathParts = fullIdentifier.split(":");
 
     Path currentPath = storageFolder;

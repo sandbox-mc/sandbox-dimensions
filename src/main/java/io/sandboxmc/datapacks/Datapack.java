@@ -21,7 +21,7 @@ import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class Datapack {
   DatapackMeta datapackMeta = new DatapackMeta();
-  Path datapackPath;
+  public Path datapackPath;
   public String name;
   Path tmpDirectory;
   Path tmpFile;

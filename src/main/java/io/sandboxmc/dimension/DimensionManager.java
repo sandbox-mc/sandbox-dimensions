@@ -3,7 +3,6 @@ package io.sandboxmc.dimension;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +26,6 @@ import net.minecraft.resource.ResourceType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.random.RandomSequencesState;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
@@ -42,7 +40,6 @@ public class DimensionManager {
   private static List<String> initializedDimensions = new ArrayList<>();
   private static Map<String, String> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<String, DimensionSave> dimensionSaves = new HashMap<>();
-  private static Path storageDirectory = null;
   private static MinecraftServer minecraftServer = null;
 
   public static void init() {
@@ -171,31 +168,6 @@ public class DimensionManager {
     }
 
     return datapackFolderSet;
-  }
-
-  // Using Session so this can be used outside commands
-  public static Path getStorageFolder(Session session) {
-    if (storageDirectory != null) {
-      return storageDirectory;
-    }
-
-    String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
-
-    String sandboxDirName = Paths.get(minecraftFolder, "sandbox").toString();
-    File sandboxDirFile = new File(sandboxDirName);
-    if (!sandboxDirFile.exists()) {
-      sandboxDirFile.mkdir();
-    }
-
-    Path storageDirPath = Paths.get(sandboxDirName, "storage");
-    File storageDirFile = new File(storageDirPath.toString());
-    if (!storageDirFile.exists()) {
-      storageDirFile.mkdir();
-    }
-
-    storageDirectory = storageDirPath;
-
-    return storageDirPath;
   }
 
   public static void processSandboxDimensionFiles(MinecraftServer server) {

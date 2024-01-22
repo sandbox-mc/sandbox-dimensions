@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 import io.sandboxmc.datapacks.types.DownloadedPack;
-import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.MinecraftServer;
@@ -22,6 +21,7 @@ public class DatapackManager {
   private static Map<String, Datapack> datapackCache = new HashMap<>();
   private static Map<String, String> dimensionToDatapackMap = new HashMap<>();
   private static Map<String, DownloadedPack> DownloadedDatapacks = new HashMap<>();
+  private static Path storageDirectory = null;
 
   public static void init(MinecraftServer server) {
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
@@ -29,7 +29,7 @@ public class DatapackManager {
     // Cache the datapackPath for later use
     datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
 
-    Path storageFolder = DimensionManager.getStorageFolder(session);
+    Path storageFolder = getStorageFolder(session);
     DownloadedDatapacks.put(
       "product17:dog-house",
       new DownloadedPack(
@@ -103,5 +103,30 @@ public class DatapackManager {
 
   public static void registerDatapackDimension(String datapackName, Identifier dimensionId) {
     dimensionToDatapackMap.put(dimensionId.toString(), datapackName);
+  }
+
+  // Using Session so this can be used outside commands
+  public static Path getStorageFolder(Session session) {
+    if (storageDirectory != null) {
+      return storageDirectory;
+    }
+
+    String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
+
+    String sandboxDirName = Paths.get(minecraftFolder, "sandbox").toString();
+    File sandboxDirFile = new File(sandboxDirName);
+    if (!sandboxDirFile.exists()) {
+      sandboxDirFile.mkdir();
+    }
+
+    Path storageDirPath = Paths.get(sandboxDirName, "storage");
+    File storageDirFile = new File(storageDirPath.toString());
+    if (!storageDirFile.exists()) {
+      storageDirFile.mkdir();
+    }
+
+    storageDirectory = storageDirPath;
+
+    return storageDirPath;
   }
 }
