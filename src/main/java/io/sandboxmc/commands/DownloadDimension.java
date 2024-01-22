@@ -25,6 +25,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DownloadDimension implements Runnable {
@@ -60,27 +61,32 @@ public class DownloadDimension implements Runnable {
   }
 
   public void run() {
-    String[] creatorDimensionAry = fullIdentifier.split(":");
+    String[] urlItemArray = fullIdentifier.split(":");
 
     // Make sure the URL is formed properly and can be accessed as an InputStream.
     String fileUrl = "/dimensions";
+    Identifier datapackId;
 
     // Full identifiers must be formatted as:
     // (creator:)dimension
     // TODO: creators are currently not supported by the web app. This also might share a namespace with "group"?
     // TODO: allow (:version) also? What would this look like? "vX", a timestamp, custom (parameterized) string?
     // If no creator/group is specified then the dimension must exist in the user's personal collection.
-    switch (creatorDimensionAry.length) {
+    switch (urlItemArray.length) {
       case 0:
         printMessage(source, "TODO: I don't think this is possible... maybe try to test?");
         return;
       case 1:
-        fileUrl += "/" + creatorDimensionAry[0];
-        System.out.println("Stuff: " + creatorDimensionAry[0]);
+        // Case 1, this is for private datapacks, there is no namespace here.
+        // In the case of default
+        datapackId = new Identifier("personal", urlItemArray[0]);
+        fileUrl += "/" + urlItemArray[0];
+        System.out.println("Stuff: " + urlItemArray[0]);
         break;
       // case 2:
-      //   pathParts[2] = creatorDimensionAry[0];
-      //   pathParts[3] = creatorDimensionAry[1];
+      //   // Case 2, this is for published datapacks, they would be published under a publisher/group
+      //   pathParts[2] = urlItemArray[0];
+      //   pathParts[3] = urlItemArray[1];
       //   break;
       default:
         printMessage(source, "Wrong number of identifier parts. Must be `(group:)dimension(:version)`.");
@@ -102,7 +108,6 @@ public class DownloadDimension implements Runnable {
       if (newFile.exists()) {
         // TODO: user feedback to overwrite file.
         newFile.delete();
-        // TODO: do I have to re-initialize it after deletion?
         newFile = new File(filePath.toString());
       }
 
@@ -114,40 +119,17 @@ public class DownloadDimension implements Runnable {
       web.closeReaders();
     }
 
-    // DatapackManager.addDownloadedDatapack(fileUrl, filePath);
+    DatapackManager.addDownloadedDatapack(datapackId, filePath);
+    String downloadCmd = "/sbmc install " + datapackId.toString();
 
     MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
     MutableText creationText = Text.literal("[CLICK HERE TO INSTALL IT]");
-    // TODO: We need an "install" command which installs from a downloaded file.
-    // Start with the commented code block below...
-    ClickEvent unpackEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dimension install xyz");
+    ClickEvent unpackEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, downloadCmd);
     creationText.setStyle(Style.EMPTY.withClickEvent(unpackEvent));
     creationText.formatted(Formatting.UNDERLINE).formatted(Formatting.BLUE);
     feedbackText.append(creationText);
     printMessage(source, feedbackText);
-
-    // Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
-    // datapackPath = Paths.get(datapackPath.toString(), identifier);
-    // try {
-    //   DatapackManager.installDatapackFromZip(filePath, datapackPath);
-    // } catch (IOException e) {
-    //   // TODO Auto-generated catch block
-    //   e.printStackTrace();
-    // }
-
-    // return 1;
   }
-
-  // private static Path defaultFilePath(Session session, String creatorName, String identifier) {
-  //   Path storageFolder = DimensionManager.getStorageFolder(session);
-  //   String creatorFolderName = Paths.get(storageFolder.toString(), creatorName).toString();
-  //   File creatorDirFile = new File(creatorFolderName);
-  //   if (!creatorDirFile.exists()) {
-  //     creatorDirFile.mkdir();
-  //   }
-
-  //   return Paths.get(storageFolder.toString(), creatorName, identifier + ".zip");
-  // }
 
   private Path defaultFilePath() {
     Session session = ((MinecraftServerAccessor)source.getServer()).getSession();

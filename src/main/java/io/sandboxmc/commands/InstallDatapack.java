@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
@@ -38,9 +37,8 @@ public class InstallDatapack {
         false // default to false
       ))
     ).executes(context -> {
-      // TODO: add fallback messaging
-      System.out.println("Fallback????");
-      return 1;
+      // no arguments given, do nothing
+      return 0;
     });
   }
 
@@ -57,12 +55,9 @@ public class InstallDatapack {
 
   private static int installDatapack(CommandContext<ServerCommandSource> context, Identifier datapackIdentifier, Boolean shouldOverwrite) {
     ServerCommandSource source = context.getSource();
-    System.out.println("Testing...");
-    System.out.println("OUT: " + datapackIdentifier + " : " + shouldOverwrite);
     DatapackManager.installDownloadedDatapack(source.getServer(), datapackIdentifier.toString());
-    // System.out.println("OUT: " + datapackIdentifier);
     source.sendFeedback(() -> {
-      return Text.literal("Installed Dimension: " + datapackIdentifier);
+      return Text.literal("Installed datapack as: " + datapackIdentifier);
     }, false);
     return 1;
   }
