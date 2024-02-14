@@ -37,7 +37,7 @@ public class Rule {
     // Get rule
     ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
     String rule = StringArgumentType.getString(context, "dimensionRule");
-    DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
     Boolean ruleValue = dimensionSave.getRule(rule);
     context.getSource().sendFeedback(() -> {
       return Text.literal("DimensionRule " + rule + " is currently set to: " + ruleValue.toString());
@@ -51,7 +51,7 @@ public class Rule {
     String rule = StringArgumentType.getString(context, "dimensionRule");
     Boolean value = BoolArgumentType.getBool(context, "value");
 
-    DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
     dimensionSave.setRule(rule, value);
     context.getSource().sendFeedback(() -> {
       return Text.literal("DimensionRule " + rule + " has been set to: " + value.toString());

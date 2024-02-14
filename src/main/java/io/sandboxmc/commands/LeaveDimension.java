@@ -30,7 +30,7 @@ public class LeaveDimension {
     ServerCommandSource source = context.getSource();
     ServerPlayerEntity player = source.getPlayerOrThrow();
     ServerWorld overworld = source.getServer().getWorld(World.OVERWORLD);
-    PlayerData overworldPlayerData = DimensionSave.getDimensionState(overworld).getPlayerData(player);
+    PlayerData overworldPlayerData = DimensionSave.buildDimensionSave(overworld).getPlayerData(player);
 
     if (overworldPlayerData.previousPositions.size() == 0) {
       player.sendMessage(Text.translatable("sandbox-dimensions.errorMessages.no-previous-pos"), true);
@@ -43,11 +43,11 @@ public class LeaveDimension {
     ServerWorld dimension = source.getServer().getWorld(
       RegistryKey.of(RegistryKeys.WORLD, new Identifier(playerPos.dimension))
     );
-    DimensionSave leavingFromDimensionSave = DimensionSave.getDimensionState(player.getServerWorld());
+    DimensionSave leavingFromDimensionSave = DimensionSave.buildDimensionSave(player.getServerWorld());
     if (!leavingFromDimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {
       // If the world the player is leaving from has KeepInvOnJoin set to false
       // we want to try to give them back their inventory from this previous world
-      DimensionSave destinationDimentionSave = DimensionSave.getDimensionState(dimension);
+      DimensionSave destinationDimentionSave = DimensionSave.buildDimensionSave(dimension);
       destinationDimentionSave.swapPlayerInventoryWithDestination(player);
     }
 

@@ -1,4 +1,4 @@
-package io.sandboxmc;
+package io.sandboxmc.eventListeners;
 
 import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.dimension.DimensionManager;

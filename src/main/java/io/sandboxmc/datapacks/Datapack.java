@@ -12,8 +12,8 @@ import java.nio.file.StandardCopyOption;
 import io.sandboxmc.datapacks.types.DatapackMeta;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
-import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -131,15 +131,14 @@ public class Datapack {
             namespace,
             dimensionFile.getName().replaceAll(".json", "")
           );
-          String dimensionIdString = dimensionIdentifier.toString();
   
           // Create the dimension
-          DimensionManager.addDimensionToPacknameMap(dimensionIdString, this.name);
+          DimensionManager.addDimensionToPacknameMap(dimensionIdentifier.toString(), this.name);
           DimensionSave.loadDimensionFile(
-            dimensionIdString,
+            dimensionIdentifier,
             server
           );
-          DimensionManager.createDimensionWorld(server, dimensionIdentifier);
+          DimensionManager.createDimensionWorld(server, dimensionIdentifier, new Identifier("overworld"));
         }
       }
     }

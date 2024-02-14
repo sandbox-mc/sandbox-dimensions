@@ -46,7 +46,7 @@ public class JoinDimension {
 
     // get Overworld to save previous data to
     ServerWorld overworld = source.getServer().getWorld(World.OVERWORLD);
-    DimensionSave overworldSaveData = DimensionSave.getDimensionState(overworld);
+    DimensionSave overworldSaveData = DimensionSave.buildDimensionSave(overworld);
     PlayerData overworldPlayerData = overworldSaveData.getPlayerData(player);
     ServerWorld originalDimension = player.getServerWorld();
     PlayerPosition playerPos = new PlayerPosition();
@@ -59,7 +59,7 @@ public class JoinDimension {
     overworldPlayerData.previousPositions.add(playerPos);
     overworldSaveData.setPlayerData(player.getUuid(), overworldPlayerData);
     
-    DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
 
     // swap inventory if keepInventoryOnJoin rule is false
     if (!dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {

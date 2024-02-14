@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.UUID;
 
 import io.sandboxmc.Main;
-import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.player.PlayerData;
+import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.nbt.NbtCompound;
@@ -58,6 +58,7 @@ public class DimensionSave extends PersistentState {
   private int spawnX = 0;
   private int spawnY = 0;
   private int spawnZ = 0;
+  private ServerWorld serverWorld;
 
   public HashMap<UUID, PlayerData> players = new HashMap<>();
  
@@ -111,9 +112,11 @@ public class DimensionSave extends PersistentState {
     null // Supposed to be an 'DataFixTypes' enum, but we can just pass null
   );
 
-  public static DimensionSave getDimensionState(ServerWorld dimension) {
+  public static DimensionSave buildDimensionSave(ServerWorld dimension) {
     PersistentStateManager persistentStateManager = dimension.getPersistentStateManager();
     DimensionSave dimensionSave = persistentStateManager.getOrCreate(type, Main.modId);
+    dimensionSave.serverWorld = dimension;
+    DimensionManager.addDimensionSave(dimension.getRegistryKey().getValue().toString(), dimensionSave);
     dimensionSave.markDirty();
     return dimensionSave;
   }
@@ -160,15 +163,29 @@ public class DimensionSave extends PersistentState {
   }
 
   // datapackNameString is dataPack:dimension format (can be the same name)
-  public static Boolean loadDimensionFile(String dimensionIdentifierString, MinecraftServer server) {
+  public static Boolean loadDimensionFile(Identifier dimensionIdentifier, MinecraftServer server) {
     // The Session gets directory context into the specific save dir in run
     // /run/<my-save-name>
     Session session = ((MinecraftServerAccessor)server).getSession();
-    Identifier dataPackId = new Identifier(dimensionIdentifierString);
-    String dimensionNamespace = dataPackId.getNamespace();
-    String dimensionName = dataPackId.getPath();
-    String packName = DimensionManager.getPackFolder(dimensionIdentifierString);
+    String dimensionNamespace = dimensionIdentifier.getNamespace();
+    String dimensionName = dimensionIdentifier.getPath();
+    String packName = DimensionManager.getPackFolder(dimensionIdentifier.toString());
     Path datapacksPath = session.getDirectory(WorldSavePath.DATAPACKS);
+
+    // Path to load dimension save
+    Path datapackLoadFilePath = Paths.get(
+      datapacksPath.toString(),
+      packName,
+      "data",
+      dimensionNamespace,
+      WORLD_SAVE_FOLDER,
+      dimensionName + ".zip" // File name should be dimensionName + zip
+    );
+
+    // if there is no save file, this process fails
+    if (!datapackLoadFilePath.toFile().exists()) {
+      return false;
+    }
 
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
@@ -183,16 +200,6 @@ public class DimensionSave extends PersistentState {
     if (!dimensionFile.exists()) {
       dimensionFile.mkdirs();
     }
-    
-    // Path to load dimension save
-    Path datapackLoadFilePath = Paths.get(
-      datapacksPath.toString(),
-      packName,
-      "data",
-      dimensionNamespace,
-      WORLD_SAVE_FOLDER,
-      dimensionName + ".zip" // File name should be dimensionName + zip
-    );
 
     System.out.println("DataPack Dir: " + datapackLoadFilePath); // full path
 
@@ -252,7 +259,7 @@ public class DimensionSave extends PersistentState {
   // Empties invenotry if not
   // Saves Original Inventory
   public void swapPlayerInventoryWithDestination(ServerPlayerEntity player) {
-    DimensionSave originalDimensionSave = DimensionSave.getDimensionState(player.getServerWorld());
+    DimensionSave originalDimensionSave = DimensionSave.buildDimensionSave(player.getServerWorld());
     PlayerData originalDimensionPlayerData = originalDimensionSave.getPlayerData(player);
     PlayerData destinationPlayerData = this.getPlayerData(player);
     PlayerInventory playerInventory = player.getInventory();

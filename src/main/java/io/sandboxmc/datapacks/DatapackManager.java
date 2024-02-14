@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 import io.sandboxmc.datapacks.types.DownloadedPack;
-import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;

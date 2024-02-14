@@ -18,7 +18,7 @@ public class PlayerRespawnConfig {
       boolean alive
     ) -> {
       ServerWorld dimension = oldPlayer.getServerWorld();
-      DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+      DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
       Boolean shouldKeepInventory = dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_DEATH);
       Boolean respawnInDimension = dimensionSave.getRule(DimensionSave.RESPAWN_IN_DIMENSION);
       if (shouldKeepInventory) {

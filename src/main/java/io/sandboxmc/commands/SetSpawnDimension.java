@@ -31,7 +31,7 @@ public class SetSpawnDimension {
     ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
     // Set the spawn location of dimension
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-    DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
     dimensionSave.setSpawnPos(dimension, player.getBlockPos());
     return 1;
   }

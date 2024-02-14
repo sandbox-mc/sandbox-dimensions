@@ -1,6 +1,5 @@
 package io.sandboxmc.commands;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -10,8 +9,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.datapacks.Datapack;
 import io.sandboxmc.datapacks.DatapackManager;
-import io.sandboxmc.dimension.zip.ZipUtility;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;

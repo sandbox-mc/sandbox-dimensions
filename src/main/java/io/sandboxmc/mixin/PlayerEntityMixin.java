@@ -16,7 +16,7 @@ public abstract class PlayerEntityMixin {
   public void safeInv(CallbackInfo ci) {
     ServerPlayerEntity serverPlayer = (ServerPlayerEntity) (Object) this;
     ServerWorld dimension = serverPlayer.getServerWorld();
-    DimensionSave dimensionSave = DimensionSave.getDimensionState(dimension);
+    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
     Boolean keepInventory = dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_DEATH);
     
     if (keepInventory) {

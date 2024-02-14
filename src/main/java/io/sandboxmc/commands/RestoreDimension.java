@@ -32,7 +32,7 @@ public class RestoreDimension {
     System.out.println("Restore Command not fully Implemented yet...");
     // Forces datapack save zip to overwrite the current dimension save files
     dimensionSave.dimensionSaveLoaded = DimensionSave.loadDimensionFile(
-      dimension.getRegistryKey().getValue().toString(), context.getSource().getServer());
+      dimension.getRegistryKey().getValue(), context.getSource().getServer());
 
     return 1;
   }
