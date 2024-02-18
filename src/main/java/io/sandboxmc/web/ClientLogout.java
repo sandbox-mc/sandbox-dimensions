@@ -16,7 +16,7 @@ public class ClientLogout extends Common implements Runnable {
   public void run() {
     ServerCommandSource source = context.getSource();
 
-    BearerToken bearerToken = Web.getBearerToken(source);
+    BearerToken bearerToken = Web.getBearerToken(source.getPlayer());
     if (bearerToken == null) {
       printMessage("Not currently logged in.");
       return;
@@ -33,7 +33,7 @@ public class ClientLogout extends Common implements Runnable {
       web.closeReaders();
     }
 
-    Web.removeBearerToken(source);
+    Web.removeBearerToken(source.getPlayer());
 
     printMessage("Logged out of SandboxMC.");
   }

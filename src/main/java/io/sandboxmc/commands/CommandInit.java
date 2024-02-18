@@ -41,6 +41,7 @@ public class CommandInit {
 					.then(ClientAuthCmd.register("auth"))
 					.then(ClientAuthCmd.register("authenticate"))
 					.then(ClientLogoutCmd.register())
+					.then(ServerCmd.register("server"))
 				);
 				dispatcher.register(LiteralArgumentBuilder.<ServerCommandSource>literal("sbmc").redirect(baseCommandNode));
 		});

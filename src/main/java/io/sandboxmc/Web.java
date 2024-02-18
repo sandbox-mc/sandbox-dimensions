@@ -14,6 +14,7 @@ import com.google.gson.stream.JsonReader;
 import io.sandboxmc.web.BearerToken;
 import io.sandboxmc.web.PlayerIdentifier;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -63,10 +64,6 @@ public class Web {
     return getBearerToken(new PlayerIdentifier(player).getIdentifier());
   }
 
-  public static BearerToken getBearerToken(ServerCommandSource source) {
-    return getBearerToken(source.getPlayer());
-  }
-
   public static void setBearerToken(String key, String token) {
     bearerTokens.put(key, new BearerToken(token, System.currentTimeMillis()));
   }
@@ -79,17 +76,14 @@ public class Web {
     removeBearerToken(new PlayerIdentifier(player).getIdentifier());
   }
 
-  public static void removeBearerToken(ServerCommandSource source) {
-    removeBearerToken(source.getPlayer());
-  }
-
   //==============================================================
   //
   // Instance definition of Web.
   // Used for building API requests.
   //
   //==============================================================
-  private ServerCommandSource source;
+  private ServerCommandSource source = null;
+  private MinecraftServer mcServer;
   private MediaType jsonMediaType = MediaType.get("application/json");
   private OkHttpClient client;
   private Request request;
@@ -104,12 +98,18 @@ public class Web {
   private InputStream inputStream = null;
   private BufferedInputStream bufferedInputStream = null;
 
-  public Web(ServerCommandSource commandSource) {
-    source = commandSource;
+  public Web(MinecraftServer theServer) {
+    mcServer = theServer;
     client = new OkHttpClient();
     requestBuilder = new Request.Builder()
       .header("User-Agent", userAgent())
       .header("Accept", "*/*");
+  }
+
+  public Web(ServerCommandSource commandSource) {
+    this(commandSource.getServer());
+
+    source = commandSource;
   }
 
   public Web(ServerCommandSource commandSource, String path) {
@@ -122,7 +122,7 @@ public class Web {
     this(commandSource, path);
 
     if (withAuth) {
-      BearerToken bearerToken = getBearerToken(commandSource);
+      BearerToken bearerToken = getBearerToken(source.getPlayer());
       if (bearerToken != null) {
         setAuth(bearerToken.getToken());
       }
@@ -296,10 +296,14 @@ public class Web {
   }
 
   public String userAgent() {
-    return "SandboxMC Agent (" + MOD_VERSION + "); Minecraft (" + source.getServer().getVersion() + "); Java (" + JavaVersion.getMajorJavaVersion() + ");";
+    return "SandboxMC Agent (" + MOD_VERSION + "); Minecraft (" + mcServer.getVersion() + "); Java (" + JavaVersion.getMajorJavaVersion() + ");";
   }
 
   public void printMessage(String feedbackText) {
+    if (source == null) {
+      return;
+    }
+
     source.sendFeedback(() -> {
       return Text.literal(feedbackText);
     }, false);

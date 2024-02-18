@@ -31,7 +31,7 @@ public class ClientAuth extends Common implements Runnable {
   }
 
   public void run() {
-    if (Web.getBearerToken(source) != null) {
+    if (Web.getBearerToken(source.getPlayer()) != null) {
       printMessage("Already authenticated.");
       return;
     }

@@ -27,7 +27,7 @@ public abstract class ServerPlayerEntityMixin extends Entity {
     ServerCommandSource source = this.getCommandSource();
 
     // Same as the code in the WebLogout command, but it doesn't have any of the feedback messages
-    if (Web.getBearerToken(source) == null) {
+    if (Web.getBearerToken(source.getPlayer()) == null) {
       return;
     }
 
@@ -41,7 +41,7 @@ public abstract class ServerPlayerEntityMixin extends Entity {
     } catch (IOException e) {
       // If it fails it fails, doesn't matter.
     } finally {
-      Web.removeBearerToken(source);
+      Web.removeBearerToken(source.getPlayer());
       web.closeReaders();
     }
   }
