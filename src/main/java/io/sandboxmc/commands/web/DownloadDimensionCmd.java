@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.web;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -14,7 +14,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.commands.autoComplete.WebAutoComplete;
+import io.sandboxmc.commands.autoComplete.web.WebAutoComplete;
 import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -27,7 +27,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class DownloadDimension implements Runnable {
+public class DownloadDimensionCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("download")
       .then(
@@ -45,7 +45,7 @@ public class DownloadDimension implements Runnable {
     ServerCommandSource source = context.getSource();
     String fullIdentifier = StringArgumentType.getString(context, "dimension-identifier");
 
-    Runnable downloadThread = new DownloadDimension(source, fullIdentifier);
+    Runnable downloadThread = new DownloadDimensionCmd(source, fullIdentifier);
     new Thread(downloadThread).start();
 
     return 1;
@@ -54,7 +54,7 @@ public class DownloadDimension implements Runnable {
   private ServerCommandSource source;
   private String fullIdentifier;
 
-  public DownloadDimension(ServerCommandSource theSource, String theFullIdentifier) {
+  public DownloadDimensionCmd(ServerCommandSource theSource, String theFullIdentifier) {
     source = theSource;
     fullIdentifier = theFullIdentifier;
   }

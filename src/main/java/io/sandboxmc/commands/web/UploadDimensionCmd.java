@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.web;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class UploadDimension implements Runnable {
+public class UploadDimensionCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("upload")
       .then(
@@ -56,7 +56,7 @@ public class UploadDimension implements Runnable {
     ServerCommandSource source = context.getSource();
     String dimensionFileName = StringArgumentType.getString(context, "dimension-file");
     
-    Runnable uploadThread = new UploadDimension(source, dimensionFileName);
+    Runnable uploadThread = new UploadDimensionCmd(source, dimensionFileName);
     new Thread(uploadThread).start();
 
     return 1;
@@ -66,7 +66,7 @@ public class UploadDimension implements Runnable {
   private Session session;
   private String dimensionFileName;
 
-  public UploadDimension(ServerCommandSource commandSource, String theDimensionFileName) {
+  public UploadDimensionCmd(ServerCommandSource commandSource, String theDimensionFileName) {
     source = commandSource;
     session = ((MinecraftServerAccessor)commandSource.getServer()).getSession();
     dimensionFileName = theDimensionFileName;
