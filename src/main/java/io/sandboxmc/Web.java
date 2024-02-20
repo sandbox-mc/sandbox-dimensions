@@ -30,8 +30,8 @@ import okhttp3.ResponseBody;
 
 public class Web {
   // public static final String WEB_DOMAIN = "http://127.0.0.1:3000";
-  // public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
-  public static final String WEB_DOMAIN = "https://www.sandboxmc.io";
+  public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
+  // public static final String WEB_DOMAIN = "https://www.sandboxmc.io";
   public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.modId).get().toString().replace("sandboxmc ", "");
 
   //==============================================================

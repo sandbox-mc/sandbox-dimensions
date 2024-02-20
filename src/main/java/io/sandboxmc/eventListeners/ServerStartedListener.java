@@ -2,7 +2,6 @@ package io.sandboxmc.eventListeners;
 
 import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.dimension.DimensionManager;
-import io.sandboxmc.web.Server;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.ServerStarted;
 import net.minecraft.server.MinecraftServer;
 
@@ -11,6 +10,5 @@ public class ServerStartedListener implements ServerStarted {
   public void onServerStarted(MinecraftServer server) {
     DimensionManager.processSandboxDimensionFiles(server);
     DatapackManager.init(server);
-    Server.authOnBoot(server);
   }
 }

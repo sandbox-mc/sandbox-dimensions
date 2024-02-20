@@ -6,6 +6,8 @@ import net.minecraft.util.Identifier;
 import io.sandboxmc.configs.PlayerRespawnConfig;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.eventListeners.ServerStartedListener;
+import io.sandboxmc.eventListeners.ServerStartingListener;
+import io.sandboxmc.eventListeners.ServerStoppedListener;
 import io.sandboxmc.chunkGenerators.ChunkGeneratorManager;
 import io.sandboxmc.commands.CommandInit;
 
@@ -18,7 +20,9 @@ public class Main implements ModInitializer {
     // However, some things (like resources) may still be uninitialized.
     // Proceed with mild caution.
 
+    ServerLifecycleEvents.SERVER_STARTING.register(new ServerStartingListener());
     ServerLifecycleEvents.SERVER_STARTED.register(new ServerStartedListener());
+    ServerLifecycleEvents.SERVER_STOPPED.register(new ServerStoppedListener());
 
     // Initialize Commands
     ChunkGeneratorManager.init();

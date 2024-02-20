@@ -17,17 +17,28 @@ import net.minecraft.text.Text;
 
 public class Server extends Common implements Runnable {
   // Class level methods for interacting with the server's auth.
-  private static final String UUID_FILE_NAME = "sbmc.server.uuid";
+  private static final String UUID_FILE_NAME = "sandboxmc.server.uuid";
+  private static final String AUTH_TOKEN_FILE_NAME = "sandboxmc.server.token";
   private static String uuid = null;
   private static String authToken = null;
 
   public static void authOnBoot(MinecraftServer server) {
+    // Keep this threaded for faster boot times
     Runnable thread = new Server(server);
     new Thread(thread).start();
   }
 
+  public static void handleAuthForShutdown(MinecraftServer server) {
+    // I don't think this can be threaded...
+    new Server(server).writeAuthTokenToFile();
+  }
+
   public static Boolean needsUUID() {
     return uuid == null;
+  }
+
+  public static Boolean needsAuthToken() {
+    return authToken == null;
   }
 
   public static String getUUID() {
@@ -48,7 +59,7 @@ public class Server extends Common implements Runnable {
 
   // Instance methods for authing server. This all runs as a thread.
   private MinecraftServer server;
-  private Boolean isBoot = false;
+  private Boolean isServerEvent = false;
 
   // Intended for use with commands.
   public Server(CommandContext<ServerCommandSource> theContext) {
@@ -60,7 +71,7 @@ public class Server extends Common implements Runnable {
   // Intended for use with server booting.
   public Server(MinecraftServer theServer) {
     server = theServer;
-    isBoot = true;
+    isServerEvent = true;
   }
 
   public void printInfo() {
@@ -72,33 +83,36 @@ public class Server extends Common implements Runnable {
   }
 
   public void run() {
-    checkUUID(); // This may possibly call one or more synchronous web calls!
-  }
-
-  private void checkUUID() {
-    if (!needsUUID()) {
+    if (isServerEvent) {
+      readFilesOnBoot();
       return;
     }
+  }
 
-    // attempt to read from file first.
+  private void readFilesOnBoot() {
     File uuidFile = server.getFile(UUID_FILE_NAME);
+    File authTokenFile = server.getFile(AUTH_TOKEN_FILE_NAME);
 
     if (uuidFile.exists()) {
       try {
         setUUID(Files.readString(uuidFile.toPath()));
-        // TODO: we also need to set the authToken in this case...
-        // If there IS no auth token then we'll need to have a recovery path of some sort
-        // or else just say that they have to assign a new UUID...
+
+        if (authTokenFile.exists()) {
+          setAuthToken(Files.readString(authTokenFile.toPath()));
+          // Then throw out the file, this ideally exists only through restarts
+          authTokenFile.delete();
+        }
       } catch (IOException e) {
         // This should NOT break...
         System.out.println(e.getMessage());
       }
     } else {
-      assignUUID();
+      // If no uuid file was even found then we just need to request a new UUID and auth token!
+      assignUUIDFromWeb();
     }
   }
 
-  private void assignUUID() {
+  private void assignUUIDFromWeb() {
     Web web = new Web(server);
     web.setPath("/mc/server/auth/assign-uuid");
     web.setPostBody(new ServerIdentifier(server).getJSON());
@@ -110,11 +124,10 @@ public class Server extends Common implements Runnable {
         switch (key) {
           case "uuid":
             setUUID(jsonReader.nextString());
-            writeUUIDToFile(getUUID()); // It's OK to permanently store this
+            writeUUIDToFile(); // It's OK to permanently store this
             break;
           case "auth_token":
-            // This is only ever stored to a file on server shutdown.
-            // Also only then if configured to do so!
+            // Tfhis is only ever stored to a file on server shutdown
             setAuthToken(jsonReader.nextString());
             break;
           default:
@@ -127,13 +140,49 @@ public class Server extends Common implements Runnable {
       // should be able to ignore this safely
     } finally {
       web.closeReaders();
+      System.out.println("\n\nAUTH HAPPENED ON BOOT?\nuuid: " + uuid + " - authToken: " + authToken + "\n\n");
     }
   }
 
-  private void writeUUIDToFile(String theUUID) {
+  private void writeUUIDToFile() {
+    if (uuid == null) {
+      // Don't delete any possibly existing files, it could be that we failed to load the file previously
+      return;
+    }
+
     try {
-      BufferedWriter writer = new BufferedWriter(new FileWriter(server.getFile(UUID_FILE_NAME)));
-      writer.write(theUUID);
+      File uuidFile = server.getFile(UUID_FILE_NAME);
+      if (uuidFile.exists()) {
+        // Make sure we're not appending to an existing file...
+        uuidFile.delete();
+      }
+
+      // Now let's write out to the file.
+      BufferedWriter writer = new BufferedWriter(new FileWriter(uuidFile));
+      writer.write(uuid);
+      writer.close();
+    } catch (IOException e) {
+      // This should NOT happen, if it does we need to know why!
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void writeAuthTokenToFile() {
+    if (authToken == null) {
+      // Don't delete any possibly existing files, it could be that we failed to load the file previously
+      return;
+    }
+
+    try {
+      File authTokenFile = server.getFile(AUTH_TOKEN_FILE_NAME);
+      if (authTokenFile.exists()) {
+        // Make sure we're not appending to an existing file...
+        authTokenFile.delete();
+      }
+
+      // Now let's write out to the file.
+      BufferedWriter writer = new BufferedWriter(new FileWriter(authTokenFile));
+      writer.write(authToken);
       writer.close();
     } catch (IOException e) {
       // This should NOT happen, if it does we need to know why!
