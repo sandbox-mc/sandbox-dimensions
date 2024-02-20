@@ -24,6 +24,7 @@ public final class DimensionAutoComplete implements SuggestionProvider<ServerCom
     String remaining = builder.getRemaining();
 
     for (String dimensionName : DimensionManager.getDimensionList()) {
+      System.out.println("Dim Name: " + dimensionName);
       if (dimensionName.startsWith(remaining)) {
         builder.suggest(dimensionName);
       }

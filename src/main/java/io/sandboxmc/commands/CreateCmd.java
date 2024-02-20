@@ -19,7 +19,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.dimension.DimensionOptions;
 
 public class CreateCmd {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -36,8 +36,8 @@ public class CreateCmd {
         .argument("dimensionName", StringArgumentType.word())
         .then(
           CommandManager
-          .argument("dimensionType", IdentifierArgumentType.identifier())
-          .suggests(new StringListAutoComplete(getDimensionTypeAutoCompleteOptions())) 
+          .argument("dimension", IdentifierArgumentType.identifier())
+          .suggests(new StringListAutoComplete(getDimensionAutoCompleteOptions())) 
           .executes(context -> createDimension(context))
         )
       )
@@ -65,13 +65,13 @@ public class CreateCmd {
   //   };
   // }
 
-  private static Function<CommandContext<ServerCommandSource>, List<String>> getDimensionTypeAutoCompleteOptions() {
+  private static Function<CommandContext<ServerCommandSource>, List<String>> getDimensionAutoCompleteOptions() {
     return (context) -> {
-      Set<RegistryKey<DimensionType>> dimensionTypes = context.getSource().getServer()
-        .getRegistryManager().get(RegistryKeys.DIMENSION_TYPE).getKeys();
+      Set<RegistryKey<DimensionOptions>> dimensionTypes = context.getSource().getServer()
+        .getRegistryManager().get(RegistryKeys.DIMENSION).getKeys();
       List<String> dimensionTypeList = new ArrayList<>();
 
-      for (RegistryKey<DimensionType> dimensionType : dimensionTypes) {
+      for (RegistryKey<DimensionOptions> dimensionType : dimensionTypes) {
         dimensionTypeList.add(dimensionType.getValue().toString());    
       }
 
@@ -104,15 +104,15 @@ public class CreateCmd {
   private static int createDimension(CommandContext<ServerCommandSource> context) {
     // String datapackName = StringArgumentType.getString(context, "datapack");
     String namespace = StringArgumentType.getString(context, "namespace");
-    namespace = "minecraft"; // TODO: remove this override
+    // namespace = "sandboxhidden"; // TODO: remove this override
     String dimensionName = StringArgumentType.getString(context, "dimensionName");
-    Identifier dimensionType = IdentifierArgumentType.getIdentifier(context, "dimensionType");
+    Identifier dimensionOptions = IdentifierArgumentType.getIdentifier(context, "dimension");
     Identifier dimensionIdentifier = new Identifier(namespace, dimensionName);
     ServerCommandSource source = context.getSource();
     MinecraftServer server = source.getServer();
 
     // Create the dimension
-    DimensionManager.createDimensionWorld(server, dimensionIdentifier, dimensionType);
+    DimensionManager.createDimensionWorld(server, dimensionIdentifier, dimensionOptions);
 
     // Datapack datapack = DatapackManager.getDatapack(datapackName);
     // if (datapack == null) {

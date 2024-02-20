@@ -16,12 +16,16 @@ import io.sandboxmc.Main;
 import io.sandboxmc.chunkGenerators.EmptyChunkGenerator;
 import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.zip.ZipUtility;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.block.BlockState;
+import net.minecraft.registry.DynamicRegistryManager.Immutable;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.SimpleRegistry;
 import net.minecraft.registry.entry.RegistryEntry.Reference;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
@@ -37,6 +41,7 @@ import net.minecraft.world.border.WorldBorderListener.WorldBorderSyncer;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.UnmodifiableLevelProperties;
+import net.minecraft.world.level.storage.LevelStorage;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
@@ -114,31 +119,41 @@ public class DimensionManager {
   }
 
   // This will generate a dimension with EmptyChunkGenerator
-  public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier, Identifier dimensionTypeId) {
+  public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier, Identifier dimensionOptionsId) {
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
     Session session = serverAccess.getSession();
     RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
+    Immutable registryManager = server.getRegistryManager();
     SaveProperties saveProperties = server.getSaveProperties();
     UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(
       saveProperties,
       saveProperties.getMainWorldProperties()
     );
 
-    Optional<Reference<DimensionType>> dimensionType = server.getRegistryManager().get(
-      RegistryKeys.DIMENSION_TYPE
-    ).getEntry(RegistryKey.of(RegistryKeys.DIMENSION_TYPE, dimensionTypeId));
-
-    // Optional<Reference<DimensionType>> dimensionType = server.getRegistryManager().get(
-    //   RegistryKeys.DIMENSION_TYPE
-    // ).getEntry(DimensionTypes.OVERWORLD);
-
-    if (!dimensionType.isPresent()) {
-      System.out.println("Warning: Failed to create world with dimensionType: " + dimensionTypeId);
+    // Get the presets for DimensionOptions
+    // This should allow for custom dimension types to be generated
+    DimensionOptions dimensionOptions = registryManager.get(RegistryKeys.DIMENSION).get(dimensionOptionsId);
+    if (dimensionOptions == null) {
+      System.out.println("Warning: Failed to create world with dimensionOptions: " + dimensionOptionsId);
       return;
     }
 
-    var chunkGen = new EmptyChunkGenerator(server.getRegistryManager().get(RegistryKeys.BIOME).getEntry(0).get());
-    DimensionOptions test = new DimensionOptions(dimensionType.get(), chunkGen);
+    Optional<Reference<DimensionType>> dimensionType = registryManager.get(
+      RegistryKeys.DIMENSION_TYPE
+    ).getEntry(RegistryKey.of(RegistryKeys.DIMENSION_TYPE, new Identifier("overworld")));
+
+    if (!dimensionType.isPresent()) {
+      System.out.println("Warning: Failed to create world with dimensionType: " + dimensionOptionsId);
+      return;
+    }
+
+    if (dimensionOptionsId.equals(Main.id("empty"))) {
+      var chunkGen = new EmptyChunkGenerator(registryManager.get(RegistryKeys.BIOME).getEntry(0).get());
+      dimensionOptions = new DimensionOptions(dimensionType.get(), chunkGen);
+    }
+    server.submit(() -> {
+
+    });
 
     ServerWorld dimensionWorld = new ServerWorld(
       server,
@@ -146,10 +161,10 @@ public class DimensionManager {
       session,
       unmodifiableLevelProperties,
       registryKey,
-      // dimensionOption,
-      test,
+      dimensionOptions,
       serverAccess.getWorldGenerationProgressListenerFactory().create(11),
       false,
+      // TODO: add the ability to pass a seed
       server.getWorld(World.OVERWORLD).getSeed(),
       ImmutableList.of(),
       true,
@@ -157,16 +172,41 @@ public class DimensionManager {
     );
     server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
     serverAccess.getWorlds().put(registryKey, dimensionWorld);
-    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld);
+    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld, true);
     int spawnX = unmodifiableLevelProperties.getSpawnX();
-    int spawnY = chunkGen.getSeaLevel();
+    // TODO: adjust for generated terrain
+    int spawnY = dimensionOptions.chunkGenerator().getSeaLevel();
     int spawnZ = unmodifiableLevelProperties.getSpawnZ();
     BlockPos blockPos = new BlockPos(spawnX, spawnY, spawnZ);
     dimensionSave.setSpawnPos(dimensionWorld, blockPos);
-    // DimensionManager.addDimensionSave(dimensionIdentifier.toString(), dimensionSave);
-    
+
     BlockState blockState = Registries.BLOCK.get(new Identifier("grass_block")).getDefaultState();
     dimensionWorld.setBlockState(blockPos, blockState);
+  }
+
+  public void deleteDimension(MinecraftServer server, ServerWorld dimension) {
+    RegistryKey<World> dimensionKey = dimension.getRegistryKey();
+    MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
+
+    if (serverAccess.getWorlds().remove(dimensionKey, dimension)) {
+      ServerWorldEvents.UNLOAD.invoker().onWorldUnload(server, dimension);
+
+      dimensionSaves.remove(dimensionKey.getValue().toString());
+
+      LevelStorage.Session session = serverAccess.getSession();
+      File worldDirectory = session.getWorldDirectory(dimensionKey).toFile();
+      if (worldDirectory.exists()) {
+        try {
+          ZipUtility.deleteDirectory(worldDirectory.toPath());
+        } catch (IOException e) {
+          System.out.println("Failed to delete world directory");
+          try {
+            ZipUtility.deleteDirectory(worldDirectory.toPath());
+          } catch (IOException ignored) {
+          }
+        }
+      }
+    }
   }
 
   public static Identifier getDefaultConfig(String defaultType) {
@@ -175,6 +215,10 @@ public class DimensionManager {
 
   public static Set<String> getDimensionList() {
     return dimensionSaves.keySet();
+  }
+
+  public static DimensionSave getDimensionSave(String dimensionName) {
+    return dimensionSaves.get(dimensionName);
   }
 
   public static String getPackFolder(String dimensionId) {
@@ -208,7 +252,12 @@ public class DimensionManager {
 
     // Get a mapping of the currently loaded worlds for persistent storage
     for (ServerWorld world : server.getWorlds()) {
-      worldMap.put(world.getRegistryKey().getValue().toString(), world);
+      String worldId = world.getRegistryKey().getValue().toString();
+      if (!sandboxDimensionWorldFiles.containsKey(worldId)) {
+        DimensionSave.buildDimensionSave(world);
+      }
+
+      worldMap.put(worldId, world);
     }
 
     // Loop through all the saves that are found

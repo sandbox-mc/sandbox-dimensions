@@ -113,10 +113,25 @@ public class DimensionSave extends PersistentState {
   );
 
   public static DimensionSave buildDimensionSave(ServerWorld dimension) {
+    return buildDimensionSave(dimension, false);
+  }
+
+  // setActive is for initializing worlds as active
+  public static DimensionSave buildDimensionSave(ServerWorld dimension, Boolean setActive) {
+    String dimensionId = dimension.getRegistryKey().getValue().toString();
+    DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimensionId);
+    if (dimensionSave != null) {
+      return dimensionSave;
+    }
+
     PersistentStateManager persistentStateManager = dimension.getPersistentStateManager();
-    DimensionSave dimensionSave = persistentStateManager.getOrCreate(type, Main.modId);
+    dimensionSave = persistentStateManager.getOrCreate(type, Main.modId);
     dimensionSave.serverWorld = dimension;
-    DimensionManager.addDimensionSave(dimension.getRegistryKey().getValue().toString(), dimensionSave);
+    if (dimensionSave.dimensionIsActive || setActive) {
+      dimensionSave.dimensionIsActive = true;
+      DimensionManager.addDimensionSave(dimensionId, dimensionSave);
+    }
+
     dimensionSave.markDirty();
     return dimensionSave;
   }

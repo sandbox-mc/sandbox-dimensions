@@ -1,5 +1,8 @@
 package io.sandboxmc.commands;
 
+import java.util.List;
+import java.util.function.Function;
+
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -32,6 +35,28 @@ public class JoinDimension {
         return 1;
       });
   }
+
+  // private static Function<CommandContext<ServerCommandSource>, List<String>> getNamespaceAutoCompleteOptions() {
+  //   return (context) -> {
+  //     // Get previous argument to build the path to namespace inside datapack
+  //     String datapackName = context.getArgument("datapack", String.class);
+  //     Session session = ((MinecraftServerAccessor)(context.getSource().getServer())).getSession();
+  //     Path datapackPath = session.getDirectory(WorldSavePath.DATAPACKS);
+  //     File datapackDataDirectory = Paths.get(datapackPath.toString(), datapackName, "data").toFile();
+  //     List<String> namespaceFolderList = new ArrayList<>();
+
+  //     if (datapackDataDirectory.exists()) {
+  //       File[] folderList = datapackDataDirectory.listFiles((dir, name) -> dir.isDirectory());
+    
+  //       for (File datapackDir : folderList) {
+  //         // get the folder name
+  //         namespaceFolderList.add(datapackDir.getName());
+  //       }
+  //     }
+
+  //     return namespaceFolderList;
+  //   };
+  // }
 
   private static int joinDimension(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerCommandSource source = context.getSource();
