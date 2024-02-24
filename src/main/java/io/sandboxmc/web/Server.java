@@ -12,6 +12,7 @@ import com.mojang.brigadier.context.CommandContext;
 import io.sandboxmc.Web;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
@@ -21,20 +22,16 @@ public class Server extends Common implements Runnable {
   private static final String AUTH_TOKEN_FILE_NAME = "sandboxmc.server.token";
   private static String uuid = null;
   private static String authToken = null;
+  private static ServerPlayerEntity serverOwner = null;
 
   public static void authOnBoot(MinecraftServer server) {
     // Keep this threaded for faster boot times
-    Runnable thread = new Server(server);
-    new Thread(thread).start();
+    new Server(server).runTask("readFilesOnBoot");
   }
 
   public static void handleAuthForShutdown(MinecraftServer server) {
-    // I don't think this can be threaded...
+    // TODO: determine if this can be threaded...
     new Server(server).writeAuthTokenToFile();
-  }
-
-  public static Boolean needsUUID() {
-    return uuid == null;
   }
 
   public static Boolean needsAuthToken() {
@@ -59,7 +56,7 @@ public class Server extends Common implements Runnable {
 
   // Instance methods for authing server. This all runs as a thread.
   private MinecraftServer server;
-  private Boolean isServerEvent = false;
+  private String task = null;
 
   // Intended for use with commands.
   public Server(CommandContext<ServerCommandSource> theContext) {
@@ -71,21 +68,30 @@ public class Server extends Common implements Runnable {
   // Intended for use with server booting.
   public Server(MinecraftServer theServer) {
     server = theServer;
-    isServerEvent = true;
+  }
+
+  public void runTask(String theTask) {
+    task = theTask;
+    new Thread(this).start();
   }
 
   public void printInfo() {
-    MutableText text = Text.literal("Server info:\n");
-    if (needsUUID()) {
-      text.append("NO UUID!");
-    }
+    MutableText text = Text.literal("Server Info:");
+    text.append("\nUUID: " + (uuid == null ? "N/A" : uuid));
+    text.append("\nAuth Token: " + (authToken == null ? "N/A" : "--REDACTED--"));
+    text.append("\nServer Owner: " + (serverOwner == null ? "N/A or UNKNOWN" : serverOwner.getName()));
     printMessage(text);
   }
 
   public void run() {
-    if (isServerEvent) {
-      readFilesOnBoot();
-      return;
+    switch (task) {
+      case "readFilesOnBoot":
+        readFilesOnBoot();
+        break;
+      default:
+        // TODO: log this error in a more meaningful way!
+        System.out.println("\n\nINVALID SERVER TASK: " + task + "\n\n");
+        break;
     }
   }
 
@@ -101,7 +107,16 @@ public class Server extends Common implements Runnable {
           setAuthToken(Files.readString(authTokenFile.toPath()));
           // Then throw out the file, this ideally exists only through restarts
           authTokenFile.delete();
+
+          System.out.println("\n\nREAD FROM FILES ON BOOT\nuuid: " + (uuid == null ? "NULL" : uuid) + " - authToken: " + (authToken == null ? "NULL" : authToken) + "\n\n");
+
+          // Now we need to reauth so we know our token is fresh for security!
+          reauthFromWeb();
         }
+
+        // TODO: write a recovery path when there's no auth token file...
+        // Only the OWNER of a server will be able to recover and get a new auth token
+        // They must be logged in and have a server UUID.
       } catch (IOException e) {
         // This should NOT break...
         System.out.println(e.getMessage());
@@ -115,7 +130,7 @@ public class Server extends Common implements Runnable {
   private void assignUUIDFromWeb() {
     Web web = new Web(server);
     web.setPath("/mc/server/auth/assign-uuid");
-    web.setPostBody(new ServerIdentifier(server).getJSON());
+    web.setPostBody(new ServerIdentifier(server).getJSON(null));
     try {
       JsonReader jsonReader = web.getJson();
       jsonReader.beginObject();
@@ -137,10 +152,44 @@ public class Server extends Common implements Runnable {
         }
       }
     } catch (IOException e) {
-      // should be able to ignore this safely
+      // What might be happening here...? Failed connections?
+      // Let's just make sure we're clearing things...
+      setUUID(null);
+      setAuthToken(null);
     } finally {
       web.closeReaders();
-      System.out.println("\n\nAUTH HAPPENED ON BOOT?\nuuid: " + uuid + " - authToken: " + authToken + "\n\n");
+      System.out.println("\n\nASSIGNED UUID FROM WEB ON BOOT\nuuid: " + (uuid == null ? "NULL" : uuid) + " - authToken: " + (authToken == null ? "NULL" : authToken) + "\n\n");
+    }
+  }
+
+  private void reauthFromWeb() {
+    Web web = new Web(server);
+    web.setPath("/mc/server/auth/" + uuid + "/reauth");
+    web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
+    try {
+      JsonReader jsonReader = web.getJson();
+      jsonReader.beginObject();
+      while (jsonReader.hasNext()) {
+        String key = jsonReader.nextName();
+        switch (key) {
+          case "auth_token":
+            setAuthToken(jsonReader.nextString());
+
+            System.out.println("\n\nREAUTHED ON BOOT\nuuid: " + uuid + " - authToken: " + authToken.toString() + "\n\n");
+            break;
+          default:
+            // Just ignore anything else for now
+            jsonReader.skipValue();
+            break;
+        }
+      }
+    } catch (IOException e) {
+      // What might be happening here...? Failed connections? Bad auth tokens?
+      // Let's just make sure we're clearing the auth token at least
+      setAuthToken(null);
+      System.out.println("\n\nFAILED TO REAUTH ON BOOT\n\n");
+    } finally {
+      web.closeReaders();
     }
   }
 
