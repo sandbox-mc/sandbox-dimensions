@@ -22,7 +22,7 @@ public class ClientLogout extends Common implements Runnable {
       return;
     }
 
-    Web web = new Web(source, "/clients/auth/logout", bearerToken.getToken());
+    Web web = new Web(source, "/mc/client/auth/logout", bearerToken.getToken());
     web.setDeleteBody();
 
     try {
