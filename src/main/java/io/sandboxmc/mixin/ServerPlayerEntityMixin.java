@@ -33,7 +33,7 @@ public abstract class ServerPlayerEntityMixin extends Entity {
 
     // This is the one place where it's OK to make a web request NOT in a thread.
     // We need to ensure everyone is properly logged out that should be before the server shuts down.
-    Web web = new Web(source, "/clients/auth/logout", true);
+    Web web = new Web(source, "/mc/client/auth/logout", true);
     web.setDeleteBody();
 
     try {
