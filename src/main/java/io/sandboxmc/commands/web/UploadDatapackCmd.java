@@ -18,16 +18,16 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class UploadDimensionCmd implements Runnable {
+public class UploadDatapackCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("upload")
       .then(
-        CommandManager.argument("dimension-file", StringArgumentType.word())
-        // .suggests(existing dimension files)
+        CommandManager.argument("datapack-file", StringArgumentType.word())
+        // .suggests(existing datapack files)
         .executes(context -> performUploadCmd(context))
       )
       .executes(context -> {
-        printMessage(context.getSource(), "No dimension file specified");
+        printMessage(context.getSource(), "No datapack file specified");
         return 0;
       });
   }
@@ -38,11 +38,11 @@ public class UploadDimensionCmd implements Runnable {
     // // Step 2) Save that world
     // // Step 3) this command...
     //
-    // ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
-    // Identifier dimensionId = dimension.getRegistryKey().getValue();
-    // String datapackName = DatapackManager.getDatapackName(dimensionId);
+    // ServerWorld datapack = DatapackArgumentType.getDatapackArgument(context, "datapack");
+    // Identifier datapackId = datapack.getRegistryKey().getValue();
+    // String datapackName = DatapackManager.getDatapackName(datapackId);
     // Datapack datapack = DatapackManager.getDatapack(datapackName);
-    // datapack.zipWorldfilesToDatapack(dimension);
+    // datapack.zipWorldfilesToDatapack(datapack);
 
     // Path tmpZipPath; // This is the path to the .zip file
     // try {
@@ -54,9 +54,9 @@ public class UploadDimensionCmd implements Runnable {
     // // Should be able to run datapack.deleteTmpZipFile(); when you're done with the tmpFile
 
     ServerCommandSource source = context.getSource();
-    String dimensionFileName = StringArgumentType.getString(context, "dimension-file");
+    String datapackFileName = StringArgumentType.getString(context, "datapack-file");
     
-    Runnable uploadThread = new UploadDimensionCmd(source, dimensionFileName);
+    Runnable uploadThread = new UploadDatapackCmd(source, datapackFileName);
     new Thread(uploadThread).start();
 
     return 1;
@@ -64,34 +64,34 @@ public class UploadDimensionCmd implements Runnable {
 
   private ServerCommandSource source;
   private Session session;
-  private String dimensionFileName;
+  private String datapackFileName;
 
-  public UploadDimensionCmd(ServerCommandSource commandSource, String theDimensionFileName) {
+  public UploadDatapackCmd(ServerCommandSource commandSource, String theDatapackFileName) {
     source = commandSource;
     session = ((MinecraftServerAccessor)commandSource.getServer()).getSession();
-    dimensionFileName = theDimensionFileName;
+    datapackFileName = theDatapackFileName;
   }
 
   public void run() {
-    Web web = new Web(source, "/dimensions/upload", true);
-    String filePath = defaultFilePath(session, dimensionFileName + ".zip");
+    Web web = new Web(source, "/datapacks/upload", true);
+    String filePath = defaultFilePath(session, datapackFileName + ".zip");
     File file = new File(filePath);
     if (!file.exists()) {
-      printMessage(source, "Dimension not found at " + filePath);
+      printMessage(source, "Datapack not found at " + filePath);
     }
 
-    web.setFormField("dimension", file);
+    web.setFormField("datapack", file);
     web.finalizeFormAsPostBody();
 
     try {
       web.executeRequest();
       if (web.getStatusCode() == 200) {
-        printMessage(source, "Dimension successfully uploaded!");
+        printMessage(source, "Datapack successfully uploaded!");
       } else {
         web.printJsonMessages("Upload failed!");
       }
     } catch (IOException e) {
-      printMessage(source, "Something went wrong, failed to upload dimension.");
+      printMessage(source, "Something went wrong, failed to upload datapack.");
     } finally {
       web.closeReaders();
     }
