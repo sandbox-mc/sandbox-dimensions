@@ -78,20 +78,93 @@ public class Server extends Common implements Runnable {
   public void printInfo() {
     MutableText text = Text.literal("Server Info:");
     text.append("\nUUID: " + (uuid == null ? "N/A" : uuid));
-    text.append("\nAuth Token: " + (authToken == null ? "N/A" : "--REDACTED--"));
-    text.append("\nServer Owner: " + (serverOwner == null ? "N/A or UNKNOWN" : serverOwner.getName()));
+    text.append("\nServer Owner: " + (serverOwner == null ? "N/A or UNKNOWN" : serverOwner.getName().toString()));
     printMessage(text);
   }
 
   public void run() {
+    // This is server-only and doesn't require a user.
+    if (task == "readFilesOnBoot") {
+      readFilesOnBoot();
+      return;
+    }
+
+    if (!Web.hasBearerToken(source.getPlayer())) {
+      printMessage("Please log in first.");
+      return;
+    }
+
     switch (task) {
-      case "readFilesOnBoot":
-        readFilesOnBoot();
+      case "claim":
+        claimServer();
+        break;
+      case "unclaim":
+        unclaimServer();
         break;
       default:
-        // TODO: log this error in a more meaningful way!
-        System.out.println("\n\nINVALID SERVER TASK: " + task + "\n\n");
+        printMessage("Invalid server command `" + task + "`.");
         break;
+    }
+  }
+
+  private void claimServer() {
+    Web web = new Web(source, "/mc/server/auth/" + uuid + "/claim", true);
+    web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
+
+    try {
+      JsonReader jsonReader = web.getJson();
+      jsonReader.beginObject();
+      while (jsonReader.hasNext()) {
+        String key = jsonReader.nextName();
+        switch (key) {
+          case "message":
+            serverOwner = source.getPlayer();
+            printMessage(jsonReader.nextString());
+            break;
+          default:
+            // Just ignore anything else for now
+            jsonReader.skipValue();
+            break;
+        }
+      }
+
+      if (web.getStatusCode() == 200) {
+        serverOwner = source.getPlayer();
+      }
+    } catch (IOException e) {
+      // What might be happening here...? Failed connections?
+    } finally {
+      web.closeReaders();
+    }
+  }
+
+  private void unclaimServer() {
+    Web web = new Web(source, "/mc/server/auth/" + uuid + "/unclaim", true);
+    web.setDeleteBody(new ServerIdentifier(server).getJSON(authToken));
+
+    try {
+      JsonReader jsonReader = web.getJson();
+      jsonReader.beginObject();
+      while (jsonReader.hasNext()) {
+        String key = jsonReader.nextName();
+        switch (key) {
+          case "message":
+            printMessage(jsonReader.nextString());
+            break;
+          default:
+            // Just ignore anything else for now
+            jsonReader.skipValue();
+            break;
+        }
+      }
+
+      if (web.getStatusCode() == 200) {
+        serverOwner = null;
+      }
+    } catch (IOException e) {
+      // What might be happening here...? Failed connections?
+    } finally {
+      web.closeReaders();
     }
   }
 

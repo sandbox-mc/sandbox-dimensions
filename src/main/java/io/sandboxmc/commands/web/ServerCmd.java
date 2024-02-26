@@ -13,21 +13,21 @@ public class ServerCmd {
   public static LiteralArgumentBuilder<ServerCommandSource> register(String commandName) {
     return CommandManager.literal(commandName)
       .then(
-        CommandManager.argument("claim", StringArgumentType.word())
-        .executes(context -> claimServer(context))
+        CommandManager.argument("serverCommand", StringArgumentType.word())
+        .executes(context -> {
+          String serverCommand = StringArgumentType.getString(context, "serverCommand");
+
+          if (serverCommand.equals("info")) {
+            return serverInfo(context);
+          }
+
+          Server server = new Server(context);
+          server.runTask(serverCommand);
+
+          return 1;
+        })
       )
-      // .then(
-      //   CommandManager.argument("unclaim", StringArgumentType.word())
-      //   .executes(context -> unclaimServer(context))
-      // )
       .executes(context -> serverInfo(context));
-  }
-
-  private static int claimServer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    Runnable thread = new Server(context);
-    new Thread(thread).start();
-
-    return 1;
   }
 
   private static int serverInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

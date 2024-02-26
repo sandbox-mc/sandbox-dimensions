@@ -64,6 +64,10 @@ public class Web {
     return getBearerToken(new PlayerIdentifier(player).getIdentifier());
   }
 
+  public static Boolean hasBearerToken(ServerPlayerEntity player) {
+    return getBearerToken(player) != null;
+  }
+
   public static void setBearerToken(String key, String token) {
     bearerTokens.put(key, new BearerToken(token, System.currentTimeMillis()));
   }
@@ -167,6 +171,10 @@ public class Web {
 
   public void setDeleteBody() {
     requestBuilder = requestBuilder.delete();
+  }
+
+  public void setDeleteBody(String json) {
+    requestBuilder = requestBuilder.delete(RequestBody.create(json, jsonMediaType));
   }
 
   public void setFormField(String fieldName, File file) {
