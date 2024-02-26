@@ -108,8 +108,6 @@ public class Server extends Common implements Runnable {
           // Then throw out the file, this ideally exists only through restarts
           authTokenFile.delete();
 
-          System.out.println("\n\nREAD FROM FILES ON BOOT\nuuid: " + (uuid == null ? "NULL" : uuid) + " - authToken: " + (authToken == null ? "NULL" : authToken) + "\n\n");
-
           // Now we need to reauth so we know our token is fresh for security!
           reauthFromWeb();
         }
@@ -158,7 +156,6 @@ public class Server extends Common implements Runnable {
       setAuthToken(null);
     } finally {
       web.closeReaders();
-      System.out.println("\n\nASSIGNED UUID FROM WEB ON BOOT\nuuid: " + (uuid == null ? "NULL" : uuid) + " - authToken: " + (authToken == null ? "NULL" : authToken) + "\n\n");
     }
   }
 
@@ -174,8 +171,6 @@ public class Server extends Common implements Runnable {
         switch (key) {
           case "auth_token":
             setAuthToken(jsonReader.nextString());
-
-            System.out.println("\n\nREAUTHED ON BOOT\nuuid: " + uuid + " - authToken: " + authToken.toString() + "\n\n");
             break;
           default:
             // Just ignore anything else for now
