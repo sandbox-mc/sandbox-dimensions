@@ -3,6 +3,7 @@ package io.sandboxmc.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 
+import io.sandboxmc.commands.web.*;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.ServerCommandSource;
 
@@ -27,8 +28,6 @@ public class CommandInit {
 					})
 					.then(CreateCmd.register())
 					.then(Rule.register())
-					.then(DownloadDimension.register())
-					.then(UploadDimension.register())
 					.then(InstallDatapack.register())
 					.then(JoinDimension.register())
 					.then(LeaveDimension.register())
@@ -36,9 +35,13 @@ public class CommandInit {
 					.then(RestoreDimension.register())
 					.then(SaveDimension.register())
 					.then(SetSpawnDimension.register())
-					.then(WebAuthenticate.register("auth"))
-					.then(WebAuthenticate.register("authenticate"))
-					.then(WebLogout.register())
+					// Web related commands
+					.then(DownloadDatapackCmd.register())
+					.then(UploadDatapackCmd.register())
+					.then(ClientAuthCmd.register("auth"))
+					.then(ClientAuthCmd.register("authenticate"))
+					.then(ClientLogoutCmd.register())
+					.then(ServerCmd.register("server"))
 				);
 				dispatcher.register(LiteralArgumentBuilder.<ServerCommandSource>literal("sbmc").redirect(baseCommandNode));
 		});

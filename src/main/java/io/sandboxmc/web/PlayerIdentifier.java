@@ -8,7 +8,6 @@ public class PlayerIdentifier {
   private String playerIP;
   private String serverAddress;
   private String serverName;
-  private String jsonAuthString = null;
 
   public PlayerIdentifier(ServerPlayerEntity thePlayer) {
     player = thePlayer;
@@ -27,17 +26,12 @@ public class PlayerIdentifier {
   }
 
   public String getJSON() {
-    if (jsonAuthString != null) {
-      return jsonAuthString;
-    }
-
     StringBuilder jsonString = new StringBuilder("{");
     jsonString.append("\"uuid\": \"" + playerUUID + "\",");
     jsonString.append("\"player_ip\": \"" + playerIP + "\",");
     jsonString.append("\"server_address\": \"" + serverAddress + "\",");
     jsonString.append("\"server_name\": \"" + serverName + "\"");
     jsonString.append("}");
-    jsonAuthString = jsonString.toString();
-    return jsonAuthString;
+    return jsonString.toString();
   }
 }

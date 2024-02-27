@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.web;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -14,7 +14,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.commands.autoComplete.WebAutoComplete;
+import io.sandboxmc.commands.autoComplete.web.WebAutoComplete;
 import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
@@ -27,25 +27,25 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class DownloadDimension implements Runnable {
+public class DownloadDatapackCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("download")
       .then(
-        CommandManager.argument("dimension-identifier", StringArgumentType.greedyString())
-        .suggests(new WebAutoComplete("dimensions", true))
+        CommandManager.argument("datapack-identifier", StringArgumentType.greedyString())
+        .suggests(new WebAutoComplete("datapacks", true))
         .executes(context -> performDownloadCmd(context))
       )
       .executes(context -> {
-        printMessage(context.getSource(), "No dimension specified.");
+        printMessage(context.getSource(), "No datapack specified.");
         return 0;
       });
   }
 
   private static int performDownloadCmd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     ServerCommandSource source = context.getSource();
-    String fullIdentifier = StringArgumentType.getString(context, "dimension-identifier");
+    String fullIdentifier = StringArgumentType.getString(context, "datapack-identifier");
 
-    Runnable downloadThread = new DownloadDimension(source, fullIdentifier);
+    Runnable downloadThread = new DownloadDatapackCmd(source, fullIdentifier);
     new Thread(downloadThread).start();
 
     return 1;
@@ -54,7 +54,7 @@ public class DownloadDimension implements Runnable {
   private ServerCommandSource source;
   private String fullIdentifier;
 
-  public DownloadDimension(ServerCommandSource theSource, String theFullIdentifier) {
+  public DownloadDatapackCmd(ServerCommandSource theSource, String theFullIdentifier) {
     source = theSource;
     fullIdentifier = theFullIdentifier;
   }
@@ -63,14 +63,14 @@ public class DownloadDimension implements Runnable {
     String[] urlItemArray = fullIdentifier.split(":");
 
     // Make sure the URL is formed properly and can be accessed as an InputStream.
-    String fileUrl = "/dimensions";
+    String fileUrl = "/datapacks";
     Identifier datapackId;
 
     // Full identifiers must be formatted as:
-    // (creator:)dimension
+    // (creator:)datapack
     // TODO: creators are currently not supported by the web app. This also might share a namespace with "group"?
     // TODO: allow (:version) also? What would this look like? "vX", a timestamp, custom (parameterized) string?
-    // If no creator/group is specified then the dimension must exist in the user's personal collection.
+    // If no creator/group is specified then the datapack must exist in the user's personal collection.
     switch (urlItemArray.length) {
       case 0:
         printMessage(source, "TODO: I don't think this is possible... maybe try to test?");
@@ -88,7 +88,7 @@ public class DownloadDimension implements Runnable {
       //   pathParts[3] = urlItemArray[1];
       //   break;
       default:
-        printMessage(source, "Wrong number of identifier parts. Must be `(group:)dimension(:version)`.");
+        printMessage(source, "Wrong number of identifier parts. Must be `(group:)datapack(:version)`.");
         return;
     }
 
@@ -99,7 +99,7 @@ public class DownloadDimension implements Runnable {
       // This is closed by web.closeReaders()
       BufferedInputStream inputStream = web.getInputStream();
       if (web.getStatusCode() != 200) {
-        printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
+        printMessage(source, "No datapack found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
         return;
       }
 
@@ -112,7 +112,7 @@ public class DownloadDimension implements Runnable {
 
       FileUtils.copyInputStreamToFile(inputStream, newFile);
     } catch (IOException e) {
-      printMessage(source, "No dimension found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
+      printMessage(source, "No datapack found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
       return; // end early if error
     } finally {
       web.closeReaders();
@@ -121,7 +121,7 @@ public class DownloadDimension implements Runnable {
     DatapackManager.addDownloadedDatapack(datapackId, filePath);
     String downloadCmd = "/sbmc install " + datapackId.toString();
 
-    MutableText feedbackText = Text.literal("Dimension downloaded!\n\n");
+    MutableText feedbackText = Text.literal("Datapack downloaded!\n\n");
     MutableText creationText = Text.literal("[CLICK HERE TO INSTALL IT]");
     ClickEvent unpackEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, downloadCmd);
     creationText.setStyle(Style.EMPTY.withClickEvent(unpackEvent));

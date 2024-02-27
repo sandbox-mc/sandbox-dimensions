@@ -1,4 +1,4 @@
-package io.sandboxmc.commands.autoComplete;
+package io.sandboxmc.commands.autoComplete.web;
 
 import java.io.IOException;
 import java.util.ArrayList;

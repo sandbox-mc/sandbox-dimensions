@@ -27,13 +27,13 @@ public abstract class ServerPlayerEntityMixin extends Entity {
     ServerCommandSource source = this.getCommandSource();
 
     // Same as the code in the WebLogout command, but it doesn't have any of the feedback messages
-    if (Web.getBearerToken(source) == null) {
+    if (Web.getBearerToken(source.getPlayer()) == null) {
       return;
     }
 
     // This is the one place where it's OK to make a web request NOT in a thread.
     // We need to ensure everyone is properly logged out that should be before the server shuts down.
-    Web web = new Web(source, "/clients/auth/logout", true);
+    Web web = new Web(source, "/mc/client/auth/logout", true);
     web.setDeleteBody();
 
     try {
@@ -41,7 +41,7 @@ public abstract class ServerPlayerEntityMixin extends Entity {
     } catch (IOException e) {
       // If it fails it fails, doesn't matter.
     } finally {
-      Web.removeBearerToken(source);
+      Web.removeBearerToken(source.getPlayer());
       web.closeReaders();
     }
   }

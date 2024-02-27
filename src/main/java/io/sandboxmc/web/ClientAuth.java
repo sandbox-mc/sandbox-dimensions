@@ -1,17 +1,13 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.web;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 import com.google.gson.stream.JsonReader;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
-import io.sandboxmc.web.PlayerIdentifier;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
@@ -19,56 +15,28 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-public class WebAuthenticate implements Runnable {
+public class ClientAuth extends Common implements Runnable {
+  private static final String AUTH_PATH_PREFIX = "/mc/client";
   private static final String AUTH_CODE_REGEX = "^\\d{6}$";
   private static HashMap<String, String> authTokens = new HashMap<String, String>();
 
-  public static LiteralArgumentBuilder<ServerCommandSource> register(String commandName) {
-    return CommandManager.literal(commandName)
-      .then(
-        CommandManager.argument("auth-code", StringArgumentType.word())
-        .executes(context -> submitAuthCode(context))
-      )
-      .executes(context -> getAuthToken(context));
-  }
-
-  // Very basic wrapper around the thread.
-  // This is a blind function and does not know the outcome of the thread at the time of command completion.
-  private static int getAuthToken(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    Runnable webAuthThread = new WebAuthenticate(context, "getAuthToken");
-    new Thread(webAuthThread).start();
-
-    return 1;
-  }
-
-  // Very basic wrapper around the thread.
-  // This is a blind function and does not know the outcome of the thread at the time of command completion.
-  private static int submitAuthCode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    Runnable webAuthThread = new WebAuthenticate(context, "submitAuthCode");
-    new Thread(webAuthThread).start();
-
-    return 1;
-  }
-
-  private CommandContext<ServerCommandSource> context;
-  private ServerCommandSource source;
   private PlayerIdentifier playerID;
-  private String authStage;
+  private String stage;
 
-  public WebAuthenticate(CommandContext<ServerCommandSource> theContext, String stage) {
-    context = theContext;
-    source = context.getSource();
+  public ClientAuth(CommandContext<ServerCommandSource> theContext, String authStage) {
+    super(theContext);
+
     playerID = new PlayerIdentifier(source.getPlayer());
-    authStage = stage;
+    stage = authStage;
   }
 
   public void run() {
-    if (Web.getBearerToken(source) != null) {
+    if (Web.getBearerToken(source.getPlayer()) != null) {
       printMessage("Already authenticated.");
       return;
     }
 
-    switch (authStage) {
+    switch (stage) {
       case "getAuthToken":
         getAuthTokenThread();
         break;
@@ -79,7 +47,7 @@ public class WebAuthenticate implements Runnable {
   }
 
   private void getAuthTokenThread() {
-    Web web = new Web(source, "/clients/auth/init");
+    Web web = new Web(source, AUTH_PATH_PREFIX + "/auth/init");
     web.setPostBody("{\"auth\": " + playerID.getJSON() + "}");
 
     try {
@@ -109,7 +77,7 @@ public class WebAuthenticate implements Runnable {
       authTokens.put(playerID.getIdentifier(), authToken);
 
       MutableText authText = Text.literal("Please visit the following link to continue authentication\n");
-      String authUrl = Web.WEB_DOMAIN + "/clients/auth/login/" + authToken;
+      String authUrl = Web.WEB_DOMAIN + AUTH_PATH_PREFIX + "/auth/login/" + authToken;
       MutableText clickableUrl = Text.literal(authUrl);
       ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, authUrl);
       clickableUrl.setStyle(Style.EMPTY.withClickEvent(clickEvent));
@@ -139,7 +107,7 @@ public class WebAuthenticate implements Runnable {
 
     printMessage("Authenticating with SandboxMC...");
 
-    Web web = new Web(source, "/clients/auth/verify", authToken);
+    Web web = new Web(source, AUTH_PATH_PREFIX + "/auth/verify", authToken);
     web.setPatchBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
     
     try {
@@ -176,19 +144,9 @@ public class WebAuthenticate implements Runnable {
     printMessage("Authentication successful!");
   }
 
-  private void printMessage(MutableText message) {
-    context.getSource().sendFeedback(() -> {
-      return message;
-    }, false);
-  }
-
-  private void printMessage(String message) {
-    printMessage(Text.literal(message));
-  }
-
   private void printHelpMessage() {
     MutableText helpText = Text.literal("Something went wrong. Please visit\n");
-    String helpUrl = Web.WEB_DOMAIN + "/clients/auth/help";
+    String helpUrl = Web.WEB_DOMAIN + AUTH_PATH_PREFIX + "/auth/help";
     MutableText helpURL = Text.literal(helpUrl);
     ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, helpUrl);
     helpURL.setStyle(Style.EMPTY.withClickEvent(clickEvent));
