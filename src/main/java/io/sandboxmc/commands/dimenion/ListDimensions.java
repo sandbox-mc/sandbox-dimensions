@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.dimenion;
 
 import java.util.Set;
 
@@ -10,6 +10,7 @@ import io.sandboxmc.dimension.DimensionManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class ListDimensions {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -18,10 +19,10 @@ public class ListDimensions {
   }
 
   private static int listDimensions(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-    Set<String> dimensionList = DimensionManager.getDimensionList();
-    for (String dimensionName : dimensionList) {
+    Set<Identifier> dimensionList = DimensionManager.getDimensionList();
+    for (Identifier dimensionName : dimensionList) {
       context.getSource().sendFeedback(() -> {
-        return Text.literal(dimensionName);
+        return Text.literal(dimensionName.toString());
       }, false);
     }
     return 1;

@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.dimenion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.dimension.DimensionOptions;
 
-public class CreateCmd {
+public class CreateDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("create").then(
       CommandManager
@@ -37,7 +37,7 @@ public class CreateCmd {
         .then(
           CommandManager
           .argument("dimension", IdentifierArgumentType.identifier())
-          .suggests(new StringListAutoComplete(getDimensionAutoCompleteOptions())) 
+          .suggests(new StringListAutoComplete(getDimensionAutoCompleteOptions()))
           .executes(context -> createDimension(context))
         ).executes(context -> createDimension(context))
       )

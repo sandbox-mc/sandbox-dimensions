@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.dimenion;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

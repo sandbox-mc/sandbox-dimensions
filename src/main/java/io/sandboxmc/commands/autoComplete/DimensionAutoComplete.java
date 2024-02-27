@@ -10,6 +10,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
 import io.sandboxmc.dimension.DimensionManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.util.Identifier;
 
 public final class DimensionAutoComplete implements SuggestionProvider<ServerCommandSource> {
   private static final DimensionAutoComplete INSTANCE = new DimensionAutoComplete();
@@ -23,10 +24,9 @@ public final class DimensionAutoComplete implements SuggestionProvider<ServerCom
   ) throws CommandSyntaxException {
     String remaining = builder.getRemaining();
 
-    for (String dimensionName : DimensionManager.getDimensionList()) {
-      System.out.println("Dim Name: " + dimensionName);
-      if (dimensionName.startsWith(remaining)) {
-        builder.suggest(dimensionName);
+    for (Identifier dimensionName : DimensionManager.getDimensionList()) {
+      if (dimensionName.toString().startsWith(remaining)) {
+        builder.suggest(dimensionName.toString());
       }
     }
 

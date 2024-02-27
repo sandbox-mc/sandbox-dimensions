@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import io.sandboxmc.Main;
@@ -24,7 +23,6 @@ import net.minecraft.registry.DynamicRegistryManager.Immutable;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry.Reference;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
@@ -34,19 +32,16 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
-import net.minecraft.world.border.WorldBorderListener.WorldBorderSyncer;
 import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage;
-import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
   private static Set<String> datapackFolderSet = new HashSet<String>();
   private static Map<String, Identifier> sandboxDefaultIdentifiers = new HashMap<>();
   private static List<String> initializedDimensions = new ArrayList<>();
   private static Map<String, String> sandboxDimensionWorldFiles = new HashMap<>();
-  private static Map<String, DimensionSave> dimensionSaves = new HashMap<>();
+  private static Map<Identifier, DimensionSave> dimensionSaves = new HashMap<>();
   private static MinecraftServer minecraftServer = null;
 
   public static void init() {
@@ -111,21 +106,15 @@ public class DimensionManager {
     sandboxDimensionWorldFiles.put(dimensionKey, packName);
   }
 
-  public static void addDimensionSave(String dimensionName, DimensionSave dimensionSave) {
+  public static void addDimensionSave(Identifier dimensionName, DimensionSave dimensionSave) {
     dimensionSaves.put(dimensionName, dimensionSave);
   }
 
   // This will generate a dimension with EmptyChunkGenerator
   public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier, Identifier dimensionOptionsId) {
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
-    Session session = serverAccess.getSession();
     RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
     Immutable registryManager = server.getRegistryManager();
-    SaveProperties saveProperties = server.getSaveProperties();
-    UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(
-      saveProperties,
-      saveProperties.getMainWorldProperties()
-    );
 
     // Get the presets for DimensionOptions
     // This should allow for custom dimension types to be generated
@@ -152,10 +141,10 @@ public class DimensionManager {
     // server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
     serverAccess.getWorlds().put(registryKey, dimensionWorld);
     DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld, true);
-    int spawnX = unmodifiableLevelProperties.getSpawnX();
+    int spawnX = dimensionWorld.getLevelProperties().getSpawnX();
     // TODO: adjust for generated terrain
-    int spawnY = dimensionOptions.chunkGenerator().getSeaLevel();
-    int spawnZ = unmodifiableLevelProperties.getSpawnZ();
+    int spawnY = dimensionWorld.getSeaLevel();
+    int spawnZ = dimensionWorld.getLevelProperties().getSpawnZ();
     BlockPos blockPos = new BlockPos(spawnX, spawnY, spawnZ);
     dimensionSave.setSpawnPos(dimensionWorld, blockPos);
 
@@ -165,14 +154,14 @@ public class DimensionManager {
     }
   }
 
-  public void deleteDimension(MinecraftServer server, ServerWorld dimension) {
-    RegistryKey<World> dimensionKey = dimension.getRegistryKey();
+  public static void deleteDimension(MinecraftServer server, Identifier dimensionIdentifier) {
+    RegistryKey<World> dimensionKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
+    ServerWorld dimension = server.getWorld(dimensionKey);
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
 
     if (serverAccess.getWorlds().remove(dimensionKey, dimension)) {
       ServerWorldEvents.UNLOAD.invoker().onWorldUnload(server, dimension);
-
-      dimensionSaves.remove(dimensionKey.getValue().toString());
+      dimensionSaves.remove(dimensionKey.getValue());
 
       LevelStorage.Session session = serverAccess.getSession();
       File worldDirectory = session.getWorldDirectory(dimensionKey).toFile();
@@ -194,11 +183,11 @@ public class DimensionManager {
     return sandboxDefaultIdentifiers.get(defaultType);
   }
 
-  public static Set<String> getDimensionList() {
+  public static Set<Identifier> getDimensionList() {
     return dimensionSaves.keySet();
   }
 
-  public static DimensionSave getDimensionSave(String dimensionName) {
+  public static DimensionSave getDimensionSave(Identifier dimensionName) {
     return dimensionSaves.get(dimensionName);
   }
 
@@ -259,7 +248,7 @@ public class DimensionManager {
         }
 
         // Add to list for auto-complete
-        DimensionManager.addDimensionSave(dimensionIdString, dimensionSave);
+        DimensionManager.addDimensionSave(dimensionId, dimensionSave);
       } else {
         System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
       }

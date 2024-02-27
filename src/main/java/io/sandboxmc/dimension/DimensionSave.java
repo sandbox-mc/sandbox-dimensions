@@ -118,7 +118,7 @@ public class DimensionSave extends PersistentState {
 
   // setActive is for initializing worlds as active
   public static DimensionSave buildDimensionSave(ServerWorld dimension, Boolean setActive) {
-    String dimensionId = dimension.getRegistryKey().getValue().toString();
+    Identifier dimensionId = dimension.getRegistryKey().getValue();
     DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimensionId);
     if (dimensionSave != null) {
       return dimensionSave;
