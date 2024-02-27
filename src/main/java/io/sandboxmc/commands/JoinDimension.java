@@ -1,8 +1,5 @@
 package io.sandboxmc.commands;
 
-import java.util.List;
-import java.util.function.Function;
-
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;

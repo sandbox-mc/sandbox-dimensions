@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
 import io.sandboxmc.Main;
 import io.sandboxmc.chunkGenerators.EmptyChunkGenerator;
 import io.sandboxmc.datapacks.DatapackManager;
@@ -25,7 +24,6 @@ import net.minecraft.registry.DynamicRegistryManager.Immutable;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.SimpleRegistry;
 import net.minecraft.registry.entry.RegistryEntry.Reference;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
@@ -34,7 +32,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.RandomSequencesState;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.border.WorldBorderListener.WorldBorderSyncer;
@@ -133,44 +130,26 @@ public class DimensionManager {
     // Get the presets for DimensionOptions
     // This should allow for custom dimension types to be generated
     DimensionOptions dimensionOptions = registryManager.get(RegistryKeys.DIMENSION).get(dimensionOptionsId);
-    if (dimensionOptions == null) {
+    Boolean isEmptyWorld = dimensionOptionsId.equals(Main.id("empty"));
+    SandboxWorldConfig config = new SandboxWorldConfig();
+    // TODO: add custom seed override for generated worlds
+    config.setSeed(server.getWorld(World.OVERWORLD).getSeed());
+    if (isEmptyWorld) {
+      // our empty world requires the custom chunkGenerator to prevent blocks from being placed
+      var plainsBiome = registryManager.get(RegistryKeys.BIOME).getEntry(RegistryKey.of(RegistryKeys.BIOME, new Identifier("plains"))).get();
+      var chunkGen = new EmptyChunkGenerator(plainsBiome);
+      config.setGenerator(chunkGen);
+    } else if (dimensionOptions != null) {
+      config.setDimensionOptions(dimensionOptions);
+    } else {
       System.out.println("Warning: Failed to create world with dimensionOptions: " + dimensionOptionsId);
       return;
     }
 
-    Optional<Reference<DimensionType>> dimensionType = registryManager.get(
-      RegistryKeys.DIMENSION_TYPE
-    ).getEntry(RegistryKey.of(RegistryKeys.DIMENSION_TYPE, new Identifier("overworld")));
-
-    if (!dimensionType.isPresent()) {
-      System.out.println("Warning: Failed to create world with dimensionType: " + dimensionOptionsId);
-      return;
-    }
-
-    if (dimensionOptionsId.equals(Main.id("empty"))) {
-      var chunkGen = new EmptyChunkGenerator(registryManager.get(RegistryKeys.BIOME).getEntry(0).get());
-      dimensionOptions = new DimensionOptions(dimensionType.get(), chunkGen);
-    }
-    server.submit(() -> {
-
-    });
-
-    ServerWorld dimensionWorld = new ServerWorld(
-      server,
-      serverAccess.getWorkerExecutor(),
-      session,
-      unmodifiableLevelProperties,
-      registryKey,
-      dimensionOptions,
-      serverAccess.getWorldGenerationProgressListenerFactory().create(11),
-      false,
-      // TODO: add the ability to pass a seed
-      server.getWorld(World.OVERWORLD).getSeed(),
-      ImmutableList.of(),
-      true,
-      (RandomSequencesState)null
-    );
-    server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
+    // Create the World
+    SandboxWorld dimensionWorld = new SandboxWorld(server, registryKey, config, isEmptyWorld);
+    // TODO: check if we need/want to align the borders, I don't know if we do...
+    // server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
     serverAccess.getWorlds().put(registryKey, dimensionWorld);
     DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld, true);
     int spawnX = unmodifiableLevelProperties.getSpawnX();
@@ -180,8 +159,10 @@ public class DimensionManager {
     BlockPos blockPos = new BlockPos(spawnX, spawnY, spawnZ);
     dimensionSave.setSpawnPos(dimensionWorld, blockPos);
 
-    BlockState blockState = Registries.BLOCK.get(new Identifier("grass_block")).getDefaultState();
-    dimensionWorld.setBlockState(blockPos, blockState);
+    if (isEmptyWorld) {
+      BlockState blockState = Registries.BLOCK.get(new Identifier("grass_block")).getDefaultState();
+      dimensionWorld.setBlockState(blockPos, blockState);
+    }
   }
 
   public void deleteDimension(MinecraftServer server, ServerWorld dimension) {

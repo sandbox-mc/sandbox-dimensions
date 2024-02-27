@@ -3,7 +3,7 @@
   "generator": {
     "type": "minecraft:flat",
     "settings": {
-      "biome": "minecraft:basalt_deltas",
+      "biome": "minecraft:plains",
       "lakes": false,
       "features": false,
       "layers": [

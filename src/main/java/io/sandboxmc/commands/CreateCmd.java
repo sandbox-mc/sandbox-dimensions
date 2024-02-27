@@ -39,7 +39,7 @@ public class CreateCmd {
           .argument("dimension", IdentifierArgumentType.identifier())
           .suggests(new StringListAutoComplete(getDimensionAutoCompleteOptions())) 
           .executes(context -> createDimension(context))
-        )
+        ).executes(context -> createDimension(context))
       )
     ).executes(context -> {
       // No arguments given, do nothing.
