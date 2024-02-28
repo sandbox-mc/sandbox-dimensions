@@ -1,4 +1,4 @@
-package io.sandboxmc.commands.dimenion;
+package io.sandboxmc.commands.dimension;
 
 import java.util.ArrayList;
 import java.util.List;
