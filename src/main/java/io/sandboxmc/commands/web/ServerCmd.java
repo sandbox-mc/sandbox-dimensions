@@ -15,6 +15,7 @@ public class ServerCmd {
       .then(
         CommandManager.argument("serverCommand", StringArgumentType.word())
         .executes(context -> {
+          // TODO: write suggestions for this...
           String serverCommand = StringArgumentType.getString(context, "serverCommand");
 
           if (serverCommand.equals("info")) {

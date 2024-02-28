@@ -5,14 +5,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.UUID;
 
 import com.google.gson.stream.JsonReader;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.context.CommandContext;
 
 import io.sandboxmc.Web;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
@@ -22,7 +23,7 @@ public class Server extends Common implements Runnable {
   private static final String AUTH_TOKEN_FILE_NAME = "sandboxmc.server.token";
   private static String uuid = null;
   private static String authToken = null;
-  private static ServerPlayerEntity serverOwner = null;
+  private static GameProfile serverOwner = null;
 
   public static void authOnBoot(MinecraftServer server) {
     // Keep this threaded for faster boot times
@@ -77,8 +78,8 @@ public class Server extends Common implements Runnable {
 
   public void printInfo() {
     MutableText text = Text.literal("Server Info:");
-    text.append("\nUUID: " + (uuid == null ? "N/A" : uuid));
-    text.append("\nServer Owner: " + (serverOwner == null ? "N/A or UNKNOWN" : serverOwner.getName().toString()));
+    text.append("\nUUID: " + (uuid == null ? "NOT YET ASSIGNED" : uuid));
+    text.append("\nServer Owner: " + (serverOwner == null ? "NOT YET CLAIMED" : serverOwner.getName()));
     printMessage(text);
   }
 
@@ -118,7 +119,6 @@ public class Server extends Common implements Runnable {
         String key = jsonReader.nextName();
         switch (key) {
           case "message":
-            serverOwner = source.getPlayer();
             printMessage(jsonReader.nextString());
             break;
           default:
@@ -127,9 +127,10 @@ public class Server extends Common implements Runnable {
             break;
         }
       }
+      jsonReader.endObject();
 
       if (web.getStatusCode() == 200) {
-        serverOwner = source.getPlayer();
+        serverOwner = source.getPlayer().getGameProfile();
       }
     } catch (IOException e) {
       // What might be happening here...? Failed connections?
@@ -157,6 +158,7 @@ public class Server extends Common implements Runnable {
             break;
         }
       }
+      jsonReader.endObject();
 
       if (web.getStatusCode() == 200) {
         serverOwner = null;
@@ -222,6 +224,7 @@ public class Server extends Common implements Runnable {
             break;
         }
       }
+      jsonReader.endObject();
     } catch (IOException e) {
       // What might be happening here...? Failed connections?
       // Let's just make sure we're clearing things...
@@ -245,12 +248,42 @@ public class Server extends Common implements Runnable {
           case "auth_token":
             setAuthToken(jsonReader.nextString());
             break;
+          case "owner":
+            jsonReader.beginObject();
+            UUID ownerUUID = null;
+            String ownerName = null;
+            while (jsonReader.hasNext()) {
+              key = jsonReader.nextName();
+              switch (key) {
+                case "uuid":
+                  try {
+                    // UUIDs on MinecraftProfile on the site are stored as trimmed
+                    ownerUUID = PlayerIdentifier.uuidFromTrimmed(jsonReader.nextString());
+                  } catch (IllegalArgumentException e) {
+                    // if something fails then it was just invalid I think, safe to ignore
+                  }
+                  break;
+                case "name":
+                  ownerName = jsonReader.nextString();
+                  break;
+                default:
+                  jsonReader.skipValue();
+                  break;
+              }
+            }
+            jsonReader.endObject();
+
+            if (ownerUUID != null && ownerName != null) {
+              serverOwner = new GameProfile(ownerUUID, ownerName);
+            }
+            break;
           default:
             // Just ignore anything else for now
             jsonReader.skipValue();
             break;
         }
       }
+      jsonReader.endObject();
     } catch (IOException e) {
       // What might be happening here...? Failed connections? Bad auth tokens?
       // Let's just make sure we're clearing the auth token at least
