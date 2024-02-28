@@ -79,7 +79,7 @@ public class Server extends Common implements Runnable {
   public void printInfo() {
     MutableText text = Text.literal("Server Info:");
     text.append("\nUUID: " + (uuid == null ? "NOT YET ASSIGNED" : uuid));
-    text.append("\nServer Owner: " + (serverOwner == null ? "NOT YET CLAIMED" : serverOwner.getName()));
+    text.append("\nServer Owner: " + (serverOwner == null ? (authToken == null ? "SERVER NOT AUTHENTICATED" : "NOT YET CLAIMED") : serverOwner.getName()));
     printMessage(text);
   }
 
@@ -92,6 +92,25 @@ public class Server extends Common implements Runnable {
 
     if (!Web.hasBearerToken(source.getPlayer())) {
       printMessage("Please log in first.");
+      return;
+    }
+
+    if (uuid == null) {
+      printMessage("The server has not been registered with https://www.sandboxmc.com\nPlease ensure it has a connection to the internet and restart it.");
+      return;
+    }
+
+    switch (task) {
+      case "recover":
+        recoverServer(false);
+        return;
+      case "forceRecover":
+        recoverServer(true);
+        return;
+    }
+
+    if (authToken == null) {
+      printMessage("The server is not currently authenticated.\nIf you are the owner you can use the RECOVER command.");
       return;
     }
 
@@ -176,20 +195,17 @@ public class Server extends Common implements Runnable {
 
     if (uuidFile.exists()) {
       try {
-        setUUID(Files.readString(uuidFile.toPath()));
+        setUUID(Files.readString(uuidFile.toPath()).trim());
+        System.out.println("SandboxMC UUID assigned from file: " + uuid);
 
         if (authTokenFile.exists()) {
-          setAuthToken(Files.readString(authTokenFile.toPath()));
+          setAuthToken(Files.readString(authTokenFile.toPath()).trim());
           // Then throw out the file, this ideally exists only through restarts
           authTokenFile.delete();
 
           // Now we need to reauth so we know our token is fresh for security!
           reauthFromWeb();
         }
-
-        // TODO: write a recovery path when there's no auth token file...
-        // Only the OWNER of a server will be able to recover and get a new auth token
-        // They must be logged in and have a server UUID.
       } catch (IOException e) {
         // This should NOT break...
         System.out.println(e.getMessage());
@@ -225,6 +241,8 @@ public class Server extends Common implements Runnable {
         }
       }
       jsonReader.endObject();
+
+      System.out.println("SandboxMC UUID from web: " + uuid);
     } catch (IOException e) {
       // What might be happening here...? Failed connections?
       // Let's just make sure we're clearing things...
@@ -235,55 +253,33 @@ public class Server extends Common implements Runnable {
     }
   }
 
+  private void recoverServer(Boolean forceReauth) {
+    if (!forceReauth && authToken != null) {
+      printMessage("The server appears to already be authenticated.\nIf you believe you are seeing this in error you can try forceRecovery instead.");
+      return;
+    }
+    
+    Web web = new Web(source, "/mc/server/auth/" + uuid + "/recover", true);
+    web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
+
+    try {
+      readServerAuthResponse(web);
+    } catch (IOException e) {
+      // What might be happening here...? Failed connections? Bad auth tokens?
+      // Let's just make sure we're clearing the auth token at least
+      setAuthToken(null);
+      serverOwner = null;
+    } finally {
+      web.closeReaders();
+    }
+  }
+
   private void reauthFromWeb() {
     Web web = new Web(server);
     web.setPath("/mc/server/auth/" + uuid + "/reauth");
     web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
     try {
-      JsonReader jsonReader = web.getJson();
-      jsonReader.beginObject();
-      while (jsonReader.hasNext()) {
-        String key = jsonReader.nextName();
-        switch (key) {
-          case "auth_token":
-            setAuthToken(jsonReader.nextString());
-            break;
-          case "owner":
-            jsonReader.beginObject();
-            UUID ownerUUID = null;
-            String ownerName = null;
-            while (jsonReader.hasNext()) {
-              key = jsonReader.nextName();
-              switch (key) {
-                case "uuid":
-                  try {
-                    // UUIDs on MinecraftProfile on the site are stored as trimmed
-                    ownerUUID = PlayerIdentifier.uuidFromTrimmed(jsonReader.nextString());
-                  } catch (IllegalArgumentException e) {
-                    // if something fails then it was just invalid I think, safe to ignore
-                  }
-                  break;
-                case "name":
-                  ownerName = jsonReader.nextString();
-                  break;
-                default:
-                  jsonReader.skipValue();
-                  break;
-              }
-            }
-            jsonReader.endObject();
-
-            if (ownerUUID != null && ownerName != null) {
-              serverOwner = new GameProfile(ownerUUID, ownerName);
-            }
-            break;
-          default:
-            // Just ignore anything else for now
-            jsonReader.skipValue();
-            break;
-        }
-      }
-      jsonReader.endObject();
+      readServerAuthResponse(web);
     } catch (IOException e) {
       // What might be happening here...? Failed connections? Bad auth tokens?
       // Let's just make sure we're clearing the auth token at least
@@ -292,6 +288,65 @@ public class Server extends Common implements Runnable {
     } finally {
       web.closeReaders();
     }
+  }
+
+  private void readServerAuthResponse(Web web) throws IOException {
+    JsonReader jsonReader = web.getJson();
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String key = jsonReader.nextName();
+      switch (key) {
+        case "message":
+          printMessage(jsonReader.nextString());
+          break;
+        case "auth_token":
+          setAuthToken(jsonReader.nextString());
+          System.out.println("SandboxMC server auth token set from web.");
+          break;
+        case "owner":
+          jsonReader.beginObject();
+          UUID ownerUUID = null;
+          String ownerName = null;
+          while (jsonReader.hasNext()) {
+            key = jsonReader.nextName();
+            switch (key) {
+              case "uuid":
+                try {
+                  // UUIDs on MinecraftProfile on the site are stored as trimmed
+                  ownerUUID = PlayerIdentifier.uuidFromTrimmed(jsonReader.nextString());
+                } catch (IllegalStateException e) {
+                  // Ignore this, just means the value was null
+                  jsonReader.skipValue();
+                } catch (IllegalArgumentException e) {
+                  // UUID was a string but was formatted improperly
+                }
+                break;
+              case "name":
+                try {
+                  ownerName = jsonReader.nextString();
+                } catch (IllegalStateException e) {
+                  // Ignore this, just means the value was null
+                  jsonReader.skipValue();
+                }
+                break;
+              default:
+                jsonReader.skipValue();
+                break;
+            }
+          }
+          jsonReader.endObject();
+
+          if (ownerUUID != null && ownerName != null) {
+            serverOwner = new GameProfile(ownerUUID, ownerName);
+          }
+          break;
+        default:
+          // Just ignore anything else for now
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
   }
 
   private void writeUUIDToFile() {
