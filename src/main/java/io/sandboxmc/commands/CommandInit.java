@@ -3,10 +3,10 @@ package io.sandboxmc.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 
-import io.sandboxmc.commands.dimenion.CreateDimension;
-import io.sandboxmc.commands.dimenion.DeleteDimension;
-import io.sandboxmc.commands.dimenion.ListDimensions;
-import io.sandboxmc.commands.dimenion.SaveDimension;
+import io.sandboxmc.commands.dimension.CreateDimension;
+import io.sandboxmc.commands.dimension.DeleteDimension;
+import io.sandboxmc.commands.dimension.ListDimensions;
+import io.sandboxmc.commands.dimension.SaveDimension;
 import io.sandboxmc.commands.web.*;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
