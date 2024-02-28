@@ -1,7 +1,5 @@
 package io.sandboxmc.dimension;
 
-import org.jetbrains.annotations.Nullable;
-
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;

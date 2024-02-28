@@ -30,10 +30,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage;
 
 public class DimensionManager {

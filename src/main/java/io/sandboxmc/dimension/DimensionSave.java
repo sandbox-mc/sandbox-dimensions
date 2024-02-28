@@ -58,6 +58,9 @@ public class DimensionSave extends PersistentState {
   private int spawnX = 0;
   private int spawnY = 0;
   private int spawnZ = 0;
+
+  // This IS used but the editor can't seem to figure out how.
+  @SuppressWarnings("unused")
   private ServerWorld serverWorld;
 
   public HashMap<UUID, PlayerData> players = new HashMap<>();
