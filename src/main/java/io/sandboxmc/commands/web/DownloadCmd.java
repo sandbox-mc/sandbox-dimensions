@@ -27,7 +27,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class DownloadDatapackCmd implements Runnable {
+public class DownloadCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("download")
       .then(
@@ -45,7 +45,7 @@ public class DownloadDatapackCmd implements Runnable {
     ServerCommandSource source = context.getSource();
     String fullIdentifier = StringArgumentType.getString(context, "datapack-identifier");
 
-    Runnable downloadThread = new DownloadDatapackCmd(source, fullIdentifier);
+    Runnable downloadThread = new DownloadCmd(source, fullIdentifier);
     new Thread(downloadThread).start();
 
     return 1;
@@ -54,7 +54,7 @@ public class DownloadDatapackCmd implements Runnable {
   private ServerCommandSource source;
   private String fullIdentifier;
 
-  public DownloadDatapackCmd(ServerCommandSource theSource, String theFullIdentifier) {
+  public DownloadCmd(ServerCommandSource theSource, String theFullIdentifier) {
     source = theSource;
     fullIdentifier = theFullIdentifier;
   }

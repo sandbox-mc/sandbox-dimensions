@@ -18,7 +18,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
-public class UploadDatapackCmd implements Runnable {
+public class UploadCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("upload")
       .then(
@@ -56,7 +56,7 @@ public class UploadDatapackCmd implements Runnable {
     ServerCommandSource source = context.getSource();
     String datapackFileName = StringArgumentType.getString(context, "datapack-file");
     
-    Runnable uploadThread = new UploadDatapackCmd(source, datapackFileName);
+    Runnable uploadThread = new UploadCmd(source, datapackFileName);
     new Thread(uploadThread).start();
 
     return 1;
@@ -66,7 +66,7 @@ public class UploadDatapackCmd implements Runnable {
   private Session session;
   private String datapackFileName;
 
-  public UploadDatapackCmd(ServerCommandSource commandSource, String theDatapackFileName) {
+  public UploadCmd(ServerCommandSource commandSource, String theDatapackFileName) {
     source = commandSource;
     session = ((MinecraftServerAccessor)commandSource.getServer()).getSession();
     datapackFileName = theDatapackFileName;

@@ -46,8 +46,8 @@ public class CommandInit {
 					.then(RestoreDimension.register())
 					.then(SetSpawnDimension.register())
 					// Web related commands
-					.then(DownloadDatapackCmd.register())
-					.then(UploadDatapackCmd.register())
+					.then(DownloadCmd.register())
+					.then(UploadCmd.register())
 					.then(ClientAuthCmd.register("auth"))
 					.then(ClientAuthCmd.register("authenticate"))
 					.then(ClientLogoutCmd.register())
