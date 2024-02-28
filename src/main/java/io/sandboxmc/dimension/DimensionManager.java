@@ -139,6 +139,12 @@ public class DimensionManager {
     // server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
     serverAccess.getWorlds().put(registryKey, dimensionWorld);
     DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld, true);
+
+    // Add dimension to generated list so it can be restored on server restart
+    DimensionSave mainSave = DimensionSave.buildDimensionSave(server.getWorld(World.OVERWORLD));
+    mainSave.addGeneratedWorld(dimensionIdentifier, dimensionOptionsId);
+
+    // Set spawn point for single block placement
     int spawnX = dimensionWorld.getLevelProperties().getSpawnX();
     // TODO: adjust for generated terrain
     int spawnY = dimensionWorld.getSeaLevel();
@@ -160,12 +166,21 @@ public class DimensionManager {
     if (serverAccess.getWorlds().remove(dimensionKey, dimension)) {
       ServerWorldEvents.UNLOAD.invoker().onWorldUnload(server, dimension);
       dimensionSaves.remove(dimensionKey.getValue());
+      DimensionSave mainSave = DimensionSave.buildDimensionSave(server.getWorld(World.OVERWORLD));
+
+      // remove from generated list to prevent attenpts to create it on restart
+      mainSave.removeGeneratedWorld(dimensionIdentifier);
 
       LevelStorage.Session session = serverAccess.getSession();
       File worldDirectory = session.getWorldDirectory(dimensionKey).toFile();
+      System.out.println("Delete Dir: " + worldDirectory);
       if (worldDirectory.exists()) {
         try {
           ZipUtility.deleteDirectory(worldDirectory.toPath());
+          Path namespaceDir = worldDirectory.toPath().getParent();
+          if (namespaceDir.toFile().list().length == 0) {
+            namespaceDir.toFile().delete();
+          }
         } catch (IOException e) {
           System.out.println("Failed to delete world directory");
           try {
@@ -251,5 +266,24 @@ public class DimensionManager {
         System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
       }
     }
+
+    HashMap<Identifier, Identifier> mainSave = DimensionSave.buildDimensionSave(
+      server.getWorld(World.OVERWORLD)
+      ).getGeneratedWorlds();
+      mainSave.keySet().forEach(dimensionId -> {
+        if (DimensionManager.getDimensionSave(dimensionId) == null) {
+        System.out.println("WARNING: Failed to load world for: ");
+        DimensionManager.createDimensionWorld(server, dimensionId, mainSave.get(dimensionId));
+      }
+    });
   }
+
+  public static void unload() {
+    datapackFolderSet = new HashSet<String>();
+    sandboxDefaultIdentifiers = new HashMap<>();
+    initializedDimensions = new ArrayList<>();
+    sandboxDimensionWorldFiles = new HashMap<>();
+    dimensionSaves = new HashMap<>();
+    minecraftServer = null;
+  } 
 }

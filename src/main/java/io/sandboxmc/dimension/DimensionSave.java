@@ -42,6 +42,7 @@ public class DimensionSave extends PersistentState {
   // World Data save names
   private static String DIMENSION_IS_ACTIVE = "dimensionIsActive";
   private static String DIMENSION_SAVE_LOADED = "dimensionSaveLoaded";
+  private static String GENERATED_WORLDS = "generatedWorlds";
   private static String PLAYERS = "players";
   private static String SPAWN_ANGLE = "SpawnAngle";
   private static String SPAWN_X = "SpawnX";
@@ -63,6 +64,7 @@ public class DimensionSave extends PersistentState {
   @SuppressWarnings("unused")
   private ServerWorld serverWorld;
 
+  public HashMap<Identifier, Identifier> generatedWorlds = new HashMap<>();
   public HashMap<UUID, PlayerData> players = new HashMap<>();
  
   @Override
@@ -77,13 +79,20 @@ public class DimensionSave extends PersistentState {
     nbt.putInt(SPAWN_Y, spawnY);
     nbt.putInt(SPAWN_Z, spawnZ);
 
+    // Populate GeneratedWorlds list
+    NbtCompound generatedWorldsCollection = new NbtCompound();
+    generatedWorlds.forEach((Identifier dimensionId, Identifier dimensionOptionsId) -> {
+      generatedWorldsCollection.putString(dimensionId.toString(), dimensionOptionsId.toString());
+    });
+    nbt.put(GENERATED_WORLDS, generatedWorldsCollection);
+
     // Populate Player data
     // this is only populated for Overworld
-    NbtCompound playerDataList = new NbtCompound();
+    NbtCompound playerDataCollection = new NbtCompound();
     players.forEach((uuid, playerData) -> {
-      playerDataList.put(uuid.toString(), playerData.writePlayerDataNbt());
+      playerDataCollection.put(uuid.toString(), playerData.writePlayerDataNbt());
     });
-    nbt.put(PLAYERS, playerDataList);
+    nbt.put(PLAYERS, playerDataCollection);
     return nbt;
   }
 
@@ -99,6 +108,16 @@ public class DimensionSave extends PersistentState {
     state.spawnY = tag.getInt(SPAWN_Y);
     state.spawnZ = tag.getInt(SPAWN_Z);
 
+    // Read GeneratedWorld data from nbt data
+    NbtCompound generatedWorldsNbt = tag.getCompound(GENERATED_WORLDS);
+    generatedWorldsNbt.getKeys().forEach(key -> {
+      state.generatedWorlds.put(
+        new Identifier(key),
+        new Identifier(generatedWorldsNbt.getString(key))
+      );
+    });
+
+    // Read player data from nbt data
     NbtCompound playersNbt = tag.getCompound(PLAYERS);
     playersNbt.getKeys().forEach(key -> {
       PlayerData playerData = new PlayerData();
@@ -137,6 +156,14 @@ public class DimensionSave extends PersistentState {
 
     dimensionSave.markDirty();
     return dimensionSave;
+  }
+
+  public void addGeneratedWorld(Identifier dimensionId, Identifier dimensionOptionsId) {
+    this.generatedWorlds.put(dimensionId, dimensionOptionsId);
+  }
+
+  public HashMap<Identifier, Identifier> getGeneratedWorlds() {
+    return this.generatedWorlds;
   }
 
   public PlayerData getPlayerData(PlayerEntity player) {
@@ -239,6 +266,10 @@ public class DimensionSave extends PersistentState {
     }
 
     return false;
+  }
+
+  public void removeGeneratedWorld(Identifier dimensionId) {
+    this.generatedWorlds.remove(dimensionId);
   }
 
   public void setPlayerData(UUID uuid, PlayerData playerData) {
