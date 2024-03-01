@@ -3,7 +3,7 @@ package io.sandboxmc.web;
 import net.minecraft.server.MinecraftServer;
 
 public class ServerIdentifier {
-  private MinecraftServer server;
+  public MinecraftServer server;
 
   public ServerIdentifier(MinecraftServer theServer) {
     server = theServer;
@@ -12,8 +12,8 @@ public class ServerIdentifier {
   public String getJSON(String authToken) {
     StringBuilder sb = new StringBuilder("{\"server\": {");
     sb.append("\"address\": \"" + server.getServerIp() + ":" + server.getServerPort() + "\",");
-    sb.append("\"name\": \"" + server.getName() + "\","); // TODO: can this have quotes...?
-    sb.append("\"motd\": \"" + server.getServerMotd() + "\""); // TODO: can this have quotes...?
+    sb.append("\"name\": \"" + server.getName().replaceAll("\"", "__QUOTE__") + "\",");
+    sb.append("\"motd\": \"" + server.getServerMotd().replaceAll("\"", "__QUOTE__") + "\"");
     if (authToken != null) {
       sb.append(", \"auth_token\": \"" + authToken + "\"");
     }

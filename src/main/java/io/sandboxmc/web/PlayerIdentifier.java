@@ -5,7 +5,7 @@ import java.util.UUID;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class PlayerIdentifier {
-  private ServerPlayerEntity player;
+  public ServerPlayerEntity player;
   private String playerUUID;
   private String playerIP;
   private String serverAddress;
