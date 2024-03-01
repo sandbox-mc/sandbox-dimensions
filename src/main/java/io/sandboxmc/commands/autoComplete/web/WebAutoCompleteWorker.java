@@ -7,20 +7,22 @@ import java.util.HashMap;
 import com.google.gson.stream.JsonReader;
 
 import io.sandboxmc.Web;
+import io.sandboxmc.web.Common;
 import net.minecraft.server.command.ServerCommandSource;
 
-public class WebAutoCompleteWorker implements Runnable {
+public class WebAutoCompleteWorker extends Common implements Runnable {
   private static HashMap<String, ArrayList<HashMap<String, String>>> cache = new HashMap<>();
-  // private static ArrayList<String> playersFetching = new ArrayList<String>();
+  private static HashMap<String, Integer> playersFetching = new HashMap<>();
 
   private ServerCommandSource source;
+  private String playerUUID;
   private String cacheKey;
   private String pathToFetch;
   private Boolean restrictToAuth = false;
 
   public WebAutoCompleteWorker(ServerCommandSource theSource, String thePath, Boolean doRestrictToAuth) {
     source = theSource;
-    String playerUUID = source.getPlayer().getUuidAsString();
+    playerUUID = source.getPlayer().getUuidAsString();
     pathToFetch = thePath;
     restrictToAuth = doRestrictToAuth;
     // TODO:TYLER determine cache expiry method
@@ -28,7 +30,6 @@ public class WebAutoCompleteWorker implements Runnable {
   }
 
   public ArrayList<HashMap<String, String>> getFromCache() {
-    // TODO:TYLER also verify that the current user can only have one request outgoing at a time...
     if (cache.containsKey(cacheKey)) {
       return cache.get(cacheKey);
     } else {
@@ -36,10 +37,32 @@ public class WebAutoCompleteWorker implements Runnable {
     }
   }
 
+  public void startThread() {
+    Integer numActiveCalls = playersFetching.getOrDefault(playerUUID, 0);
+    // Allow up to two calls per person.
+    if (numActiveCalls > 1) {
+      System.out.println("IGNORING WEB AUTOCOMPLETE API CALL DUE TO EXISTING IN FLIGHT FOR USER: " + numActiveCalls);
+      return;
+    }
+
+    // Increment fetch counter
+    playersFetching.put(playerUUID, numActiveCalls + 1);
+
+    new Thread(this).start();
+  }
+
+  private void decrementCounter() {
+    Integer numActiveCalls = playersFetching.getOrDefault(playerUUID, 0);
+    if (numActiveCalls > 0) {
+      playersFetching.put(playerUUID, numActiveCalls - 1);
+    }
+  }
+
   public void run() {
     Web web = new Web(source, pathToFetch, restrictToAuth);
 
     if (restrictToAuth && !web.hasAuth()) {
+      decrementCounter();
       return;
     }
 
@@ -50,6 +73,7 @@ public class WebAutoCompleteWorker implements Runnable {
     } catch (IOException e) {
       System.out.println("Error: " + e.getClass().toString() + " - " + e.getMessage());
     } finally {
+      decrementCounter();
       web.closeReaders();
     }
   }
@@ -61,10 +85,10 @@ public class WebAutoCompleteWorker implements Runnable {
       String key = jsonReader.nextName();
       switch (key) {
         case "total":
-          jsonReader.skipValue(); // TODO:TYLER determine if the total count can be used
+          jsonReader.skipValue(); // This isn't useful atm
           break;
         case "message":
-          jsonReader.skipValue(); // TODO:TYLER determine if error messages can be used
+          printMessage(jsonReader.nextString());
           break;
         case "results":
           jsonReader.beginArray();

@@ -17,7 +17,7 @@ import net.minecraft.server.command.ServerCommandSource;
 
 public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> {
 
-  public static ArrayList<String> VALID_TYPES = new ArrayList<String>(Arrays.asList("creators", "dimensions"));
+  public static ArrayList<String> VALID_TYPES = new ArrayList<String>(Arrays.asList("creators", "datapacks"));
   public static String PREFIX_REPLACE_VAL = "__PREFIX_VALUE__";
   public static String URL_REGEXP = "^[\\w-]+$";
   private String urlPart = null;
@@ -71,10 +71,9 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
 
     WebAutoCompleteWorker thread = new WebAutoCompleteWorker(context.getSource(), path, restrictToAuth);
     ArrayList<HashMap<String, String>> valuesToSuggest = thread.getFromCache();
-    // TODO:TYLER also verify that the user isn't already fetching...
     if (valuesToSuggest == null) {
       // No value found in cache, let's start the worker and return nothing.
-      new Thread(thread).start();
+      thread.startThread();
       return builder.buildFuture();
     }
     

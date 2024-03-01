@@ -17,6 +17,10 @@ public class Common {
     source = context.getSource();
   }
 
+  public Common(ServerCommandSource theSource) {
+    source = theSource;
+  }
+
   protected void printMessage(MutableText message) {
     if (source == null) {
       return;
