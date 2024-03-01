@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.commands.autoComplete.web.ServerCmdsAutoComplete;
 import io.sandboxmc.web.Server;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -14,8 +15,8 @@ public class ServerCmd {
     return CommandManager.literal(commandName)
       .then(
         CommandManager.argument("serverCommand", StringArgumentType.word())
+        .suggests(new ServerCmdsAutoComplete())
         .executes(context -> {
-          // TODO: write suggestions for this...
           String serverCommand = StringArgumentType.getString(context, "serverCommand");
 
           if (serverCommand.equals("info")) {
