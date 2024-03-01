@@ -13,7 +13,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class ServerCmdsAutoComplete implements SuggestionProvider<ServerCommandSource> {
-  public static ArrayList<String> VALID_COMMANDS = new ArrayList<String>(Arrays.asList("info", "claim", "unclaim", "recover"));
+  public static ArrayList<String> VALID_COMMANDS = new ArrayList<String>(Arrays.asList("info", "claim", "unclaim", "recover", "forceRecover"));
 
   public ServerCmdsAutoComplete() {}
 

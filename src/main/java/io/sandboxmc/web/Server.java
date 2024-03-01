@@ -113,7 +113,8 @@ public class Server extends Common implements Runnable {
       printMessage("The server is not currently authenticated.\nIf you are the owner you can use the RECOVER command.");
       return;
     }
-
+    
+    // When adding new commands here make sure to update the VALID_COMMANDS list in ServerCmdsAutoComplete
     switch (task) {
       case "claim":
         claimServer();
