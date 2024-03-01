@@ -26,7 +26,7 @@ public class Rule {
           )
         )
       )
-      // TODO: add specific blockPos as secondary argument
+      // TODO:BRENT add specific blockPos as secondary argument
       .executes(context -> {
         System.out.println("Fallback????");
         return 1;

@@ -47,7 +47,6 @@ public class EmptyChunkGenerator extends ChunkGenerator {
 
   public EmptyChunkGenerator(BiomeSource biomeSource) {
     super(biomeSource);
-    //TODO Auto-generated constructor stub
   }
 
   public EmptyChunkGenerator(RegistryEntry<Biome> biome) {

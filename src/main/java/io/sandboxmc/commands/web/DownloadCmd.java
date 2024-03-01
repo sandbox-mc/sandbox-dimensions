@@ -68,8 +68,8 @@ public class DownloadCmd implements Runnable {
 
     // Full identifiers must be formatted as:
     // (creator:)datapack
-    // TODO: creators are currently not supported by the web app. This also might share a namespace with "group"?
-    // TODO: allow (:version) also? What would this look like? "vX", a timestamp, custom (parameterized) string?
+    // TODO:TYLER creators are currently not supported by the web app. This also might share a namespace with "group"?
+    // TODO:TYLER allow (:version) also? What would this look like? "vX", a timestamp, custom (parameterized) string?
     // If no creator/group is specified then the datapack must exist in the user's personal collection.
     switch (urlItemArray.length) {
       case 0:
@@ -92,7 +92,7 @@ public class DownloadCmd implements Runnable {
         return;
     }
 
-    // TODO: don't require auth if there's a creator
+    // TODO:TYLER don't require auth if there's a creator
     Web web = new Web(source, fileUrl + "/download", true);
     Path filePath = defaultFilePath(); // Currently not supporting anything but default.
     try {
@@ -105,7 +105,7 @@ public class DownloadCmd implements Runnable {
 
       File newFile = new File(filePath.toString());
       if (newFile.exists()) {
-        // TODO: user feedback to overwrite file.
+        // TODO:TYLER user feedback to overwrite file.
         newFile.delete();
         newFile = new File(filePath.toString());
       }

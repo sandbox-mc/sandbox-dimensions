@@ -71,6 +71,7 @@ public class WebAutoComplete implements SuggestionProvider<ServerCommandSource> 
 
     WebAutoCompleteWorker thread = new WebAutoCompleteWorker(context.getSource(), path, restrictToAuth);
     ArrayList<HashMap<String, String>> valuesToSuggest = thread.getFromCache();
+    // TODO:TYLER also verify that the user isn't already fetching...
     if (valuesToSuggest == null) {
       // No value found in cache, let's start the worker and return nothing.
       new Thread(thread).start();

@@ -23,12 +23,12 @@ public class WebAutoCompleteWorker implements Runnable {
     String playerUUID = source.getPlayer().getUuidAsString();
     pathToFetch = thePath;
     restrictToAuth = doRestrictToAuth;
-    // TODO: can I set this with a like... several minute cache?
+    // TODO:TYLER determine cache expiry method
     cacheKey = playerUUID + "|||" + restrictToAuth + "|||" + thePath;
   }
 
   public ArrayList<HashMap<String, String>> getFromCache() {
-    // TODO: also verify that the current user can only have one request outgoing at a time...
+    // TODO:TYLER also verify that the current user can only have one request outgoing at a time...
     if (cache.containsKey(cacheKey)) {
       return cache.get(cacheKey);
     } else {
@@ -61,10 +61,10 @@ public class WebAutoCompleteWorker implements Runnable {
       String key = jsonReader.nextName();
       switch (key) {
         case "total":
-          jsonReader.skipValue(); // TODO: determine if the total count can be used
+          jsonReader.skipValue(); // TODO:TYLER determine if the total count can be used
           break;
         case "message":
-          jsonReader.skipValue(); // TODO: determine if error messages can be used
+          jsonReader.skipValue(); // TODO:TYLER determine if error messages can be used
           break;
         case "results":
           jsonReader.beginArray();

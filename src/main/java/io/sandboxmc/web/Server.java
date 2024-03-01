@@ -31,7 +31,7 @@ public class Server extends Common implements Runnable {
   }
 
   public static void handleAuthForShutdown(MinecraftServer server) {
-    // TODO: determine if this can be threaded...
+    // This is intentionally not threaded just in case there are race conditions
     new Server(server).writeAuthTokenToFile();
   }
 

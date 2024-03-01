@@ -26,12 +26,12 @@ public class CreateDimension {
     return CommandManager.literal("create").then(
       CommandManager
       .argument("namespace", StringArgumentType.word())
-      // TODO: not sure how to get a suggestion for these without a namespace
+      // TODO:BRENT not sure how to get a suggestion for these without a namespace
       // .suggests(new StringListAutoComplete(getNamespaceAutoCompleteOptions()))
       .then(
         // This is the create command so dimensionName needs to be new for this namespace
         // can't auto-complete a new name
-        // TODO: set validation for existing dimesionNames
+        // TODO:BRENT set validation for existing dimesionNames
         CommandManager
         .argument("dimensionName", StringArgumentType.word())
         .then(
@@ -104,7 +104,7 @@ public class CreateDimension {
   private static int createDimension(CommandContext<ServerCommandSource> context) {
     // String datapackName = StringArgumentType.getString(context, "datapack");
     String namespace = StringArgumentType.getString(context, "namespace");
-    // namespace = "sandboxhidden"; // TODO: remove this override
+    // namespace = "sandboxhidden"; // TODO:BRENT remove this override
     String dimensionName = StringArgumentType.getString(context, "dimensionName");
     Identifier dimensionOptions = IdentifierArgumentType.getIdentifier(context, "dimension");
     Identifier dimensionIdentifier = new Identifier(namespace, dimensionName);

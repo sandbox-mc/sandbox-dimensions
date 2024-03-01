@@ -119,7 +119,7 @@ public class DimensionManager {
     DimensionOptions dimensionOptions = registryManager.get(RegistryKeys.DIMENSION).get(dimensionOptionsId);
     Boolean isEmptyWorld = dimensionOptionsId.equals(Main.id("empty"));
     SandboxWorldConfig config = new SandboxWorldConfig();
-    // TODO: add custom seed override for generated worlds
+    // TODO:BRENT add custom seed override for generated worlds
     config.setSeed(server.getWorld(World.OVERWORLD).getSeed());
     if (isEmptyWorld) {
       // our empty world requires the custom chunkGenerator to prevent blocks from being placed
@@ -135,7 +135,7 @@ public class DimensionManager {
 
     // Create the World
     SandboxWorld dimensionWorld = new SandboxWorld(server, registryKey, config, isEmptyWorld);
-    // TODO: check if we need/want to align the borders, I don't know if we do...
+    // TODO:BRENT check if we need/want to align the borders, I don't know if we do...
     // server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
     serverAccess.getWorlds().put(registryKey, dimensionWorld);
     DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld, true);
@@ -146,7 +146,7 @@ public class DimensionManager {
 
     // Set spawn point for single block placement
     int spawnX = dimensionWorld.getLevelProperties().getSpawnX();
-    // TODO: adjust for generated terrain
+    // TODO:BRENT adjust for generated terrain
     int spawnY = dimensionWorld.getSeaLevel();
     int spawnZ = dimensionWorld.getLevelProperties().getSpawnZ();
     BlockPos blockPos = new BlockPos(spawnX, spawnY, spawnZ);

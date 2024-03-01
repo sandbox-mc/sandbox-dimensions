@@ -73,7 +73,7 @@ public class DatapackManager {
     System.out.println("Path: " + targetDatapackPath);
     if (targetDatapackPath.toFile().exists()) {
       // Clear the original datapack
-      // TODO: offer to create a new version of it?
+      // TODO:BRENT offer to create a new version of it?
       ZipUtility.deleteDirectory(targetDatapackPath);
     }
 
@@ -87,7 +87,7 @@ public class DatapackManager {
     try {
       installDatapackFromZip(downloadedPack.installFile, Paths.get(datapackPath.toString(), datapackName));
     } catch (IOException e) {
-      // TODO Auto-generated catch block
+      // TODO:BRENT Auto-generated catch block
       System.out.println("Failed");
       e.printStackTrace();
     }

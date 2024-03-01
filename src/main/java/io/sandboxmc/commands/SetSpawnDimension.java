@@ -20,7 +20,7 @@ public class SetSpawnDimension {
           .suggests(DimensionAutoComplete.Instance())
           .executes(context -> setSpawnDimensionPlayerPos(context))
       )
-      // TODO: add specific blockPos as secondary argument
+      // TODO:BRENT add specific blockPos as secondary argument
       .executes(context -> {
         System.out.println("Fallback????");
         return 1;

@@ -38,11 +38,9 @@ public class Web {
   //
   // Static definition of Web.
   // Purely used for storing session information (bearer tokens).
-  // TODO: need to write a loader so we can boot sessions up on server load when configed.
   //
   //==============================================================
   private static HashMap<String, BearerToken> bearerTokens = new HashMap<>();
-  // TODO: inactivity should MAYBE be configable via the web app on an account-by-account basis and then stored in the BearerToken?
   private static final long INACTIVITY_TIMEOUT_MILLIS = 1000 * 60 * 30; // 30 minutes
 
   public static BearerToken getBearerToken(String key) {
