@@ -34,6 +34,7 @@ public class SandboxWorldConfig {
 
 
   public DimensionOptions createDimensionOptions(MinecraftServer server) {
+    // default to dimensionOtions if set
     if (dimensionOptions != null) {
       return this.dimensionOptions;
     }
