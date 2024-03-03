@@ -47,13 +47,22 @@ public class DatapackManager {
     }
   }
 
+  public static void addDatapack(String datapackName, Datapack datapack) {
+    datapackCache.put(datapackName, datapack);
+  }
+
   public static void addDownloadedDatapack(Identifier name, Path zipFile) {
     downloadedDatapacks.put(name.toString(), new DownloadedPack(name, zipFile));
   }
 
   public static Datapack createDatapack(String datapackName) {
-    Datapack datapack = new Datapack(datapackRootPath, datapackName);
-    datapackCache.put(datapackName, datapack);
+    Datapack datapack = getDatapack(datapackName);
+    if (datapack != null) {
+      return datapack;
+    }
+
+    datapack = new Datapack(datapackRootPath, datapackName);
+    DatapackManager.addDatapack(datapackName, datapack);
     return datapack;
   }
 

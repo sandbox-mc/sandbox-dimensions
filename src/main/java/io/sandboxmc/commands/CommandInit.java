@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import io.sandboxmc.commands.dimension.CreateDimension;
 import io.sandboxmc.commands.dimension.DeleteDimension;
 import io.sandboxmc.commands.dimension.ListDimensions;
+import io.sandboxmc.commands.datapack.InstallDatapack;
 import io.sandboxmc.commands.dimension.CopyDimension;
 import io.sandboxmc.commands.web.*;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -32,6 +33,10 @@ public class CommandInit {
 						return true;
 					})
 					.then(
+						CommandManager.literal("datapack")
+						.then(InstallDatapack.register())
+					)
+					.then(
 						// Sub command dimension
 						CommandManager.literal("dimension")
 						.then(CreateDimension.register())
@@ -40,7 +45,6 @@ public class CommandInit {
 						.then(CopyDimension.register())
 					)
 					.then(Rule.register())
-					.then(InstallDatapack.register())
 					.then(JoinDimension.register())
 					.then(LeaveDimension.register())
 					.then(RestoreDimension.register())

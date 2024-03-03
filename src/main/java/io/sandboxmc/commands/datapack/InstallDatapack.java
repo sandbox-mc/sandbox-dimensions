@@ -1,4 +1,4 @@
-package io.sandboxmc.commands;
+package io.sandboxmc.commands.datapack;
 
 import java.util.ArrayList;
 import java.util.List;
