@@ -84,15 +84,7 @@ public class CopyDimension {
     }
 
     // Create world once files are in place using dimension data
-    DimensionManager.createDimensionWorld(server, newDimensionId, dimension.getDimensionKey().getValue());
-
-
-    // String datapackName = DatapackManager.getDatapackName(dimensionId);
-    // Datapack datapack = DatapackManager.getDatapack(datapackName);
-
-    // datapack.zipWorldfilesToDatapack(dimension);
-
-    // ZipUtility.zipDirectory(datapack.datapackPath.toFile(), Paths.get(storageFolderPath.toString(), datapackName + ".zip").toString());
+    DimensionManager.createDimensionWorld(server, newDimensionId, dimension.getDimensionKey().getValue(), dimension.getSeed());
 
     context.getSource().sendFeedback(() -> {
       return Text.literal("Copied Dimension: " + dimensionId);

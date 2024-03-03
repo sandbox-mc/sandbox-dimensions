@@ -17,6 +17,7 @@ import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.World;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class Datapack {
@@ -138,7 +139,12 @@ public class Datapack {
             dimensionIdentifier,
             server
           );
-          DimensionManager.createDimensionWorld(server, dimensionIdentifier, new Identifier("overworld"));
+          DimensionManager.createDimensionWorld(
+            server,
+            dimensionIdentifier,
+            new Identifier("overworld"),
+            server.getWorld(World.OVERWORLD).getSeed()
+          );
         }
       }
     }

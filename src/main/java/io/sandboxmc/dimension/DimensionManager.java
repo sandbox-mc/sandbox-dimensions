@@ -109,7 +109,7 @@ public class DimensionManager {
   }
 
   // This will generate a dimension with EmptyChunkGenerator
-  public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier, Identifier dimensionOptionsId) {
+  public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier, Identifier dimensionOptionsId, long seed) {
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
     RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
     Immutable registryManager = server.getRegistryManager();
@@ -119,8 +119,7 @@ public class DimensionManager {
     DimensionOptions dimensionOptions = registryManager.get(RegistryKeys.DIMENSION).get(dimensionOptionsId);
     Boolean isEmptyWorld = dimensionOptionsId.equals(Main.id("empty"));
     SandboxWorldConfig config = new SandboxWorldConfig();
-    // TODO:BRENT add custom seed override for generated worlds
-    config.setSeed(server.getWorld(World.OVERWORLD).getSeed());
+    config.setSeed(seed);
     if (isEmptyWorld) {
       // our empty world requires the custom chunkGenerator to prevent blocks from being placed
       var plainsBiome = registryManager.get(RegistryKeys.BIOME).getEntry(RegistryKey.of(RegistryKeys.BIOME, new Identifier("plains"))).get();
@@ -273,7 +272,12 @@ public class DimensionManager {
       mainSave.keySet().forEach(dimensionId -> {
         if (DimensionManager.getDimensionSave(dimensionId) == null) {
         System.out.println("WARNING: Failed to load world for: ");
-        DimensionManager.createDimensionWorld(server, dimensionId, mainSave.get(dimensionId));
+        DimensionManager.createDimensionWorld(
+          server,
+          dimensionId,
+          mainSave.get(dimensionId),
+          server.getWorld(World.OVERWORLD).getSeed()
+        );
       }
     });
   }
