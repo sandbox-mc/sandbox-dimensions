@@ -29,10 +29,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public class Web {
-  // public static final String WEB_DOMAIN = "http://127.0.0.1:3000";
-  // public static final String WEB_DOMAIN = "https://www.sandboxmc.dev";
-  public static final String WEB_DOMAIN = "https://www.sandboxmc.io";
-  public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.modId).get().toString().replace("sandboxmc ", "");
+  public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.MOD_ID).get().toString().replace("sandboxmc ", "");
 
   //==============================================================
   //
@@ -40,15 +37,34 @@ public class Web {
   // Purely used for storing session information (bearer tokens).
   //
   //==============================================================
+  private static String webDomain = "https://www.sandboxmc.io"; // defaults to the prod version
   private static HashMap<String, BearerToken> bearerTokens = new HashMap<>();
-  private static final long INACTIVITY_TIMEOUT_MILLIS = 1000 * 60 * 30; // 30 minutes
+  private static long defaultInactivityTimeoutMs = 1000 * 60 * 30; // 30 minutes
+
+  public static String getWebDomain() {
+    return webDomain;
+  }
+
+  public static void setWebDomainByEnv() {
+    switch (Main.getEnv()) {
+      case "DEVELOPMENT":
+        webDomain = "https://www.sandboxmc.dev";
+        break;
+      case "LOCAL":
+        webDomain = "http://127.0.0.1:3000";
+        break;
+      default:
+        webDomain = "https://www.sandboxmc.io"; // just in case, we wanna make sure we reset it
+        break;
+    }
+  }
 
   public static BearerToken getBearerToken(String key) {
     if (!bearerTokens.containsKey(key)) {
       return null;
     }
 
-    long thirtyMinsAgo = System.currentTimeMillis() - INACTIVITY_TIMEOUT_MILLIS;
+    long thirtyMinsAgo = System.currentTimeMillis() - defaultInactivityTimeoutMs;
     BearerToken bearerToken = bearerTokens.get(key);
     if (bearerToken.getLastAccessed() > thirtyMinsAgo) {
       return bearerToken;
@@ -138,7 +154,7 @@ public class Web {
   }
 
   public void setPath(String path) {
-    requestBuilder = requestBuilder.url(HttpUrl.get(URI.create(WEB_DOMAIN + path)));
+    requestBuilder = requestBuilder.url(HttpUrl.get(URI.create(webDomain + path)));
   }
 
   public void setPostBody(String json) {

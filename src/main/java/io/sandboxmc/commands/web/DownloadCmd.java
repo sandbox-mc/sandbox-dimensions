@@ -99,7 +99,7 @@ public class DownloadCmd implements Runnable {
       // This is closed by web.closeReaders()
       BufferedInputStream inputStream = web.getInputStream();
       if (web.getStatusCode() != 200) {
-        printMessage(source, "No datapack found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
+        printMessage(source, "No datapack found at\n" + Web.getWebDomain() + fileUrl + "\nDid you misstype it?");
         return;
       }
 
@@ -112,7 +112,7 @@ public class DownloadCmd implements Runnable {
 
       FileUtils.copyInputStreamToFile(inputStream, newFile);
     } catch (IOException e) {
-      printMessage(source, "No datapack found at\n" + Web.WEB_DOMAIN + fileUrl + "\nDid you misstype it?");
+      printMessage(source, "No datapack found at\n" + Web.getWebDomain() + fileUrl + "\nDid you misstype it?");
       return; // end early if error
     } finally {
       web.closeReaders();

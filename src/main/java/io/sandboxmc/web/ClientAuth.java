@@ -77,7 +77,7 @@ public class ClientAuth extends Common implements Runnable {
       authTokens.put(playerID.getIdentifier(), authToken);
 
       MutableText authText = Text.literal("Please visit the following link to continue authentication\n");
-      String authUrl = Web.WEB_DOMAIN + AUTH_PATH_PREFIX + "/auth/login/" + authToken;
+      String authUrl = Web.getWebDomain() + AUTH_PATH_PREFIX + "/auth/login/" + authToken;
       MutableText clickableUrl = Text.literal(authUrl);
       ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, authUrl);
       clickableUrl.setStyle(Style.EMPTY.withClickEvent(clickEvent));
@@ -146,7 +146,7 @@ public class ClientAuth extends Common implements Runnable {
 
   private void printHelpMessage() {
     MutableText helpText = Text.literal("Something went wrong. Please visit\n");
-    String helpUrl = Web.WEB_DOMAIN + AUTH_PATH_PREFIX + "/auth/help";
+    String helpUrl = Web.getWebDomain() + AUTH_PATH_PREFIX + "/auth/help";
     MutableText helpURL = Text.literal(helpUrl);
     ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, helpUrl);
     helpURL.setStyle(Style.EMPTY.withClickEvent(clickEvent));

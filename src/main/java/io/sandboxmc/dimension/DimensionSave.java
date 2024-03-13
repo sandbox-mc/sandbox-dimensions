@@ -147,7 +147,7 @@ public class DimensionSave extends PersistentState {
     }
 
     PersistentStateManager persistentStateManager = dimension.getPersistentStateManager();
-    dimensionSave = persistentStateManager.getOrCreate(type, Main.modId);
+    dimensionSave = persistentStateManager.getOrCreate(type, Main.MOD_ID);
     dimensionSave.serverWorld = dimension;
     if (dimensionSave.dimensionIsActive || setActive) {
       dimensionSave.dimensionIsActive = true;
