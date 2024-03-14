@@ -24,6 +24,8 @@ public class Plunger {
 
   public static void setError() {
     level = LogLevel.ERROR;
+
+    error("Log level set to ERROR");
   }
 
   public static void setDebug() {
