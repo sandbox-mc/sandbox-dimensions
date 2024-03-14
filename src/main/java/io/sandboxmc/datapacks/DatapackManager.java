@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.datapacks.types.DownloadedPack;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
@@ -79,7 +80,7 @@ public class DatapackManager {
   }
 
   public static void installDatapackFromZip(Path zipFilePath, Path targetDatapackPath) throws IOException {
-    System.out.println("Path: " + targetDatapackPath);
+    Plunger.debug("Path: " + targetDatapackPath);
     if (targetDatapackPath.toFile().exists()) {
       // Clear the original datapack
       // TODO:BRENT offer to create a new version of it?
@@ -96,9 +97,7 @@ public class DatapackManager {
     try {
       installDatapackFromZip(downloadedPack.installFile, Paths.get(datapackRootPath.toString(), datapackName));
     } catch (IOException e) {
-      // TODO:BRENT Auto-generated catch block
-      System.out.println("Failed");
-      e.printStackTrace();
+      Plunger.error("Failed to installDatapackFromZip", e);
     }
 
     // Files are unzipped, now we can register the datapack

@@ -1,5 +1,6 @@
 package io.sandboxmc.dimension;
 
+import io.sandboxmc.Plunger;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -106,7 +107,7 @@ public class SandboxWorldConfig {
     if (dimensionType == null) {
       dimensionType = server.getRegistryManager().get(RegistryKeys.DIMENSION_TYPE).getEntry(this.dimensionTypeKey).orElse(null);
       if (dimensionType == null) {
-        System.out.println("invalid dimension type " + this.dimensionTypeKey);
+        Plunger.error("Invalid dimension type " + this.dimensionTypeKey);
       }
     }
 

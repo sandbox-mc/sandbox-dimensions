@@ -19,6 +19,8 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.file.SimplePathVisitor;
 
+import io.sandboxmc.Plunger;
+
 public class ZipUtility {
 
   public static void copyDirectory(Path source, Path target, CopyOption... options) throws IOException {
@@ -81,8 +83,7 @@ public class ZipUtility {
         }
       }
     } catch (Exception e) {
-      System.out.println(e);
-      e.printStackTrace();
+      Plunger.error("Failed in unzipInputStream", e);
     }
   }
 

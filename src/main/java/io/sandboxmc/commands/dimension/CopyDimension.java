@@ -10,6 +10,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
+import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
@@ -67,7 +69,7 @@ public class CopyDimension {
       copyTargetDirectory.mkdirs();
     } else {
       // It should not exist...
-      System.out.println("Already exists...");
+      Plunger.debug("Already exists...");
       return 0;
     }
 

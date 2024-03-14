@@ -11,6 +11,7 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.context.CommandContext;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.Web;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -197,7 +198,7 @@ public class Server extends Common implements Runnable {
     if (uuidFile.exists()) {
       try {
         setUUID(Files.readString(uuidFile.toPath()).trim());
-        System.out.println("SandboxMC UUID assigned from file: " + uuid);
+        Plunger.info("Server UUID assigned from file: " + uuid);
 
         if (authTokenFile.exists()) {
           setAuthToken(Files.readString(authTokenFile.toPath()).trim());
@@ -209,7 +210,7 @@ public class Server extends Common implements Runnable {
         }
       } catch (IOException e) {
         // This should NOT break...
-        System.out.println(e.getMessage());
+        Plunger.error("We broke in readFilesOnBoot!", e);
       }
     } else {
       // If no uuid file was even found then we just need to request a new UUID and auth token!
@@ -243,10 +244,9 @@ public class Server extends Common implements Runnable {
       }
       jsonReader.endObject();
 
-      System.out.println("SandboxMC UUID from web: " + uuid);
+      Plunger.info("Server UUID from web: " + uuid);
     } catch (IOException e) {
-      // What might be happening here...? Failed connections?
-      // Let's just make sure we're clearing things...
+      Plunger.error("Failed connection in assignUUIDFromWeb? Clearing data...", e);
       setUUID(null);
       setAuthToken(null);
     } finally {
@@ -285,7 +285,7 @@ public class Server extends Common implements Runnable {
       // What might be happening here...? Failed connections? Bad auth tokens?
       // Let's just make sure we're clearing the auth token at least
       setAuthToken(null);
-      System.out.println("\n\nFAILED TO REAUTH ON BOOT\n\n");
+      Plunger.error("FAILED TO REAUTH ON BOOT", e);
     } finally {
       web.closeReaders();
     }
@@ -302,7 +302,7 @@ public class Server extends Common implements Runnable {
           break;
         case "auth_token":
           setAuthToken(jsonReader.nextString());
-          System.out.println("SandboxMC server auth token set from web.");
+          Plunger.debug("SandboxMC server auth token set from web.");
           break;
         case "owner":
           jsonReader.beginObject();
@@ -369,7 +369,7 @@ public class Server extends Common implements Runnable {
       writer.close();
     } catch (IOException e) {
       // This should NOT happen, if it does we need to know why!
-      System.out.println(e.getMessage());
+      Plunger.error("Failed in writeUUIDToFile!", e);
     }
   }
 
@@ -392,7 +392,7 @@ public class Server extends Common implements Runnable {
       writer.close();
     } catch (IOException e) {
       // This should NOT happen, if it does we need to know why!
-      System.out.println(e.getMessage());
+      Plunger.error("Failed in writeAuthTokenToFile!", e);
     }
   }
 }

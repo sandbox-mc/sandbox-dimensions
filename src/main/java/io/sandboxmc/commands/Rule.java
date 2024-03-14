@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
+import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.commands.autoComplete.DimensionRulesAutoComplete;
 import net.minecraft.command.argument.DimensionArgumentType;
@@ -28,7 +29,7 @@ public class Rule {
       )
       // TODO:BRENT add specific blockPos as secondary argument
       .executes(context -> {
-        System.out.println("Fallback????");
+        Plunger.debug("Fallback????");
         return 1;
       });
   }

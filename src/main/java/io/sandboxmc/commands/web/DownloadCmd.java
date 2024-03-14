@@ -13,6 +13,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.web.WebAutoComplete;
 import io.sandboxmc.datapacks.DatapackManager;
@@ -80,7 +81,7 @@ public class DownloadCmd implements Runnable {
         // In the case of default
         datapackId = new Identifier("personal", urlItemArray[0]);
         fileUrl += "/" + urlItemArray[0];
-        System.out.println("Stuff: " + urlItemArray[0]);
+        Plunger.debug("Stuff: " + urlItemArray[0]);
         break;
       // case 2:
       //   // Case 2, this is for published datapacks, they would be published under a publisher/group

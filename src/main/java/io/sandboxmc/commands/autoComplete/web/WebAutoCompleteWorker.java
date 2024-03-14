@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import com.google.gson.stream.JsonReader;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.Web;
 import io.sandboxmc.web.Common;
 import net.minecraft.server.command.ServerCommandSource;
@@ -41,7 +42,7 @@ public class WebAutoCompleteWorker extends Common implements Runnable {
     Integer numActiveCalls = playersFetching.getOrDefault(playerUUID, 0);
     // Allow up to two calls per person.
     if (numActiveCalls > 1) {
-      System.out.println("IGNORING WEB AUTOCOMPLETE API CALL DUE TO EXISTING IN FLIGHT FOR USER: " + numActiveCalls);
+      Plunger.debug("IGNORING WEB AUTOCOMPLETE API CALL DUE TO EXISTING IN FLIGHT FOR USER: " + numActiveCalls);
       return;
     }
 
@@ -71,7 +72,7 @@ public class WebAutoCompleteWorker extends Common implements Runnable {
       readJSON(web.getJson(), valuesToSuggest);
       cache.put(cacheKey, valuesToSuggest);
     } catch (IOException e) {
-      System.out.println("Error: " + e.getClass().toString() + " - " + e.getMessage());
+      Plunger.error("Failed in WebAutoCompleteWorker", e);
     } finally {
       decrementCounter();
       web.closeReaders();

@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.player.PlayerData;
 import io.sandboxmc.player.PlayerPosition;
+import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.minecraft.command.argument.DimensionArgumentType;
@@ -28,7 +29,7 @@ public class JoinDimension {
           .executes(context -> joinDimension(context))
       )
       .executes(context -> {
-        System.out.println("Fallback????");
+        Plunger.debug("Fallback????");
         return 1;
       });
   }
@@ -106,7 +107,7 @@ public class JoinDimension {
         player.getPitch()
       )
     );
-    System.out.println("Teleported Player: " + player.getName() + " to dimension: " + dimension.getRegistryKey().getValue().toString());
+    Plunger.debug("Teleported Player: " + player.getName() + " to dimension: " + dimension.getRegistryKey().getValue().toString());
     return 1;
   }
 }

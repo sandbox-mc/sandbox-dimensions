@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.SandboxMC;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.player.PlayerData;
@@ -246,7 +247,7 @@ public class DimensionSave extends PersistentState {
       dimensionFile.mkdirs();
     }
 
-    System.out.println("DataPack Dir: " + datapackLoadFilePath); // full path
+    Plunger.debug("DataPack Dir: " + datapackLoadFilePath); // full path
 
     try {
       
@@ -255,14 +256,13 @@ public class DimensionSave extends PersistentState {
       ZipUtility.deleteDirectory(dimensionSavePath);
 
       // Unzip the world files
-      System.out.println("Starting unzip");
+      Plunger.debug("Starting unzip");
       ZipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
-      System.out.println("Done unzipping");
+      Plunger.debug("Done unzipping");
 
       return true;
     } catch (IOException e) {
-      System.out.println("IO Exception");
-      e.printStackTrace();
+      Plunger.error("Failed in loadDimensionFile!", e);
     }
 
     return false;
@@ -326,7 +326,7 @@ public class DimensionSave extends PersistentState {
 
     // If the destination has an inventory... load it?
     if (destinationPlayerData.inventoryCache != null) {
-      System.out.println("HAD INV");
+      Plunger.debug("HAD INV");
       playerInventory.clone(destinationPlayerData.inventoryCache);
     }
     originalDimensionSave.markDirty();

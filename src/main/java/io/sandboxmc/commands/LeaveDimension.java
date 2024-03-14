@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.player.PlayerData;
 import io.sandboxmc.player.PlayerPosition;
@@ -65,7 +66,7 @@ public class LeaveDimension {
         player.getPitch()
       )
     );
-    System.out.println("Teleported Player: " + player.getName() + " to dimension: " + dimension.getRegistryKey().getValue().toString());
+    Plunger.debug("Teleported Player: " + player.getName() + " to dimension: " + dimension.getRegistryKey().getValue().toString());
     return 1;
   }
 }

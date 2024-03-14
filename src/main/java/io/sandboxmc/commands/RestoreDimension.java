@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.dimension.DimensionSave;
+import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -20,7 +21,7 @@ public class RestoreDimension {
           .executes(context -> execute(context))
       )
       .executes(context -> {
-        System.out.println("Fallback????");
+        Plunger.debug("Fallback????");
         return 1;
       });
   }
@@ -29,7 +30,7 @@ public class RestoreDimension {
     ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
 
     var dimensionSave = new DimensionSave();
-    System.out.println("Restore Command not fully Implemented yet...");
+    Plunger.debug("Restore Command not fully Implemented yet...");
     // Forces datapack save zip to overwrite the current dimension save files
     dimensionSave.dimensionSaveLoaded = DimensionSave.loadDimensionFile(
       dimension.getRegistryKey().getValue(), context.getSource().getServer());

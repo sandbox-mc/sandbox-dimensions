@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.SandboxMC;
 import io.sandboxmc.chunkGenerators.EmptyChunkGenerator;
 import io.sandboxmc.datapacks.DatapackManager;
@@ -69,7 +70,7 @@ public class DimensionManager {
             .replaceAll("dimension/", "")
             .replaceAll(".json", "");
           String dimensionRegistrationKey = dimensionName.getNamespace() + ":" + dimPath;
-          System.out.println("DimensionKey: " + dimensionRegistrationKey);
+          Plunger.debug("DimensionKey: " + dimensionRegistrationKey);
           initializedDimensions.add(dimensionRegistrationKey);
         }
 
@@ -78,7 +79,7 @@ public class DimensionManager {
         for (Identifier resourceName : worldSaves.keySet()) {
           Resource resource = worldSaves.get(resourceName);
           String packName = resource.getResourcePackName().replaceAll("file/", "");
-          System.out.println("Pathing: " + resourceName);
+          Plunger.debug("Pathing: " + resourceName);
           // Pathing should match for Namespace and fileName
           String dimensionKey = resourceName.toString()
             .replaceAll(DimensionSave.WORLD_SAVE_FOLDER + "/", "") // remove folder name
@@ -89,7 +90,7 @@ public class DimensionManager {
               sandboxDimensionWorldFiles.put(dimensionKey, packName);
             }
           } else {
-            System.out.println("WARNING: " + resourceName + " does not have a dimension loaded from a Datapack");
+            Plunger.error("WARNING: " + resourceName + " does not have a dimension loaded from a Datapack");
           }
         }
 
@@ -128,7 +129,7 @@ public class DimensionManager {
     } else if (dimensionOptions != null) {
       config.setDimensionOptions(dimensionOptions);
     } else {
-      System.out.println("Warning: Failed to create world with dimensionOptions: " + dimensionOptionsId);
+      Plunger.error("Warning: Failed to create world with dimensionOptions: " + dimensionOptionsId);
       return;
     }
 
@@ -172,7 +173,7 @@ public class DimensionManager {
 
       LevelStorage.Session session = serverAccess.getSession();
       File worldDirectory = session.getWorldDirectory(dimensionKey).toFile();
-      System.out.println("Delete Dir: " + worldDirectory);
+      Plunger.debug("Delete Dir: " + worldDirectory);
       if (worldDirectory.exists()) {
         try {
           ZipUtility.deleteDirectory(worldDirectory.toPath());
@@ -181,7 +182,7 @@ public class DimensionManager {
             namespaceDir.toFile().delete();
           }
         } catch (IOException e) {
-          System.out.println("Failed to delete world directory");
+          Plunger.error("Failed to delete world directory", e);
           try {
             ZipUtility.deleteDirectory(worldDirectory.toPath());
           } catch (IOException ignored) {
@@ -248,30 +249,29 @@ public class DimensionManager {
       ServerWorld dimensionWorld = worldMap.get(dimensionIdString);
       if (dimensionWorld != null) {
         // Register dimension to datapack
-        System.out.println("Register: " + dimensionId + " : " + sandboxDimensionWorldFiles.get(dimensionIdString));
+        Plunger.debug("Register: " + dimensionId + " : " + sandboxDimensionWorldFiles.get(dimensionIdString));
         DatapackManager.registerDatapackDimension(sandboxDimensionWorldFiles.get(dimensionIdString), dimensionId);
         DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimensionWorld);
         if (!dimensionSave.dimensionSaveLoaded) {
-          System.out.println("Loading World File: " + dimensionIdString);
+          Plunger.debug("Loading World File: " + dimensionIdString);
           // Load datapack save zip and set as loaded
           dimensionSave.dimensionSaveLoaded = DimensionSave.loadDimensionFile(dimensionId, server);
         } else {
-          System.out.println("World Save files already loaded, Skipping: " + dimensionIdString);
+          Plunger.debug("World Save files already loaded, Skipping: " + dimensionIdString);
         }
 
         // Add to list for auto-complete
         DimensionManager.addDimensionSave(dimensionId, dimensionSave);
       } else {
-        System.out.println("WARNING: Failed to load world for: " + dimensionIdString);
+        Plunger.error("WARNING: Failed to load world for: " + dimensionIdString);
       }
     }
 
-    HashMap<Identifier, Identifier> mainSave = DimensionSave.buildDimensionSave(
-      server.getWorld(World.OVERWORLD)
-      ).getGeneratedWorlds();
-      mainSave.keySet().forEach(dimensionId -> {
-        if (DimensionManager.getDimensionSave(dimensionId) == null) {
-        System.out.println("WARNING: Failed to load world for: ");
+    HashMap<Identifier, Identifier> mainSave = DimensionSave.buildDimensionSave(server.getWorld(World.OVERWORLD)).getGeneratedWorlds();
+    mainSave.keySet().forEach(dimensionId -> {
+      if (DimensionManager.getDimensionSave(dimensionId) == null) {
+        // TODO:BRENT is this right? I changed some tabbing here... not sure
+        Plunger.error("WARNING: Failed to load world for: " + dimensionId + " creating?");
         DimensionManager.createDimensionWorld(
           server,
           dimensionId,

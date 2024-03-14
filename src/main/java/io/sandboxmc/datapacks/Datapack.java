@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.datapacks.types.DatapackMeta;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
@@ -50,7 +51,7 @@ public class Datapack {
   }
 
   public void addFolder(String folderPath) {
-    System.out.println(folderPath);
+    Plunger.debug("Adding folder: " + folderPath);
     File newFolder = Paths.get(this.datapackPath.toString(), folderPath).toFile();
     if (!newFolder.exists()) {
       newFolder.mkdirs();
@@ -156,7 +157,7 @@ public class Datapack {
     Path dimensionPath = session.getWorldDirectory(dimension.getRegistryKey());
     Path worldSavePath = buildWorldSavePath(dimensionId.getNamespace(), dimensionId.getPath());
 
-    System.out.println("Zipping files for: " + dimensionId);
+    Plunger.debug("Zipping files for: " + dimensionId);
     ZipUtility.zipDirectory(dimensionPath.toFile(), worldSavePath.toString());
   }
 }
