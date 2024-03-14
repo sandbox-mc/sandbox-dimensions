@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.sandboxmc.Main;
+import io.sandboxmc.SandboxMC;
 import io.sandboxmc.chunkGenerators.EmptyChunkGenerator;
 import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
@@ -47,7 +47,7 @@ public class DimensionManager {
     .registerReloadListener(new SimpleSynchronousResourceReloadListener() {
       @Override
       public Identifier getFabricId() {
-        return Main.id("world_save_loader");
+        return SandboxMC.id("world_save_loader");
       }
 
       @Override
@@ -117,7 +117,7 @@ public class DimensionManager {
     // Get the presets for DimensionOptions
     // This should allow for custom dimension types to be generated
     DimensionOptions dimensionOptions = registryManager.get(RegistryKeys.DIMENSION).get(dimensionOptionsId);
-    Boolean isEmptyWorld = dimensionOptionsId.equals(Main.id("empty"));
+    Boolean isEmptyWorld = dimensionOptionsId.equals(SandboxMC.id("empty"));
     SandboxWorldConfig config = new SandboxWorldConfig();
     config.setSeed(seed);
     if (isEmptyWorld) {

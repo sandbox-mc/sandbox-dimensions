@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import io.sandboxmc.Main;
+import io.sandboxmc.SandboxMC;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.player.PlayerData;
 import io.sandboxmc.zip.ZipUtility;
@@ -147,7 +147,7 @@ public class DimensionSave extends PersistentState {
     }
 
     PersistentStateManager persistentStateManager = dimension.getPersistentStateManager();
-    dimensionSave = persistentStateManager.getOrCreate(type, Main.MOD_ID);
+    dimensionSave = persistentStateManager.getOrCreate(type, SandboxMC.MOD_ID);
     dimensionSave.serverWorld = dimension;
     if (dimensionSave.dimensionIsActive || setActive) {
       dimensionSave.dimensionIsActive = true;

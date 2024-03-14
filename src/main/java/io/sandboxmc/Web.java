@@ -29,7 +29,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public class Web {
-  public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(Main.MOD_ID).get().toString().replace("sandboxmc ", "");
+  public static final String MOD_VERSION = FabricLoader.getInstance().getModContainer(SandboxMC.MOD_ID).get().toString().replace("sandboxmc ", "");
 
   //==============================================================
   //
@@ -45,18 +45,10 @@ public class Web {
     return webDomain;
   }
 
-  public static void setWebDomainByEnv() {
-    switch (Main.getEnv()) {
-      case "DEVELOPMENT":
-        webDomain = "https://www.sandboxmc.dev";
-        break;
-      case "LOCAL":
-        webDomain = "http://127.0.0.1:3000";
-        break;
-      default:
-        webDomain = "https://www.sandboxmc.io"; // just in case, we wanna make sure we reset it
-        break;
-    }
+  public static void setDevMode() {
+    webDomain = "https://www.sandboxmc.dev";
+
+    Plunger.debug("Web.webDomain set to " + webDomain);
   }
 
   public static BearerToken getBearerToken(String key) {
