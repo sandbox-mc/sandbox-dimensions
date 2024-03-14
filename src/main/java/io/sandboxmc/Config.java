@@ -58,6 +58,9 @@ public class Config {
       case "debug":
         Plunger.setDebug();
         break;
+      case "error":
+        Plunger.setError();
+        break;
     }
   }
 
