@@ -25,7 +25,7 @@ public class Config {
       BufferedReader reader = Files.newBufferedReader(configFile.toPath());
       while (reader.ready()) {
         String line = reader.readLine();
-        if (line.startsWith("#") || line.length() == 0) continue;
+        if (line.startsWith("#") || line.strip().length() == 0) continue;
 
         String[] setting = line.split("=");
         switch (setting.length) {
