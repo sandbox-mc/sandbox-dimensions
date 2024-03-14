@@ -34,6 +34,8 @@ public class Plunger {
     debug("Log level set to DEBUG");
   }
 
+  // Info printing is strictly for public-facing logging messages.
+  // Be sure you mean to use this because these would be visible in production mode.
   public static void info(String message) {
     LOGGER.info(message);
   }
@@ -41,13 +43,13 @@ public class Plunger {
   public static void error(String message) {
     if (!isError()) return;
 
-    LOGGER.error(message);
+    DEBUG_LOGGER.error(message);
   }
 
   public static void error(String message, Throwable errThrowable) {
     if (!isError()) return;
 
-    LOGGER.error(message, errThrowable);
+    DEBUG_LOGGER.error(message, errThrowable);
   }
 
   public static void debug(String message) {
