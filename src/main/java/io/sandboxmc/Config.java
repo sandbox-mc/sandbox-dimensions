@@ -12,14 +12,15 @@ public class Config {
 
   // First thing called in ServerStartingListener.
   public static void setConfigs(MinecraftServer server) {
-    long startMs = System.nanoTime();
-    Plunger.info("Loading config file...");
     File configFile = server.getFile(CONFIG_FILE);
     if (!configFile.exists()) {
       // no config file, set any defaults
       Plunger.info("No config file, loading defaults.");
       return;
     }
+
+    long startMs = System.nanoTime();
+    Plunger.info("Loading config file...");
 
     try {
       BufferedReader reader = Files.newBufferedReader(configFile.toPath());
