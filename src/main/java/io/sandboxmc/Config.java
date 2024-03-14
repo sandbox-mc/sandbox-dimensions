@@ -12,7 +12,7 @@ public class Config {
 
   // First thing called in ServerStartingListener.
   public static void setConfigs(MinecraftServer server) {
-    long startMs = System.currentTimeMillis();
+    long startMs = System.nanoTime();
     Plunger.info("Loading config file...");
     File configFile = server.getFile(CONFIG_FILE);
     if (!configFile.exists()) {
@@ -51,7 +51,7 @@ public class Config {
     } catch (IOException e) {
       Plunger.error("Failed to load config file!", e);
     } finally {
-      Plunger.info("Done. Took " + (System.currentTimeMillis() - startMs) + "ms");
+      Plunger.info("Config loaded in " + ((System.nanoTime() - startMs) / 1000.0) + "μs");
     }
   }
 
