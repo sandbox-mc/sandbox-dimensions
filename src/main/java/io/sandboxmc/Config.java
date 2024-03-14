@@ -12,7 +12,8 @@ public class Config {
 
   // First thing called in ServerStartingListener.
   public static void setConfigs(MinecraftServer server) {
-    Plunger.debug("Loading config file.");
+    long startMs = System.currentTimeMillis();
+    Plunger.info("Loading config file...");
     File configFile = server.getFile(CONFIG_FILE);
     if (!configFile.exists()) {
       // no config file, set any defaults
@@ -47,9 +48,10 @@ public class Config {
         }
       }
       reader.close();
-      Plunger.debug("Config file loaded.");
     } catch (IOException e) {
       Plunger.error("Failed to load config file!", e);
+    } finally {
+      Plunger.info("Done. Took " + (System.currentTimeMillis() - startMs) + "ms");
     }
   }
 

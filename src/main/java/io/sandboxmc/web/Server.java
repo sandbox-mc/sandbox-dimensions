@@ -22,9 +22,14 @@ public class Server extends Common implements Runnable {
   // Class level methods for interacting with the server's auth.
   private static final String UUID_FILE_NAME = "sandboxmc.server.uuid";
   private static final String AUTH_TOKEN_FILE_NAME = "sandboxmc.server.token";
+  private static String fileNameSuffix = "";
   private static String uuid = null;
   private static String authToken = null;
   private static GameProfile serverOwner = null;
+
+  public static void setDevMode() {
+    fileNameSuffix = ".dev";
+  }
 
   public static void authOnBoot(MinecraftServer server) {
     // Keep this threaded for faster boot times
@@ -192,8 +197,8 @@ public class Server extends Common implements Runnable {
   }
 
   private void readFilesOnBoot() {
-    File uuidFile = server.getFile(UUID_FILE_NAME);
-    File authTokenFile = server.getFile(AUTH_TOKEN_FILE_NAME);
+    File uuidFile = server.getFile(UUID_FILE_NAME + fileNameSuffix);
+    File authTokenFile = server.getFile(AUTH_TOKEN_FILE_NAME + fileNameSuffix);
 
     if (uuidFile.exists()) {
       try {
@@ -357,7 +362,7 @@ public class Server extends Common implements Runnable {
     }
 
     try {
-      File uuidFile = server.getFile(UUID_FILE_NAME);
+      File uuidFile = server.getFile(UUID_FILE_NAME + fileNameSuffix);
       if (uuidFile.exists()) {
         // Make sure we're not appending to an existing file...
         uuidFile.delete();
@@ -380,7 +385,7 @@ public class Server extends Common implements Runnable {
     }
 
     try {
-      File authTokenFile = server.getFile(AUTH_TOKEN_FILE_NAME);
+      File authTokenFile = server.getFile(AUTH_TOKEN_FILE_NAME + fileNameSuffix);
       if (authTokenFile.exists()) {
         // Make sure we're not appending to an existing file...
         authTokenFile.delete();

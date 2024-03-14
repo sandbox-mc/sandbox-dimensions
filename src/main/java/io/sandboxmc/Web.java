@@ -13,6 +13,7 @@ import com.google.gson.stream.JsonReader;
 
 import io.sandboxmc.web.BearerToken;
 import io.sandboxmc.web.PlayerIdentifier;
+import io.sandboxmc.web.Server;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -45,8 +46,14 @@ public class Web {
     return webDomain;
   }
 
+  public static boolean isDevMode() {
+    return webDomain.endsWith(".dev");
+  }
+
   public static void setDevMode() {
     webDomain = "https://www.sandboxmc.dev";
+
+    Server.setDevMode(); // makes the config files use a .dev suffix
 
     Plunger.debug("Web.webDomain set to " + webDomain);
   }
