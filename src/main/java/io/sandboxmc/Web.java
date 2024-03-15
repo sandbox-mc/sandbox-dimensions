@@ -120,7 +120,16 @@ public class Web {
     client = new OkHttpClient();
     requestBuilder = new Request.Builder()
       .header("User-Agent", userAgent())
-      .header("Accept", "*/*");
+      .header("Accept", "*/*")
+      // Add server auth as "Bearer uuid, authToken"
+      .header("Authorization", "Bearer " + Server.getUUID().toString())
+      .addHeader("Authorization", Server.getAuthToken().toString());
+  }
+
+  public Web(MinecraftServer theServer, String path) {
+    this(theServer);
+
+    setPath(path);
   }
 
   public Web(ServerCommandSource commandSource) {
@@ -198,10 +207,12 @@ public class Web {
     formBuilder = formBuilder.addFormDataPart(fieldName, file.getName(), RequestBody.create(file, MediaType.parse("text/plain")));
   }
 
+  // Authorization for user
   public void setAuth(String authToken) {
     if (authToken != null && authToken.length() > 0) {
       hasAuth = true;
-      requestBuilder = requestBuilder.addHeader("Authorization", "Bearer " + authToken);
+      // This APPENDS to the existing header that is structured as "Bearer serverUUID, serverAuthToken" with a comma
+      requestBuilder = requestBuilder.addHeader("Authorization", authToken);
     }
   }
 

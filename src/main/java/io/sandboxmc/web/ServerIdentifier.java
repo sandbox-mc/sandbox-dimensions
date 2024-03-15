@@ -9,14 +9,11 @@ public class ServerIdentifier {
     server = theServer;
   }
 
-  public String getJSON(String authToken) {
+  public String getJSON() {
     StringBuilder sb = new StringBuilder("{\"server\": {");
     sb.append("\"address\": \"" + server.getServerIp() + ":" + server.getServerPort() + "\",");
     sb.append("\"name\": \"" + server.getName().replaceAll("\"", "__QUOTE__") + "\",");
     sb.append("\"motd\": \"" + server.getServerMotd().replaceAll("\"", "__QUOTE__") + "\"");
-    if (authToken != null) {
-      sb.append(", \"auth_token\": \"" + authToken + "\"");
-    }
     sb.append("}}");
     return sb.toString();
   }

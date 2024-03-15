@@ -109,6 +109,7 @@ public class ClientAuth extends Common implements Runnable {
 
     Web web = new Web(source, AUTH_PATH_PREFIX + "/auth/verify", authToken);
     web.setPatchBody("{\"auth\": {\"code\": \"" + authCode + "\"}}");
+    Boolean authSuccessful = false;
     
     try {
       JsonReader jsonReader = web.getJson();
@@ -119,6 +120,8 @@ public class ClientAuth extends Common implements Runnable {
         switch (key) {
           case "bearer_token":
             Web.setBearerToken(playerID.getIdentifier(), jsonReader.nextString());
+
+            authSuccessful = true;
 
             // We're now effectively logged in, we can drop the auth token
             // now we'll use the bearer token for the player's UUID to make any auth-required calls for this session.
@@ -141,7 +144,11 @@ public class ClientAuth extends Common implements Runnable {
     }
 
     // We're now authed, tell the user.
-    printMessage("Authentication successful!");
+    if (authSuccessful) {
+      printMessage("Authentication successful!");
+    } else {
+      printMessage("Failed to authenticate!");
+    }
   }
 
   private void printHelpMessage() {

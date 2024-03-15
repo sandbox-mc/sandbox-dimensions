@@ -42,7 +42,7 @@ public class WebAutoCompleteWorker extends Common implements Runnable {
     Integer numActiveCalls = playersFetching.getOrDefault(playerUUID, 0);
     // Allow up to two calls per person.
     if (numActiveCalls > 1) {
-      Plunger.debug("IGNORING WEB AUTOCOMPLETE API CALL DUE TO EXISTING IN FLIGHT FOR USER: " + numActiveCalls);
+      Plunger.debug("Too many in-flight web autocompletes for user: " + numActiveCalls);
       return;
     }
 
@@ -79,14 +79,13 @@ public class WebAutoCompleteWorker extends Common implements Runnable {
     }
   }
 
-  // @see https://stackoverflow.com/questions/4308554/simplest-way-to-read-json-from-a-url-in-java
   private void readJSON(JsonReader jsonReader, ArrayList<HashMap<String, String>> valuesToSuggest) throws IOException {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String key = jsonReader.nextName();
       switch (key) {
         case "total":
-          jsonReader.skipValue(); // This isn't useful atm
+          jsonReader.skipValue(); // This isn't useful yet
           break;
         case "message":
           printMessage(jsonReader.nextString());

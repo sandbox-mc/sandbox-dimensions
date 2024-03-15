@@ -135,8 +135,8 @@ public class Server extends Common implements Runnable {
   }
 
   private void claimServer() {
-    Web web = new Web(source, "/mc/server/auth/" + uuid + "/claim", true);
-    web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
+    Web web = new Web(source, "/mc/server/auth/claim", true);
+    web.setPatchBody(new ServerIdentifier(server).getJSON());
 
     try {
       JsonReader jsonReader = web.getJson();
@@ -166,8 +166,8 @@ public class Server extends Common implements Runnable {
   }
 
   private void unclaimServer() {
-    Web web = new Web(source, "/mc/server/auth/" + uuid + "/unclaim", true);
-    web.setDeleteBody(new ServerIdentifier(server).getJSON(authToken));
+    Web web = new Web(source, "/mc/server/auth/unclaim", true);
+    web.setDeleteBody(new ServerIdentifier(server).getJSON());
 
     try {
       JsonReader jsonReader = web.getJson();
@@ -203,15 +203,18 @@ public class Server extends Common implements Runnable {
     if (uuidFile.exists()) {
       try {
         setUUID(Files.readString(uuidFile.toPath()).trim());
-        Plunger.info("Server UUID assigned from file: " + uuid);
+        Plunger.info("Server UUID set from file: " + uuid);
 
         if (authTokenFile.exists()) {
           setAuthToken(Files.readString(authTokenFile.toPath()).trim());
           // Then throw out the file, this ideally exists only through restarts
           authTokenFile.delete();
+          Plunger.info("Server authToken set from file. [FILTERED]");
 
           // Now we need to reauth so we know our token is fresh for security!
           reauthFromWeb();
+        } else {
+          Plunger.info("No server authToken read from file! Recovery necessary.");
         }
       } catch (IOException e) {
         // This should NOT break...
@@ -224,9 +227,8 @@ public class Server extends Common implements Runnable {
   }
 
   private void assignUUIDFromWeb() {
-    Web web = new Web(server);
-    web.setPath("/mc/server/auth/assign-uuid");
-    web.setPostBody(new ServerIdentifier(server).getJSON(null));
+    Web web = new Web(server, "/mc/server/auth/assign-uuid");
+    web.setPostBody(new ServerIdentifier(server).getJSON());
     try {
       JsonReader jsonReader = web.getJson();
       jsonReader.beginObject();
@@ -265,39 +267,48 @@ public class Server extends Common implements Runnable {
       return;
     }
     
-    Web web = new Web(source, "/mc/server/auth/" + uuid + "/recover", true);
-    web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
+    Web web = new Web(source, "/mc/server/auth/recover", true);
+    web.setPatchBody(new ServerIdentifier(server).getJSON());
 
     try {
-      readServerAuthResponse(web);
+      JsonReader jsonReader = web.getJson();
+      if (web.getStatusCode() != 200) {
+        Plunger.debug("Failed to recover server from web. Status Code: " + web.getStatusCode());
+        return;
+      }
+      readServerAuthResponse(jsonReader);
     } catch (IOException e) {
       // What might be happening here...? Failed connections? Bad auth tokens?
       // Let's just make sure we're clearing the auth token at least
       setAuthToken(null);
       serverOwner = null;
+      Plunger.error("Failed to recover server!", e);
     } finally {
       web.closeReaders();
     }
   }
 
   private void reauthFromWeb() {
-    Web web = new Web(server);
-    web.setPath("/mc/server/auth/" + uuid + "/reauth");
-    web.setPatchBody(new ServerIdentifier(server).getJSON(authToken));
+    Web web = new Web(server, "/mc/server/auth/reauth");
+    web.setPatchBody(new ServerIdentifier(server).getJSON());
     try {
-      readServerAuthResponse(web);
+      JsonReader jsonReader = web.getJson();
+      if (web.getStatusCode() != 200) {
+        Plunger.debug("Failed to reauth from web. Status Code: " + web.getStatusCode());
+        return;
+      }
+      readServerAuthResponse(jsonReader);
     } catch (IOException e) {
       // What might be happening here...? Failed connections? Bad auth tokens?
       // Let's just make sure we're clearing the auth token at least
       setAuthToken(null);
-      Plunger.error("FAILED TO REAUTH ON BOOT", e);
+      Plunger.error("Failed to reauth on boot!", e);
     } finally {
       web.closeReaders();
     }
   }
 
-  private void readServerAuthResponse(Web web) throws IOException {
-    JsonReader jsonReader = web.getJson();
+  private void readServerAuthResponse(JsonReader jsonReader) throws IOException {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String key = jsonReader.nextName();
@@ -307,7 +318,7 @@ public class Server extends Common implements Runnable {
           break;
         case "auth_token":
           setAuthToken(jsonReader.nextString());
-          Plunger.debug("SandboxMC server auth token set from web.");
+          Plunger.info("Server authToken updated from web. [FILTERED]");
           break;
         case "owner":
           jsonReader.beginObject();

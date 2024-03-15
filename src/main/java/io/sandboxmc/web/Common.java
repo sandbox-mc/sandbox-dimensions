@@ -2,6 +2,7 @@ package io.sandboxmc.web;
 
 import com.mojang.brigadier.context.CommandContext;
 
+import io.sandboxmc.Plunger;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -23,6 +24,7 @@ public class Common {
 
   protected void printMessage(MutableText message) {
     if (source == null) {
+      Plunger.debug(message.toString());
       return;
     }
 
