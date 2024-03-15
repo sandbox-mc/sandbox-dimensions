@@ -46,7 +46,7 @@ public class Server extends Common implements Runnable {
   }
 
   public static String getUUID() {
-    return uuid;
+    return uuid == null ? "" : uuid;
   }
 
   public static void setUUID(String newUUID) {
@@ -54,7 +54,7 @@ public class Server extends Common implements Runnable {
   }
 
   public static String getAuthToken() {
-    return authToken;
+    return authToken == null ? "" : authToken;
   }
 
   public static void setAuthToken(String newAuthToken) {

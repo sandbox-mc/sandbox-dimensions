@@ -122,8 +122,8 @@ public class Web {
       .header("User-Agent", userAgent())
       .header("Accept", "*/*")
       // Add server auth as "Bearer uuid, authToken"
-      .header("Authorization", "Bearer " + Server.getUUID().toString())
-      .addHeader("Authorization", Server.getAuthToken().toString());
+      .header("Authorization", "Bearer " + Server.getUUID())
+      .addHeader("Authorization", Server.getAuthToken());
   }
 
   public Web(MinecraftServer theServer, String path) {
