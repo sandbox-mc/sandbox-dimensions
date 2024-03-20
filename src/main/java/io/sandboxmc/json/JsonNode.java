@@ -5,45 +5,78 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 import com.google.gson.stream.JsonReader;
 
 import io.sandboxmc.Plunger;
 
 public class JsonNode {
-  private String id = null;
-  private int index = -1;
-  private String type; // https://json-schema.org/understanding-json-schema/reference/type
+  private JsonNodeType type; // https://json-schema.org/understanding-json-schema/reference/type
   private String valStr;
-  private Boolean valBool;
+  private boolean valBool;
   private int valInt;
   private double valDouble;
   private ArrayList<JsonNode> valArray;
   private HashMap<String, JsonNode> valMap;
 
-  public JsonNode(int theIndex, JsonReader jsonReader) {
-    index = theIndex;
-
+  public JsonNode(JsonReader jsonReader) {
     injestFromReader(jsonReader);
   }
 
-  public JsonNode(String key, JsonReader jsonReader) {
-    id = key;
+  public JsonNode(JsonNodeType theType) {
+    type = theType;
 
-    injestFromReader(jsonReader);
+    switch (type) {
+      case OBJECT:
+        valMap = new HashMap<>();
+        break;
+      case ARRAY:
+        valArray = new ArrayList<>();
+        break;
+      default:
+        // I don't think we have to do anything special for any of the other ones
+        break;
+    }
   }
 
-  public String getType() {
+  public JsonNode(String value) {
+    this(JsonNodeType.STRING);
+
+    valStr = value;
+  }
+
+  public JsonNode(int value) {
+    this(JsonNodeType.INTEGER);
+
+    valInt = value;
+  }
+
+  public JsonNode(double value) {
+    this(JsonNodeType.NUMBER);
+
+    valDouble = value;
+  }
+
+  public JsonNode(boolean value) {
+    this(JsonNodeType.BOOLEAN);
+
+    valBool = value;
+  }
+
+  public JsonNode(ArrayList<JsonNode> value) {
+    this(JsonNodeType.ARRAY);
+
+    valArray = value;
+  }
+
+  public JsonNode(HashMap<String, JsonNode> value) {
+    this(JsonNodeType.OBJECT);
+
+    valMap = value;
+  }
+
+  public JsonNodeType getType() {
     return type;
-  }
-
-  public String getKey() {
-    return id;
-  }
-
-  public int getIndex() {
-    return index;
   }
 
   public Boolean isNull() {
@@ -52,45 +85,98 @@ public class JsonNode {
 
   public Object getValue() {
     switch (type) {
-      case "STRING":
+      case STRING:
         return getString();
-      case "BOOLEAN":
+      case BOOLEAN:
         return getBoolean();
-      case "INTEGER":
+      case INTEGER:
         return getInteger();
-      case "NUMBER":
+      case NUMBER:
         return getDouble();
-      case "ARRAY":
+      case ARRAY:
         return getArray();
-      case "OBJECT":
+      case OBJECT:
         return getMap();
       default:
         return null;
     }
   }
 
+  public void clearData() {
+    valStr = null;
+    valBool = false;
+    valInt = -1;
+    valDouble = -1;
+    valArray = null;
+    valMap = null;
+  }
+
   public String getString() {
     return valStr;
   }
 
-  public Boolean getBoolean() {
+  public void setString(String value) {
+    clearData();
+    type = JsonNodeType.STRING;
+    valStr = value;
+  }
+
+  public boolean getBoolean() {
     return valBool;
+  }
+
+  public void setBoolean(boolean value) {
+    clearData();
+    type = JsonNodeType.BOOLEAN;
+    valBool = value;
   }
 
   public int getInteger() {
     return valInt;
   }
 
+  public void setInteger(int value) {
+    clearData();
+    type = JsonNodeType.INTEGER;
+    valInt = value;
+  }
+
   public double getDouble() {
-    return type == "INTEGER" ? valInt : valDouble;
+    return type == JsonNodeType.INTEGER ? valInt : valDouble;
+  }
+
+  public void setDouble(double value) {
+    clearData();
+    type = JsonNodeType.NUMBER;
+    valDouble = value;
   }
 
   public ArrayList<JsonNode> getArray() {
     return valArray;
   }
 
+  public void setArray(ArrayList<JsonNode> value) {
+    clearData();
+    type = JsonNodeType.ARRAY;
+    valArray = value;
+  }
+
   public HashMap<String, JsonNode> getMap() {
     return valMap;
+  }
+
+  public void setMap(HashMap<String, JsonNode> value) {
+    clearData();
+    type = JsonNodeType.OBJECT;
+    valMap = value;
+  }
+
+  public HashMap<String, JsonNode> getObject() {
+    return getMap();
+  }
+
+  public void setObject(HashMap<String, JsonNode> value) {
+    setMap(value);
   }
 
   // This is just to be called as if the node was a TOP LEVEL node.
@@ -100,11 +186,55 @@ public class JsonNode {
     return toString(0, false);
   }
 
-  private String toString(int nestLevel, Boolean hasNext) {
+  public JsonNode getNode(String key) {
+    if (type != JsonNodeType.OBJECT) {
+      Plunger.error("Attempted to get from JsonNode but the node was not an object!");
+      return null;
+    }
+
+    return valMap.get(key);
+  }
+
+  public JsonNode put(String key, JsonNodeType theType) {
+    if (type != JsonNodeType.OBJECT) {
+      Plunger.error("Attempted to put to JsonNode but the node was not an object!");
+      return null;
+    }
+
+    JsonNode newNode = new JsonNode(theType);
+    valMap.put(key, newNode);
+    return newNode;
+  }
+
+  public JsonNode put(String key, String value) {
+    JsonNode newNode = put(key, JsonNodeType.STRING);
+    newNode.setString(value);
+    return newNode;
+  }
+
+  public JsonNode put(String key, int value) {
+    JsonNode newNode = put(key, JsonNodeType.INTEGER);
+    newNode.setInteger(value);
+    return newNode;
+  }
+
+  public JsonNode put(String key, double value) {
+    JsonNode newNode = put(key, JsonNodeType.NUMBER);
+    newNode.setDouble(value);
+    return newNode;
+  }
+
+  public JsonNode put(String key, boolean value) {
+    JsonNode newNode = put(key, JsonNodeType.BOOLEAN);
+    newNode.setBoolean(value);
+    return newNode;
+  }
+
+  private String toString(int nestLevel, boolean hasNext) {
     StringBuilder sb = new StringBuilder();
 
     switch (type) {
-      case "OBJECT":
+      case OBJECT:
         sb.append("{\n");
         Iterator<Map.Entry<String, JsonNode>> mapIterator = getMap().entrySet().iterator();
         while (mapIterator.hasNext()) {
@@ -117,7 +247,7 @@ public class JsonNode {
         for (int i = 0; i < nestLevel * 2; i++) sb.append(' ');
         sb.append("}");
         break;
-      case "ARRAY":
+      case ARRAY:
         sb.append("[\n");
         Iterator<JsonNode> arrayIterator = getArray().iterator();
         while (arrayIterator.hasNext()) {
@@ -128,7 +258,7 @@ public class JsonNode {
         for (int i = 0; i < nestLevel * 2; i++) sb.append(' ');
         sb.append("]");
         break;
-      case "STRING":
+      case STRING:
         sb.append("\"" + valStr + "\"");
         break;
       default:
@@ -151,21 +281,21 @@ public class JsonNode {
     try {
       switch (jsonReader.peek()) {
         case STRING:
-          type = "STRING";
+          type = JsonNodeType.STRING;
           valStr = jsonReader.nextString();
           break;
         case NUMBER:
           Double nextDouble = jsonReader.nextDouble();
           if (nextDouble.longValue() == nextDouble) {
-            type = "INTEGER";
+            type = JsonNodeType.INTEGER;
             valInt = nextDouble.intValue();
           } else {
-            type = "NUMBER";
+            type = JsonNodeType.NUMBER;
             valDouble = nextDouble;
           }
           break;
         case BOOLEAN:
-          type = "BOOLEAN";
+          type = JsonNodeType.BOOLEAN;
           valBool = jsonReader.nextBoolean();
           break;
         case NULL:
@@ -174,29 +304,30 @@ public class JsonNode {
           type = null;
           jsonReader.skipValue();
         case BEGIN_ARRAY:
-          type = "ARRAY";
+          type = JsonNodeType.ARRAY;
           jsonReader.beginArray();
           valArray = new ArrayList<>();
           while (jsonReader.hasNext()) {
-            valArray.add(new JsonNode(valArray.size(), jsonReader));
+            valArray.add(new JsonNode(jsonReader));
           }
           jsonReader.endArray();
           break;
         case BEGIN_OBJECT:
-          type = "OBJECT";
+          type = JsonNodeType.OBJECT;
           jsonReader.beginObject();
           valMap = new HashMap<>();
           while (jsonReader.hasNext()) {
             String mapName = jsonReader.nextName();
-            valMap.put(mapName, new JsonNode(mapName, jsonReader));
+            valMap.put(mapName, new JsonNode(jsonReader));
           }
           jsonReader.endObject();
           break;
         default:
+          Plunger.debug("Unhandled JsonToken type: " + jsonReader.peek());
           break;
       }
     } catch (IOException e) {
-      Plunger.error("Failed parsing JSON at KEY: " + (id == null ? "NULL" : id) + ", INDEX: " + index, e);
+      Plunger.error("Failed parsing JSON", e);
     }
   }
 }
