@@ -29,6 +29,8 @@ public class JsonContainer {
     container.putAt(new String[]{"object key", "inner object key", "double value"}, 500.456);
     container.putAt(new String[]{"object key", "inner object key", "boolean value"}, true);
     Plunger.debug("Outputting JSON:\n" + container.toString());
+    Integer intVal = (Integer)container.getAt(new String[]{"object key", "inner object key", "integer value"});
+    Plunger.debug("Accessing 'object key'.'inner object key'.'integer value': " + intVal);
     Plunger.debug("Writing to file at: " + container.getFile().toPath());
     container.writeDataToFile();
   }
@@ -101,6 +103,40 @@ public class JsonContainer {
     return writeDataToFile();
   }
 
+  // Top level only
+  public JsonNode getNode(String key) {
+    return getNodeAt(new String[] { key });
+  }
+
+  public JsonNode getNodeAt(String[] keys) {
+    return getNodeAt(keys, 0, topNode);
+  }
+
+  public JsonNode getNodeAt(String[] keys, int idx, JsonNode lastNode) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (lastNode == null) return null; // Hit a dead end, early return
+
+    JsonNode nextNode = lastNode.getNode(keys[idx]);
+
+    if (idx == (keys.length - 1)) {
+      // last item, we can return the node now
+      return nextNode;
+    }
+
+    // Not at the last item yet, do recursion
+    return getNodeAt(keys, idx + 1, nextNode);
+  }
+
+  // Top level only
+  public Object get(String key) {
+    return getAt(new String[] { key });
+  }
+
+  public Object getAt(String[] keys) {
+    JsonNode node = getNodeAt(keys, 0, topNode);
+    return node == null ? null : node.getValue();
+  }
+
   // Only top level key:values
   public JsonNode put(String key, String value) {
     return putAt(new String[]{ key }, value);
@@ -112,15 +148,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, String value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (!isValidNode(keys, idx, lastNode));
+    if (!isValidNode(keys, idx, lastNode)) return null;
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = getNextNode(keys[idx], lastNode);
-    return putAt(keys, idx + 1, lastNode, value);
+    return putAt(keys, idx + 1, getNextNode(keys[idx], lastNode), value);
   }
 
   // Only top level key:values
@@ -134,15 +169,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, int value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (!isValidNode(keys, idx, lastNode));
+    if (!isValidNode(keys, idx, lastNode)) return null;
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = getNextNode(keys[idx], lastNode);
-    return putAt(keys, idx + 1, lastNode, value);
+    return putAt(keys, idx + 1, getNextNode(keys[idx], lastNode), value);
   }
 
   // Only top level key:values
@@ -156,15 +190,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, double value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (!isValidNode(keys, idx, lastNode));
+    if (!isValidNode(keys, idx, lastNode)) return null;
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = getNextNode(keys[idx], lastNode);
-    return putAt(keys, idx + 1, lastNode, value);
+    return putAt(keys, idx + 1, getNextNode(keys[idx], lastNode), value);
   }
 
   // Only top level key:values
@@ -178,28 +211,215 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (!isValidNode(keys, idx, lastNode));
+    if (!isValidNode(keys, idx, lastNode)) return null;
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = getNextNode(keys[idx], lastNode);
-    return putAt(keys, idx + 1, lastNode, value);
+    return putAt(keys, idx + 1, getNextNode(keys[idx], lastNode), value);
+  }
+
+  // Only top level key:values
+  public JsonNode putArray(String key) {
+    return putArrayAt(new String[]{ key });
+  }
+
+  public JsonNode putArrayAt(String[] keys) {
+    return putArrayAt(keys, 0, topNode);
+  }
+
+  public JsonNode putArrayAt(String[] keys, int idx, JsonNode lastNode) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    if (idx == (keys.length - 1)) {
+      // last item, we can actually put the value here
+      return lastNode.put(keys[idx], JsonNodeType.ARRAY);
+    }
+
+    return putArrayAt(keys, idx + 1, getNextNode(keys[idx], lastNode));
   }
 
   // "putAt" for type OBJECT is redundant,
   // you don't need to instantiate it until you're putting the first key.
 
-  // TODO:TYLER implement addAt for Arrays
+  // Only top level key:values
+  public JsonNode addAt(String key, String value) {
+    return addAt(new String[]{ key }, value);
+  }
+
+  public JsonNode addAt(String[] keys, String value) {
+    return addAt(keys, 0, topNode, value);
+  }
+
+  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, String value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    // valid node, let's get the next...
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+
+    if (idx == (keys.length - 1)) {
+      // now we're the last node, we can try adding the value
+      if (nextNode == null) {
+        // if it's null we can insert an empty array
+        nextNode = putArrayAt(keys, idx, lastNode);
+      }
+      return nextNode.add(value);
+    }
+
+    return addAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level key:values
+  public JsonNode addAt(String key, int value) {
+    return addAt(new String[]{ key }, value);
+  }
+
+  public JsonNode addAt(String[] keys, int value) {
+    return addAt(keys, 0, topNode, value);
+  }
+
+  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, int value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    // valid node, let's get the next...
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+
+    if (idx == (keys.length - 1)) {
+      // now we're the last node, we can try adding the value
+      if (nextNode == null) {
+        // if it's null we can insert an empty array
+        nextNode = putArrayAt(keys, idx, lastNode);
+      }
+      return nextNode.add(value);
+    }
+
+    return addAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level key:values
+  public JsonNode addAt(String key, double value) {
+    return addAt(new String[]{ key }, value);
+  }
+
+  public JsonNode addAt(String[] keys, double value) {
+    return addAt(keys, 0, topNode, value);
+  }
+
+  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, double value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    // valid node, let's get the next...
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+
+    if (idx == (keys.length - 1)) {
+      // now we're the last node, we can try adding the value
+      if (nextNode == null) {
+        // if it's null we can insert an empty array
+        nextNode = putArrayAt(keys, idx, lastNode);
+      }
+      return nextNode.add(value);
+    }
+
+    return addAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level key:values
+  public JsonNode addAt(String key, boolean value) {
+    return addAt(new String[]{ key }, value);
+  }
+
+  public JsonNode addAt(String[] keys, boolean value) {
+    return addAt(keys, 0, topNode, value);
+  }
+
+  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    // valid node, let's get the next...
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+
+    if (idx == (keys.length - 1)) {
+      // now we're the last node, we can try adding the value
+      if (nextNode == null) {
+        // if it's null we can insert an empty array
+        nextNode = putArrayAt(keys, idx, lastNode);
+      }
+      return nextNode.add(value);
+    }
+
+    return addAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level key:values
+  public JsonNode addArrayAt(String key) {
+    return addArrayAt(new String[]{ key });
+  }
+
+  public JsonNode addArrayAt(String[] keys) {
+    return addArrayAt(keys, 0, topNode);
+  }
+
+  public JsonNode addArrayAt(String[] keys, int idx, JsonNode lastNode) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    // valid node, let's get the next...
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+
+    if (idx == (keys.length - 1)) {
+      // now we're the last node, we can try adding the value
+      if (nextNode == null) {
+        // if it's null we can insert an empty array
+        nextNode = putArrayAt(keys, idx, lastNode);
+      }
+      return nextNode.addArray();
+    }
+
+    return addArrayAt(keys, idx + 1, nextNode);
+  }
+
+  // Only top level key:values
+  public JsonNode addObjectAt(String key) {
+    return addObjectAt(new String[]{ key });
+  }
+
+  public JsonNode addObjectAt(String[] keys) {
+    return addObjectAt(keys, 0, topNode);
+  }
+
+  public JsonNode addObjectAt(String[] keys, int idx, JsonNode lastNode) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (!isValidNode(keys, idx, lastNode)) return null;
+
+    // valid node, let's get the next...
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+
+    if (idx == (keys.length - 1)) {
+      // now we're the last node, we can try adding the value
+      if (nextNode == null) {
+        // if it's null we can insert an empty array
+        nextNode = putArrayAt(keys, idx, lastNode);
+      }
+      return nextNode.addObject();
+    }
+
+    return addObjectAt(keys, idx + 1, nextNode);
+  }
+
+
   // TODO:TYLER implement removeAt for both Objects and Arrays
-  // TODO:TYLER implement getAt
 
   private JsonNode ensureTopNode(int idx, JsonNode lastNode) {
-    if (idx != 0 || topNode != null) {
-      return lastNode;
-    }
+    // If we're NOT the first node or if the top node isn't null then just leave
+    // This method is only trying to make sure we have a top node
+    if (idx != 0 || topNode != null) return lastNode;
 
     if (lastNode == null) {
       // In this case we're actually putting to an uninstantiated top level node

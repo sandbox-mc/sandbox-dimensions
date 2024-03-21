@@ -17,7 +17,7 @@ public class JsonNode {
   private int valInt;
   private double valDouble;
   private ArrayList<JsonNode> valArray;
-  private HashMap<String, JsonNode> valMap;
+  private HashMap<String, JsonNode> valObject;
 
   public JsonNode(JsonReader jsonReader) {
     injestFromReader(jsonReader);
@@ -28,7 +28,7 @@ public class JsonNode {
 
     switch (type) {
       case OBJECT:
-        valMap = new HashMap<>();
+        valObject = new HashMap<>();
         break;
       case ARRAY:
         valArray = new ArrayList<>();
@@ -72,7 +72,7 @@ public class JsonNode {
   public JsonNode(HashMap<String, JsonNode> value) {
     this(JsonNodeType.OBJECT);
 
-    valMap = value;
+    valObject = value;
   }
 
   public JsonNodeType getType() {
@@ -96,7 +96,7 @@ public class JsonNode {
       case ARRAY:
         return getArray();
       case OBJECT:
-        return getMap();
+        return getObject();
       default:
         return null;
     }
@@ -108,7 +108,7 @@ public class JsonNode {
     valInt = -1;
     valDouble = -1;
     valArray = null;
-    valMap = null;
+    valObject = null;
   }
 
   public String getString() {
@@ -161,22 +161,14 @@ public class JsonNode {
     valArray = value;
   }
 
-  public HashMap<String, JsonNode> getMap() {
-    return valMap;
-  }
-
-  public void setMap(HashMap<String, JsonNode> value) {
-    clearData();
-    type = JsonNodeType.OBJECT;
-    valMap = value;
-  }
-
   public HashMap<String, JsonNode> getObject() {
-    return getMap();
+    return valObject;
   }
 
   public void setObject(HashMap<String, JsonNode> value) {
-    setMap(value);
+    clearData();
+    type = JsonNodeType.OBJECT;
+    valObject = value;
   }
 
   // This is just to be called as if the node was a TOP LEVEL node.
@@ -192,7 +184,7 @@ public class JsonNode {
       return null;
     }
 
-    return valMap.get(key);
+    return valObject.get(key);
   }
 
   public JsonNode put(String key, JsonNodeType theType) {
@@ -202,7 +194,7 @@ public class JsonNode {
     }
 
     JsonNode newNode = new JsonNode(theType);
-    valMap.put(key, newNode);
+    valObject.put(key, newNode);
     return newNode;
   }
 
@@ -230,19 +222,77 @@ public class JsonNode {
     return newNode;
   }
 
+  private boolean isValidArray() {
+    if (type == JsonNodeType.ARRAY) {
+      return true;
+    }
+
+    Plunger.error("Attempted to add an item but the node was not an array!");
+    return false;
+  }
+
+  public JsonNode add(String value) {
+    if (!isValidArray()) return null;
+
+    JsonNode newNode = new JsonNode(value);
+    valArray.add(newNode);
+    return newNode;
+  }
+
+  public JsonNode add(int value) {
+    if (!isValidArray()) return null;
+
+    JsonNode newNode = new JsonNode(value);
+    valArray.add(newNode);
+    return newNode;
+  }
+
+  public JsonNode add(double value) {
+    if (!isValidArray()) return null;
+
+    JsonNode newNode = new JsonNode(value);
+    valArray.add(newNode);
+    return newNode;
+  }
+
+  public JsonNode add(boolean value) {
+    if (!isValidArray()) return null;
+
+    JsonNode newNode = new JsonNode(value);
+    valArray.add(newNode);
+    return newNode;
+  }
+
+  public JsonNode addArray() {
+    if (!isValidArray()) return null;
+
+    JsonNode newNode = new JsonNode(JsonNodeType.ARRAY);
+    valArray.add(newNode);
+    return newNode;
+  }
+
+  public JsonNode addObject() {
+    if (!isValidArray()) return null;
+
+    JsonNode newNode = new JsonNode(JsonNodeType.OBJECT);
+    valArray.add(newNode);
+    return newNode;
+  }
+
+
   private String toString(int nestLevel, boolean hasNext) {
     StringBuilder sb = new StringBuilder();
 
     switch (type) {
       case OBJECT:
         sb.append("{\n");
-        Iterator<Map.Entry<String, JsonNode>> mapIterator = getMap().entrySet().iterator();
-        while (mapIterator.hasNext()) {
-          Map.Entry<String, JsonNode> entry = mapIterator.next();
+        Iterator<Map.Entry<String, JsonNode>> objectIterator = getObject().entrySet().iterator();
+        while (objectIterator.hasNext()) {
+          Map.Entry<String, JsonNode> entry = objectIterator.next();
           String key = entry.getKey();
           JsonNode value = entry.getValue();
           for (int i = 0; i < (nestLevel + 1) * 2; i++) sb.append(' ');
-          sb.append("\"" + key + "\": " + value.toString(nestLevel + 1, mapIterator.hasNext()));
+          sb.append("\"" + key + "\": " + value.toString(nestLevel + 1, objectIterator.hasNext()));
         }
         for (int i = 0; i < nestLevel * 2; i++) sb.append(' ');
         sb.append("}");
@@ -315,10 +365,10 @@ public class JsonNode {
         case BEGIN_OBJECT:
           type = JsonNodeType.OBJECT;
           jsonReader.beginObject();
-          valMap = new HashMap<>();
+          valObject = new HashMap<>();
           while (jsonReader.hasNext()) {
             String mapName = jsonReader.nextName();
-            valMap.put(mapName, new JsonNode(jsonReader));
+            valObject.put(mapName, new JsonNode(jsonReader));
           }
           jsonReader.endObject();
           break;
