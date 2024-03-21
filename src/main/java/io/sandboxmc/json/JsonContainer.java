@@ -1,7 +1,9 @@
 package io.sandboxmc.json;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +16,17 @@ public class JsonContainer {
   private JsonNode topNode = null;
   private File file = null;
   private Path filePath = null;
+
+  public static void usageExample(Path filePath) {
+    JsonContainer container = new JsonContainer(filePath);
+    container.put("base string value", "Some string at the top level");
+    container.putAt(new String[]{"object key", "inner object key", "integer value"}, 5);
+    container.putAt(new String[]{"object key", "inner object key", "double value"}, 500.456);
+    container.putAt(new String[]{"object key", "inner object key", "boolean value"}, true);
+    Plunger.debug("Outputting JSON:\n" + container.toString());
+    Plunger.debug("Writing to file at: " + filePath);
+    container.writeDataToFile();
+  }
 
   public JsonContainer() {}
 
@@ -49,10 +62,38 @@ public class JsonContainer {
       try {
         if (jsonReader != null) jsonReader.close();
         if (reader != null) reader.close();
-      } catch (Exception e) {
-        // ignore
+      } catch (Exception e) {}
+    }
+  }
+
+  public boolean writeDataToFile() {
+    if (file == null) {
+      Plunger.error("No file given to write JSON to!");
+      return false;
+    }
+    BufferedWriter writer = null;
+
+    try {
+      file.delete(); // don't append to existing file...
+      writer = new BufferedWriter(new FileWriter(file));
+      writer.write(toString());
+      return true;
+    } catch (IOException e) {
+      Plunger.error("Failed to write JSON to file!", e);
+    } finally {
+      if (writer != null) {
+        try { writer.close(); } catch (IOException e) {}
       }
     }
+
+    return false;
+  }
+
+  public boolean writeDataToFile(File theFile) {
+    file = theFile;
+    filePath = file.toPath();
+
+    return writeDataToFile();
   }
 
   // Only top level key:values
@@ -66,17 +107,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, String value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (lastNode == null) {
-      Plunger.error("Attempted to put to a null node at " + keys.toString() + " - " + keys[idx]);
-      return lastNode;
-    }
+    if (!isValidNode(keys, idx, lastNode));
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = lastNode.put(keys[idx], JsonNodeType.OBJECT);
+    lastNode = getNextNode(keys[idx], lastNode);
     return putAt(keys, idx + 1, lastNode, value);
   }
 
@@ -91,17 +129,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, int value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (lastNode == null) {
-      Plunger.error("Attempted to put to a null node at " + keys.toString() + " - " + keys[idx]);
-      return lastNode;
-    }
+    if (!isValidNode(keys, idx, lastNode));
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = lastNode.put(keys[idx], JsonNodeType.OBJECT);
+    lastNode = getNextNode(keys[idx], lastNode);
     return putAt(keys, idx + 1, lastNode, value);
   }
 
@@ -116,17 +151,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, double value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (lastNode == null) {
-      Plunger.error("Attempted to put to a null node at " + keys.toString() + " - " + keys[idx]);
-      return lastNode;
-    }
+    if (!isValidNode(keys, idx, lastNode));
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = lastNode.put(keys[idx], JsonNodeType.OBJECT);
+    lastNode = getNextNode(keys[idx], lastNode);
     return putAt(keys, idx + 1, lastNode, value);
   }
 
@@ -141,17 +173,14 @@ public class JsonContainer {
 
   public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
     lastNode = ensureTopNode(idx, lastNode);
-    if (lastNode == null) {
-      Plunger.error("Attempted to put to a null node at " + keys.toString() + " - " + keys[idx]);
-      return lastNode;
-    }
+    if (!isValidNode(keys, idx, lastNode));
 
     if (idx == (keys.length - 1)) {
       // last item, we can actually put the value here
       return lastNode.put(keys[idx], value);
     }
 
-    lastNode = lastNode.put(keys[idx], JsonNodeType.OBJECT);
+    lastNode = getNextNode(keys[idx], lastNode);
     return putAt(keys, idx + 1, lastNode, value);
   }
 
@@ -177,6 +206,25 @@ public class JsonContainer {
     }
 
     return lastNode;
+  }
+
+  private boolean isValidNode(String[] keys, int idx, JsonNode theNode) {
+    if (theNode == null) {
+      Plunger.error("Attempted to put to a null node at " + keys.toString() + " - " + keys[idx]);
+      return false;
+    }
+
+    return true;
+  }
+  
+  private JsonNode getNextNode(String key, JsonNode lastNode) {
+    JsonNode nextNode = lastNode.getNode(key);
+
+    if (nextNode == null || nextNode.getType() != JsonNodeType.OBJECT) {
+      return lastNode.put(key, JsonNodeType.OBJECT);
+    } else {
+      return nextNode;
+    }
   }
 
   public String toString() {
