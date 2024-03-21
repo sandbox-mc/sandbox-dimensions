@@ -17,14 +17,19 @@ public class JsonContainer {
   private File file = null;
   private Path filePath = null;
 
-  public static void usageExample(Path filePath) {
-    JsonContainer container = new JsonContainer(filePath);
+  public static void injestExample(File theFile) {
+    JsonContainer jsonConfig = new JsonContainer(theFile);
+    jsonConfig.loadDataFromFile();
+  }
+
+  public static void buildAndWriteExample(File theFile) {
+    JsonContainer container = new JsonContainer(theFile);
     container.put("base string value", "Some string at the top level");
     container.putAt(new String[]{"object key", "inner object key", "integer value"}, 5);
     container.putAt(new String[]{"object key", "inner object key", "double value"}, 500.456);
     container.putAt(new String[]{"object key", "inner object key", "boolean value"}, true);
     Plunger.debug("Outputting JSON:\n" + container.toString());
-    Plunger.debug("Writing to file at: " + filePath);
+    Plunger.debug("Writing to file at: " + container.getFile().toPath());
     container.writeDataToFile();
   }
 
@@ -189,6 +194,7 @@ public class JsonContainer {
 
   // TODO:TYLER implement addAt for Arrays
   // TODO:TYLER implement removeAt for both Objects and Arrays
+  // TODO:TYLER implement getAt
 
   private JsonNode ensureTopNode(int idx, JsonNode lastNode) {
     if (idx != 0 || topNode != null) {
