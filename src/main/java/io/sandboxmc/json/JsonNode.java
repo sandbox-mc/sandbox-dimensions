@@ -279,6 +279,48 @@ public class JsonNode {
     return newNode;
   }
 
+  public JsonNode remove(String key) {
+    if (type == JsonNodeType.OBJECT) {
+      return valObject.remove(key);
+    } else if (type == JsonNodeType.ARRAY) {
+      // This is part of this method so we can reuse the name
+      // removing anything that is NOT a String will only work for arrays
+      int idx = valArray.indexOf(new JsonNode(key));
+      return idx > -1 ? valArray.remove(idx) : null;
+    }
+
+    Plunger.error("Attempted to remove an item but the node was not an array or object!");
+    return null;
+  }
+
+  public JsonNode remove(int value) {
+    if (type != JsonNodeType.ARRAY) {
+      Plunger.error("Attempted to remove an item at an index but the node was not an array!");
+      return null;
+    }
+
+    int idx = valArray.indexOf(new JsonNode(value));
+    return idx > -1 ? valArray.remove(idx) : null;
+  }
+
+  public JsonNode remove(double value) {
+    if (type != JsonNodeType.ARRAY) {
+      Plunger.error("Attempted to remove an item at an index but the node was not an array!");
+      return null;
+    }
+
+    int idx = valArray.indexOf(new JsonNode(value));
+    return idx > -1 ? valArray.remove(idx) : null;
+  }
+
+  public JsonNode removeAt(int idx) {
+    if (type != JsonNodeType.ARRAY) {
+      Plunger.error("Attempted to remove an item at an index but the node was not an array!");
+      return null;
+    }
+
+    return valArray.remove(idx);
+  }
 
   private String toString(int nestLevel, boolean hasNext) {
     StringBuilder sb = new StringBuilder();
