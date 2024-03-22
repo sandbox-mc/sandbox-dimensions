@@ -112,7 +112,7 @@ public class JsonContainer {
     return getNodeAt(keys, 0, topNode);
   }
 
-  public JsonNode getNodeAt(String[] keys, int idx, JsonNode lastNode) {
+  private JsonNode getNodeAt(String[] keys, int idx, JsonNode lastNode) {
     lastNode = ensureTopNode(idx, lastNode);
     if (lastNode == null) return null; // Hit a dead end, early return
 
@@ -146,7 +146,7 @@ public class JsonContainer {
     return putAt(keys, 0, topNode, value);
   }
 
-  public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, String value) {
+  private JsonNode putAt(String[] keys, int idx, JsonNode lastNode, String value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -167,7 +167,7 @@ public class JsonContainer {
     return putAt(keys, 0, topNode, value);
   }
 
-  public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, int value) {
+  private JsonNode putAt(String[] keys, int idx, JsonNode lastNode, int value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -188,7 +188,7 @@ public class JsonContainer {
     return putAt(keys, 0, topNode, value);
   }
 
-  public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, double value) {
+  private JsonNode putAt(String[] keys, int idx, JsonNode lastNode, double value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -209,7 +209,7 @@ public class JsonContainer {
     return putAt(keys, 0, topNode, value);
   }
 
-  public JsonNode putAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
+  private JsonNode putAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -230,7 +230,7 @@ public class JsonContainer {
     return putArrayAt(keys, 0, topNode);
   }
 
-  public JsonNode putArrayAt(String[] keys, int idx, JsonNode lastNode) {
+  private JsonNode putArrayAt(String[] keys, int idx, JsonNode lastNode) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -254,7 +254,7 @@ public class JsonContainer {
     return addAt(keys, 0, topNode, value);
   }
 
-  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, String value) {
+  private JsonNode addAt(String[] keys, int idx, JsonNode lastNode, String value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -282,7 +282,7 @@ public class JsonContainer {
     return addAt(keys, 0, topNode, value);
   }
 
-  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, int value) {
+  private JsonNode addAt(String[] keys, int idx, JsonNode lastNode, int value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -310,7 +310,7 @@ public class JsonContainer {
     return addAt(keys, 0, topNode, value);
   }
 
-  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, double value) {
+  private JsonNode addAt(String[] keys, int idx, JsonNode lastNode, double value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -338,7 +338,7 @@ public class JsonContainer {
     return addAt(keys, 0, topNode, value);
   }
 
-  public JsonNode addAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
+  private JsonNode addAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -366,7 +366,7 @@ public class JsonContainer {
     return addArrayAt(keys, 0, topNode);
   }
 
-  public JsonNode addArrayAt(String[] keys, int idx, JsonNode lastNode) {
+  private JsonNode addArrayAt(String[] keys, int idx, JsonNode lastNode) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -394,7 +394,7 @@ public class JsonContainer {
     return addObjectAt(keys, 0, topNode);
   }
 
-  public JsonNode addObjectAt(String[] keys, int idx, JsonNode lastNode) {
+  private JsonNode addObjectAt(String[] keys, int idx, JsonNode lastNode) {
     lastNode = ensureTopNode(idx, lastNode);
     if (!isValidNode(keys, idx, lastNode)) return null;
 
@@ -422,7 +422,7 @@ public class JsonContainer {
     return removeAt(keys, 0, topNode);
   }
 
-  public JsonNode removeAt(String[] keys, int idx, JsonNode lastNode) {
+  private JsonNode removeAt(String[] keys, int idx, JsonNode lastNode) {
     lastNode = ensureTopNode(idx, lastNode);
     if (lastNode == null) return null;
 
@@ -442,7 +442,7 @@ public class JsonContainer {
     return removeFromArrayAt(keys, 0, topNode, value);
   }
   
-  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, String value) {
+  private JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, String value) {
     lastNode = ensureTopNode(idx, lastNode);
     JsonNode nextNode = getNextNode(keys[idx], lastNode);
     if (nextNode == null) return null;
@@ -463,7 +463,7 @@ public class JsonContainer {
     return removeFromArrayAt(keys, 0, topNode, value);
   }
   
-  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, int value) {
+  private JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, int value) {
     lastNode = ensureTopNode(idx, lastNode);
     JsonNode nextNode = getNextNode(keys[idx], lastNode);
     if (nextNode == null) return null;
@@ -484,7 +484,7 @@ public class JsonContainer {
     return removeFromArrayAt(keys, 0, topNode, value);
   }
   
-  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, double value) {
+  private JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, double value) {
     lastNode = ensureTopNode(idx, lastNode);
     JsonNode nextNode = getNextNode(keys[idx], lastNode);
     if (nextNode == null) return null;
@@ -505,7 +505,7 @@ public class JsonContainer {
     return removeFromArrayAt(keys, 0, topNode, value);
   }
   
-  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
+  private JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
     lastNode = ensureTopNode(idx, lastNode);
     JsonNode nextNode = getNextNode(keys[idx], lastNode);
     if (nextNode == null) return null;
