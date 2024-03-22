@@ -517,6 +517,26 @@ public class JsonContainer {
     return removeFromArrayAt(keys, idx + 1, nextNode, value);
   }
 
+  public JsonNode removeFromArrayAtIndex(String key, int index) {
+    return removeFromArrayAtIndexAt(new String[]{ key }, index);
+  }
+
+  public JsonNode removeFromArrayAtIndexAt(String[] keys, int index) {
+    return removeFromArrayAtIndexAt(keys, 0, topNode, index);
+  }
+
+  private JsonNode removeFromArrayAtIndexAt(String[] keys, int idx, JsonNode lastNode, int index) {
+    lastNode = ensureTopNode(idx, lastNode);
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+    if (nextNode == null) return null;
+
+    if (idx == (keys.length - 1)) {
+      return nextNode.removeAt(index);
+    }
+
+    return removeFromArrayAtIndexAt(keys, idx + 1, nextNode, index);
+  }
+
   private JsonNode ensureTopNode(int idx, JsonNode lastNode) {
     // If we're NOT the first node or if the top node isn't null then just leave
     // This method is only trying to make sure we have a top node
