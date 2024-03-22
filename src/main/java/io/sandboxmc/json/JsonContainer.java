@@ -413,8 +413,27 @@ public class JsonContainer {
     return addObjectAt(keys, idx + 1, nextNode);
   }
 
+  // Only top level keys
+  public JsonNode remove(String key) {
+    return removeAt(new String[]{ key });
+  }
 
-  // TODO:TYLER implement removeAt for both Objects and Arrays
+  public JsonNode removeAt(String[] keys) {
+    return removeAt(keys, 0, topNode);
+  }
+
+  public JsonNode removeAt(String[] keys, int idx, JsonNode lastNode) {
+    lastNode = ensureTopNode(idx, lastNode);
+    if (lastNode == null) return null;
+
+    if (idx == (keys.length - 1)) {
+      return lastNode.remove(keys[idx]);
+    }
+
+    return removeAt(keys, idx + 1, getNextNode(keys[idx], lastNode));
+  }
+
+  // TODO:TYLER removeFromArray...
 
   private JsonNode ensureTopNode(int idx, JsonNode lastNode) {
     // If we're NOT the first node or if the top node isn't null then just leave
@@ -444,6 +463,8 @@ public class JsonContainer {
   }
   
   private JsonNode getNextNode(String key, JsonNode lastNode) {
+    if (lastNode == null) return null;
+
     JsonNode nextNode = lastNode.getNode(key);
 
     if (nextNode == null || nextNode.getType() != JsonNodeType.OBJECT) {
