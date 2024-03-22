@@ -433,7 +433,89 @@ public class JsonContainer {
     return removeAt(keys, idx + 1, getNextNode(keys[idx], lastNode));
   }
 
-  // TODO:TYLER removeFromArray...
+  // Only top level
+  public JsonNode removeFromArray(String key, String value) {
+    return removeFromArrayAt(new String[] { key }, value);
+  }
+
+  public JsonNode removeFromArrayAt(String[] keys, String value) {
+    return removeFromArrayAt(keys, 0, topNode, value);
+  }
+  
+  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, String value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+    if (nextNode == null) return null;
+
+    if (idx == (keys.length - 1)) {
+      return nextNode.remove(value);
+    }
+
+    return removeFromArrayAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level
+  public JsonNode removeFromArray(String key, int value) {
+    return removeFromArrayAt(new String[] { key }, value);
+  }
+
+  public JsonNode removeFromArrayAt(String[] keys, int value) {
+    return removeFromArrayAt(keys, 0, topNode, value);
+  }
+  
+  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, int value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+    if (nextNode == null) return null;
+
+    if (idx == (keys.length - 1)) {
+      return nextNode.remove(value);
+    }
+
+    return removeFromArrayAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level
+  public JsonNode removeFromArray(String key, double value) {
+    return removeFromArrayAt(new String[] { key }, value);
+  }
+
+  public JsonNode removeFromArrayAt(String[] keys, double value) {
+    return removeFromArrayAt(keys, 0, topNode, value);
+  }
+  
+  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, double value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+    if (nextNode == null) return null;
+
+    if (idx == (keys.length - 1)) {
+      return nextNode.remove(value);
+    }
+
+    return removeFromArrayAt(keys, idx + 1, nextNode, value);
+  }
+
+  // Only top level
+  public JsonNode removeFromArray(String key, boolean value) {
+    return removeFromArrayAt(new String[] { key }, value);
+  }
+
+  public JsonNode removeFromArrayAt(String[] keys, boolean value) {
+    return removeFromArrayAt(keys, 0, topNode, value);
+  }
+  
+  public JsonNode removeFromArrayAt(String[] keys, int idx, JsonNode lastNode, boolean value) {
+    lastNode = ensureTopNode(idx, lastNode);
+    JsonNode nextNode = getNextNode(keys[idx], lastNode);
+    if (nextNode == null) return null;
+
+    if (idx == (keys.length - 1)) {
+      return nextNode.remove(value);
+    }
+
+    return removeFromArrayAt(keys, idx + 1, nextNode, value);
+  }
 
   private JsonNode ensureTopNode(int idx, JsonNode lastNode) {
     // If we're NOT the first node or if the top node isn't null then just leave

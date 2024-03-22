@@ -313,6 +313,16 @@ public class JsonNode {
     return idx > -1 ? valArray.remove(idx) : null;
   }
 
+  public JsonNode remove(boolean value) {
+    if (type != JsonNodeType.ARRAY) {
+      Plunger.error("Attempted to remove an item at an index but the node was not an array!");
+      return null;
+    }
+
+    int idx = valArray.indexOf(new JsonNode(value));
+    return idx > -1 ? valArray.remove(idx) : null;
+  }
+
   public JsonNode removeAt(int idx) {
     if (type != JsonNodeType.ARRAY) {
       Plunger.error("Attempted to remove an item at an index but the node was not an array!");
