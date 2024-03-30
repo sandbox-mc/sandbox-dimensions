@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Map.Entry;
@@ -152,8 +153,14 @@ public class Datapack {
   }
 
   public void loadQueuedDimensions() {
-    for (Entry<Identifier, DatapackDimensionConfig> entry : this.dimensionsToLoad.entrySet()) {
-      this.queueOrReloadDimension(entry.getKey(), entry.getValue());
+    Iterator<Entry<Identifier, DatapackDimensionConfig>> iteratorSet = this.dimensionsToLoad.entrySet().iterator();
+    while (iteratorSet.hasNext()) {
+      Entry<Identifier, DatapackDimensionConfig> entry = iteratorSet.next();
+
+      // Attempt to load and dequeue
+      if (this.queueOrReloadDimension(entry.getKey(), entry.getValue())) {
+        iteratorSet.remove();
+      }
     }
   }
 
@@ -161,10 +168,11 @@ public class Datapack {
     return this;
   }
 
-  public Datapack queueOrReloadDimension(Identifier id, DatapackDimensionConfig datapackDimensionConfig) {
+  public Boolean queueOrReloadDimension(Identifier id, DatapackDimensionConfig datapackDimensionConfig) {
     if (datapackDimensionConfig == null) {
       Plunger.error("datapackDimensionConfig cannot be null for dimension: " + id);
-      return null;
+      // remove from queue to prevent continuous processing
+      return true;
     }
 
     // Check if id exists
@@ -174,7 +182,7 @@ public class Datapack {
       if (DatapackManager.getRootPath() == null) {
         // we queue this up to be loaded onServerStart()
         this.dimensionsToLoad.put(id, datapackDimensionConfig);
-        return this;
+        return false;
       }
 
       SandboxWorldConfig sandboxConfig = new SandboxWorldConfig(DatapackManager.getServer(), datapackDimensionConfig);
@@ -182,10 +190,7 @@ public class Datapack {
       this.addDimension(dimensionSave);
     }
 
-    // we reload the configs
-    // DimensionManager.reloadDimensionSave(id, config);
-    this.dimensionsToLoad.remove(id);
-    return this;
+    return true;
   }
 
   public void removeDimension(Identifier dimensionIdentifier) {

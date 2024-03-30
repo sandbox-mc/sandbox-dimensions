@@ -29,6 +29,7 @@ public class ListDatapacks {
         return Text.literal(datapackName);
       }, false);
     }
+
     return 1;
   }
 }
