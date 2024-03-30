@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import io.sandboxmc.Plunger;
@@ -58,28 +59,6 @@ public class Datapack {
     return this;
   }
 
-  // public Datapack addNamespace(String namespace) {
-  //   this.namespaces.add(namespace);
-  //   return this;
-  // }
-
-  private Path addConfigFile(Identifier identifier, String folder, String fileType, InputStream fileStream) throws IOException {
-    Path dimensionConfigPath = Paths.get("data", identifier.getNamespace(), folder);
-    this.addFolder(dimensionConfigPath.toString());
-    dimensionConfigPath = Paths.get(
-      datapackPath.toString(),
-      dimensionConfigPath.toString(),
-      identifier.getPath() + "." + fileType
-    );
-
-    // Create new dimension.json file for the new dimension
-    // This will allow for reloading this world
-    // Cloning the current state of the dimension being used
-    // Any Non-default dimensions will have a file to clone or it won't make it into this method
-    Files.copy(fileStream, dimensionConfigPath, StandardCopyOption.REPLACE_EXISTING);
-    return dimensionConfigPath;
-  }
-
   public void addFolder(String folderPath) {
     Plunger.debug("Adding folder: " + folderPath);
     File newFolder = Paths.get(this.datapackPath.toString(), folderPath).toFile();
@@ -87,18 +66,6 @@ public class Datapack {
       newFolder.mkdirs();
     }
   }
-
-  // private void addWorldSaveFile(String namespace, String dimensionName, InputStream fileStream) {
-  //   Path worldSavePath = buildWorldSavePath(namespace, dimensionName);
-
-  //   // Copy over a default world save to use as default
-  //   // This is the save file that will be used for the new dimension
-  //   try {
-  //     Files.copy(fileStream, worldSavePath, StandardCopyOption.REPLACE_EXISTING);
-  //   } catch (IOException e) {
-  //     e.printStackTrace();
-  //   }
-  // }
 
   // Creates the world folder if it doesn't exist and returns .zip path
   private Path buildWorldSavePath(String namespace, String dimensionName) {
@@ -130,6 +97,10 @@ public class Datapack {
 
   public Path getDatapackPath() {
     return this.datapackPath;
+  }
+
+  public Set<Identifier> getDimensionIds() {
+    return this.dimensions.keySet();
   }
 
   public void initializeDatapack() {
@@ -164,10 +135,6 @@ public class Datapack {
     }
   }
 
-  public Datapack putDimension(Identifier id) {
-    return this;
-  }
-
   public Boolean queueOrReloadDimension(Identifier id, DatapackDimensionConfig datapackDimensionConfig) {
     if (datapackDimensionConfig == null) {
       Plunger.error("datapackDimensionConfig cannot be null for dimension: " + id);
@@ -193,8 +160,20 @@ public class Datapack {
     return true;
   }
 
-  public void removeDimension(Identifier dimensionIdentifier) {
-    
+  public void removeDimension(Identifier dimensionId) {
+    DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimensionId);
+    if (!this.dimensions.containsKey(dimensionId)) {
+      Plunger.error("Datapack: " + this.name + " does not contain Dimension: " + dimensionId);
+      return;
+    }
+
+    // Remove the datapack
+    dimensionSave.setDatapackName(null);
+    // Generate configs without datapack set should move them
+    dimensionSave.generateConfigFiles();
+
+    // Remove from cached list
+    this.dimensions.remove(dimensionId);
   }
 
   public Datapack setDescription(String description) {

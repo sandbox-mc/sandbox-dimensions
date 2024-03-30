@@ -21,16 +21,16 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-public class AddDimension {
+public class RemoveDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
-    return CommandManager.literal("addDimension").then(
+    return CommandManager.literal("removeDimension").then(
       CommandManager.argument("datapackName", StringArgumentType.word())
       .suggests(new StringListAutoComplete(getDatapackNames()))
       .then(
         CommandManager
         .argument("dimension", IdentifierArgumentType.identifier())
-        .suggests(DimensionAutoComplete.Instance())
-        .executes(context -> addDimension(context))
+        .suggests(new DimensionAutoComplete(getDimensionsInDatapack()))
+        .executes(context -> removeDimension(context))
       )
     ).executes(context -> {
       // no arguments given, do nothing
@@ -49,11 +49,20 @@ public class AddDimension {
     };
   }
 
-  private static int addDimension(CommandContext<ServerCommandSource> context) {
+  private static Function<CommandContext<ServerCommandSource>, List<Identifier>> getDimensionsInDatapack() {
+    return (context) -> {
+      String datapackName = StringArgumentType.getString(context, "datapackName");
+      Datapack datapack = DatapackManager.getDatapack(datapackName);
+
+      return new ArrayList<>(datapack.getDimensionIds());
+    };
+  }
+
+  private static int removeDimension(CommandContext<ServerCommandSource> context) {
     ServerCommandSource source = context.getSource();
     String datapackName = StringArgumentType.getString(context, "datapackName");
-    Identifier dimension = IdentifierArgumentType.getIdentifier(context, "dimension");
-    Plunger.info("Setting Dimension: " + dimension + " to Datapack: " + datapackName);
+    Identifier dimensionId = IdentifierArgumentType.getIdentifier(context, "dimension");
+    Plunger.info("Setting Dimension: " + dimensionId + " to Datapack: " + datapackName);
     Datapack datapack = DatapackManager.getDatapack(datapackName);
     if (datapack == null) {
       source.sendFeedback(() -> {
@@ -62,18 +71,18 @@ public class AddDimension {
       return 0;
     }
     
-    DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimension);
-    if (dimensionSave == null) {
-      source.sendFeedback(() -> {
-        return Text.literal("Dimension does not exist: " + dimension);
-      }, false);
-      return 0;
-    }
+    // DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimensionId);
+    // if (dimensionSave == null) {
+    //   source.sendFeedback(() -> {
+    //     return Text.literal("Dimension does not exist: " + dimensionId);
+    //   }, false);
+    //   return 0;
+    // }
 
-    datapack.addDimension(dimensionSave);
+    datapack.removeDimension(dimensionId);
     
     source.sendFeedback(() -> {
-      return Text.literal("Adding Dimension: " + dimension + " to Datapack: " + datapackName);
+      return Text.literal("Removing Dimension: " + dimensionId + " from Datapack: " + datapackName);
     }, false);
     return 1;
   }
