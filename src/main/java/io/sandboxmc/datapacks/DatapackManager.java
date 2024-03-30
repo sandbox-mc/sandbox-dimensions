@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -163,9 +164,22 @@ public class DatapackManager {
     datapackRootPath = session.getDirectory(WorldSavePath.DATAPACKS);
     minecraftServer = server;
 
+    // Load custom dimension files
     for(Datapack datapack : DatapackManager.datapackCache.values()) {
       datapack.setRootPath(datapackRootPath);
       datapack.loadQueuedDimensions();
+    }
+
+    // Build list of Custom Datapacks (datapacks in the datapack folder)
+    // This allows us to create an empty datapack and then add things later
+    Collection<String> enabledDataPacks = server.getDataPackManager().getEnabledNames();
+    for (String datapackFullName : enabledDataPacks) {
+      if (datapackFullName.startsWith("file/")) {
+        String packName = datapackFullName.replaceAll("file/", "");
+
+        // Creates the datapack or just gets it and is ignored
+        getOrCreateDatapack(packName);
+      }
     }
   }
 

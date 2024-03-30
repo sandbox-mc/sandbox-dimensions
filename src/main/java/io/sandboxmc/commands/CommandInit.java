@@ -9,6 +9,7 @@ import io.sandboxmc.commands.dimension.ListDimensions;
 import io.sandboxmc.commands.datapack.AddDimension;
 import io.sandboxmc.commands.datapack.CreateDatapack;
 import io.sandboxmc.commands.datapack.InstallDatapack;
+import io.sandboxmc.commands.datapack.ListDatapacks;
 import io.sandboxmc.commands.datapack.SetDatapackDescription;
 import io.sandboxmc.commands.datapack.SetDatapackFormat;
 import io.sandboxmc.commands.dimension.CopyDimension;
@@ -41,6 +42,7 @@ public class CommandInit {
 						.then(AddDimension.register())
 						.then(CreateDatapack.register())
 						.then(InstallDatapack.register())
+						.then(ListDatapacks.register())
 						.then(SetDatapackDescription.register())
 						.then(SetDatapackFormat.register())
 					)
