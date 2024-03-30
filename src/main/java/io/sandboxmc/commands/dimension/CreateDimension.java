@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.dimension.SandboxWorldConfig;
+import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.registry.RegistryKey;
@@ -34,10 +37,14 @@ public class CreateDimension {
         .argument("dimensionName", StringArgumentType.word())
         .then(
           CommandManager
-          .argument("dimension", IdentifierArgumentType.identifier())
+          .argument("dimensionOptionsId", IdentifierArgumentType.identifier())
           .suggests(new StringListAutoComplete(getDimensionAutoCompleteOptions()))
-          .executes(context -> createDimension(context))
-        ).executes(context -> createDimension(context))
+          .then(
+            CommandManager
+            .argument("seed", LongArgumentType.longArg())
+            .executes(context -> createDimension(context, LongArgumentType.getLong(context, "seed"), true))
+          ).executes(context -> createDimension(context, 0, false))
+        ).executes(context -> createDimension(context, 0, false))
       )
     ).executes(context -> {
       // No arguments given, do nothing.
@@ -59,16 +66,20 @@ public class CreateDimension {
     };
   }
 
-  private static int createDimension(CommandContext<ServerCommandSource> context) {
+  private static int createDimension(CommandContext<ServerCommandSource> context, long seed, Boolean passedSeed) {
     String namespace = StringArgumentType.getString(context, "namespace");
     String dimensionName = StringArgumentType.getString(context, "dimensionName");
-    Identifier dimensionOptions = IdentifierArgumentType.getIdentifier(context, "dimension");
+    Identifier dimensionOptionsId = IdentifierArgumentType.getIdentifier(context, "dimensionOptionsId");
     Identifier dimensionIdentifier = new Identifier(namespace, dimensionName);
     ServerCommandSource source = context.getSource();
     MinecraftServer server = source.getServer();
-
+    
+    
     // Create the dimension
-    DimensionManager.createDimensionWorld(server, dimensionIdentifier, dimensionOptions, server.getWorld(World.OVERWORLD).getSeed());
+    SandboxWorldConfig config = new SandboxWorldConfig(server);
+    config.setSeed(passedSeed ? seed : server.getWorld(World.OVERWORLD).getSeed());
+    config.setDimensionOptionsId(dimensionOptionsId);
+    DimensionManager.buildDimensionSaveFromConfig(dimensionIdentifier, config);
 
     source.sendFeedback(() -> {
       return Text.literal("Created new Dimension: " + dimensionName);

@@ -14,6 +14,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.dimension.SandboxWorldConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.command.argument.DimensionArgumentType;
@@ -30,7 +31,7 @@ public class CopyDimension {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
     return CommandManager.literal("copy")
       .then(
-        CommandManager.argument("dimension", DimensionArgumentType.dimension())
+        CommandManager.argument("dimensionToCopy", DimensionArgumentType.dimension())
         .suggests(DimensionAutoComplete.Instance())
         .then(
           CommandManager
@@ -53,7 +54,7 @@ public class CopyDimension {
   private static int copyDimension(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
     MinecraftServer server = context.getSource().getServer();
     Session session = ((MinecraftServerAccessor)context.getSource().getServer()).getSession();
-    ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
+    ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimensionToCopy");
     String namespace = StringArgumentType.getString(context, "namespace");
     String dimensionName = StringArgumentType.getString(context, "dimensionName");
     Identifier dimensionId = dimension.getRegistryKey().getValue();
@@ -84,7 +85,10 @@ public class CopyDimension {
     }
 
     // Create world once files are in place using dimension data
-    DimensionManager.createDimensionWorld(server, newDimensionId, dimension.getDimensionKey().getValue(), dimension.getSeed());
+    SandboxWorldConfig config = new SandboxWorldConfig(server);
+    config.setSeed(dimension.getSeed());
+    config.setDimensionOptionsId(dimension.getDimensionKey().getValue());
+    DimensionManager.buildDimensionSaveFromConfig(newDimensionId, config);
 
     context.getSource().sendFeedback(() -> {
       return Text.literal("Copied Dimension: " + dimensionId);

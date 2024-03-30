@@ -5,6 +5,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -16,7 +17,7 @@ public abstract class PlayerEntityMixin {
   public void safeInv(CallbackInfo ci) {
     ServerPlayerEntity serverPlayer = (ServerPlayerEntity) (Object) this;
     ServerWorld dimension = serverPlayer.getServerWorld();
-    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
+    DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimension);
     Boolean keepInventory = dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_DEATH);
     
     if (keepInventory) {

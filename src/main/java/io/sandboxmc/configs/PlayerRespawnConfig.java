@@ -1,5 +1,6 @@
 package io.sandboxmc.configs;
 
+import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
 import net.fabricmc.fabric.api.dimension.v1.FabricDimensions;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -18,7 +19,7 @@ public class PlayerRespawnConfig {
       boolean alive
     ) -> {
       ServerWorld dimension = oldPlayer.getServerWorld();
-      DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
+      DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimension);
       Boolean shouldKeepInventory = dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_DEATH);
       Boolean respawnInDimension = dimensionSave.getRule(DimensionSave.RESPAWN_IN_DIMENSION);
       if (shouldKeepInventory) {

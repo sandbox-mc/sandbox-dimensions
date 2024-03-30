@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.player.PlayerData;
 import io.sandboxmc.player.PlayerPosition;
@@ -69,7 +70,7 @@ public class JoinDimension {
 
     // get Overworld to save previous data to
     ServerWorld overworld = source.getServer().getWorld(World.OVERWORLD);
-    DimensionSave overworldSaveData = DimensionSave.buildDimensionSave(overworld);
+    DimensionSave overworldSaveData = DimensionManager.getOrCreateDimensionSave(overworld);
     PlayerData overworldPlayerData = overworldSaveData.getPlayerData(player);
     ServerWorld originalDimension = player.getServerWorld();
     PlayerPosition playerPos = new PlayerPosition();
@@ -82,7 +83,7 @@ public class JoinDimension {
     overworldPlayerData.previousPositions.add(playerPos);
     overworldSaveData.setPlayerData(player.getUuid(), overworldPlayerData);
     
-    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
+    DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimension);
 
     // swap inventory if keepInventoryOnJoin rule is false
     if (!dimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {

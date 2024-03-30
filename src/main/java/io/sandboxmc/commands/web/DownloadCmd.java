@@ -132,8 +132,7 @@ public class DownloadCmd implements Runnable {
   }
 
   private Path defaultFilePath() {
-    Session session = ((MinecraftServerAccessor)source.getServer()).getSession();
-    Path storageFolder = DatapackManager.getStorageFolder(session);
+    Path storageFolder = DatapackManager.getStorageFolder();
     String[] pathParts = fullIdentifier.split(":");
 
     Path currentPath = storageFolder;

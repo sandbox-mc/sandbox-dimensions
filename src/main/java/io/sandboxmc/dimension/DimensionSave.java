@@ -1,33 +1,41 @@
 package io.sandboxmc.dimension;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.apache.commons.io.FileUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+
 import io.sandboxmc.Plunger;
-import io.sandboxmc.SandboxMC;
-import io.sandboxmc.mixin.MinecraftServerAccessor;
+import io.sandboxmc.datapacks.Datapack;
+import io.sandboxmc.datapacks.DatapackManager;
+import io.sandboxmc.dimension.configs.DatapackDimensionConfig;
 import io.sandboxmc.player.PlayerData;
 import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.resource.Resource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionSave extends PersistentState {
   // Global Constants
+  public static final String DIMENSION_CONFIG_FOLDER = "sandbox_dimension";
   public static final String WORLD_SAVE_FOLDER = "saves";
 
   // Game Rules
@@ -50,9 +58,14 @@ public class DimensionSave extends PersistentState {
   private static String SPAWN_Y = "SpawnY";
   private static String SPAWN_Z = "SpawnZ";
 
+  private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
   // Class props
+  private SandboxWorldConfig sandboxWorldConfig;
+  private String datapackName;
   public Boolean dimensionIsActive = false;
   public Boolean dimensionSaveLoaded = false;
+  private Identifier identifier;
   public Boolean keepInventoryOnDeath = false;
   public Boolean keepInventoryOnJoin = true;
   public Boolean respawnInDimension = false;
@@ -60,11 +73,14 @@ public class DimensionSave extends PersistentState {
   private int spawnX = 0;
   private int spawnY = 0;
   private int spawnZ = 0;
-
-  // This IS used but the editor can't seem to figure out how.
-  @SuppressWarnings("unused")
   private ServerWorld serverWorld;
 
+  // File paths
+  private Path dimensionConfigPath;
+  private Path dimensionPath;
+  private Path savefilePath;
+
+  // generatedWorlds is specific to the Overworld and is used to save stuff
   public HashMap<Identifier, Identifier> generatedWorlds = new HashMap<>();
   public HashMap<UUID, PlayerData> players = new HashMap<>();
  
@@ -129,38 +145,122 @@ public class DimensionSave extends PersistentState {
     return state;
   }
 
-  private static Type<DimensionSave> type = new Type<>(
-    DimensionSave::new, // If there's no 'DimensionSave' yet create one
-    DimensionSave::createFromNbt, // If there is a 'DimensionSave' NBT, parse it with 'createFromNbt'
-    null // Supposed to be an 'DataFixTypes' enum, but we can just pass null
-  );
-
-  public static DimensionSave buildDimensionSave(ServerWorld dimension) {
-    return buildDimensionSave(dimension, false);
+  public void deleteConfigFiles() {
+    this.dimensionConfigPath.toFile().delete();
+    this.dimensionPath.toFile().delete();
   }
 
-  // setActive is for initializing worlds as active
-  public static DimensionSave buildDimensionSave(ServerWorld dimension, Boolean setActive) {
-    Identifier dimensionId = dimension.getRegistryKey().getValue();
-    DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimensionId);
-    if (dimensionSave != null) {
-      return dimensionSave;
+  public Boolean generateConfigFiles() {
+    Path basePath = DatapackManager.getDimensionStorageFolder();
+    // if has datapack
+    if (this.datapackName != null) {
+      Datapack datapack = DatapackManager.getDatapack(this.datapackName);
+      if (datapack != null) {
+        basePath = datapack.getDatapackPath();
+      } else {
+        Plunger.error("Missing expected datapack: " + this.datapackName);
+        return false;
+      }
     }
 
-    PersistentStateManager persistentStateManager = dimension.getPersistentStateManager();
-    dimensionSave = persistentStateManager.getOrCreate(type, SandboxMC.MOD_ID);
-    dimensionSave.serverWorld = dimension;
-    if (dimensionSave.dimensionIsActive || setActive) {
-      dimensionSave.dimensionIsActive = true;
-      DimensionManager.addDimensionSave(dimensionId, dimensionSave);
+    Path namespacePath = Paths.get(basePath.toString(), "data", identifier.getNamespace());
+
+    // Write or move the files
+    writeOrMoveConfigFile(namespacePath);
+    writeOrMoveDimensionFile(namespacePath);
+
+    return true;
+  }
+
+  private Boolean writeOrMoveConfigFile(Path namespacePath) {
+    Path newDimensionConfigPath = this.ensureFolderAndGetPath(
+      Paths.get(namespacePath.toString(), DIMENSION_CONFIG_FOLDER),
+      identifier.getPath() + ".json"
+    );
+
+    if (this.dimensionConfigPath == null) {
+      SandboxWorldConfig worldConfig = ((SandboxWorld)this.getServerWorld()).getConfig();
+      DatapackDimensionConfig dimensionConfig = worldConfig.buildDatapackConfig();
+
+      try {
+        String jsonString = gson.toJson(dimensionConfig);
+        gson.toJson(dimensionConfig, new FileWriter(newDimensionConfigPath.toString()));
+        FileWriter file = new FileWriter(newDimensionConfigPath.toString());
+        file.write(jsonString);
+        file.close();
+        this.dimensionConfigPath = newDimensionConfigPath;
+      } catch (JsonIOException | IOException e) {
+        Plunger.error("Failed to Create config for: " + identifier, e);
+      }
+    } else if (!this.dimensionConfigPath.equals(newDimensionConfigPath)) {
+      // we need to move the files and not write them
+      this.dimensionConfigPath.toFile().renameTo(new File(newDimensionConfigPath.toString()));
+      this.dimensionConfigPath = newDimensionConfigPath;
     }
 
-    dimensionSave.markDirty();
-    return dimensionSave;
+    return true;
+  }
+
+  private Boolean writeOrMoveDimensionFile(Path namespacePath) {
+    SandboxWorldConfig worldConfig = ((SandboxWorld)this.getServerWorld()).getConfig();
+    Identifier dimensionOptionsId = worldConfig.getDimensionOptions().dimensionTypeEntry().getKey().get().getValue();
+    Optional<Resource> dimensionResourceOptional = this.getServerWorld().getServer().getResourceManager().getResource(dimensionOptionsId);
+    if (dimensionResourceOptional.isPresent()) {
+      // no need to create the director if they are using a default dimensionOption such as minecraft:overworld
+      Path dimensionPath = this.ensureFolderAndGetPath(
+        Paths.get(namespacePath.toString(), "dimension"),
+        identifier.getPath() + ".json"
+      );
+
+      // Else the dimensionOption is from a default type and should always be there
+      try (InputStream inputStream = dimensionResourceOptional.get().getInputStream()) {
+        File newFile = new File(dimensionPath.toString());
+        if (newFile.exists()) {
+          // Not sure if we should delete the file here...
+          // Technically... there shouldn't be one there
+          // And we are always cloning the original
+          // newFile.delete();
+          // newFile = new File(dimensionPath.toString());
+          Plunger.error("File already exists " + identifier);
+          return false;
+        }
+
+        FileUtils.copyInputStreamToFile(inputStream, newFile);
+      } catch (IOException e) {
+        Plunger.error("Failed to Write Json for: " + identifier, e);
+      }
+    }
+
+    return true;
+  }
+
+  public Path ensureFolderAndGetPath(Path folderPath, String fileName) {
+    File newFolder = folderPath.toFile();
+    if (!newFolder.exists()) {
+      newFolder.mkdirs();
+    }
+
+    return Paths.get(folderPath.toString(), fileName);
   }
 
   public void addGeneratedWorld(Identifier dimensionId, Identifier dimensionOptionsId) {
     this.generatedWorlds.put(dimensionId, dimensionOptionsId);
+  }
+
+  public String getDatapackName() {
+    return this.datapackName;
+  }
+
+  public Identifier getDimensionIdentifier() {
+    return this.identifier;
+  }
+
+  public Path getDimensionConfigPath() {
+    return this.dimensionConfigPath;
+  }
+
+  public Path getDimensionPath() {
+    return this.dimensionPath;
   }
 
   public HashMap<Identifier, Identifier> getGeneratedWorlds() {
@@ -182,6 +282,10 @@ public class DimensionSave extends PersistentState {
     }
 
     return null;
+  }
+
+  public ServerWorld getServerWorld() {
+    return this.serverWorld;
   }
 
   public BlockPos getSpawnPos(ServerWorld dimension) {
@@ -208,24 +312,27 @@ public class DimensionSave extends PersistentState {
     return this.spawnZ;
   }
 
-  // datapackNameString is dataPack:dimension format (can be the same name)
-  public static Boolean loadDimensionFile(Identifier dimensionIdentifier, MinecraftServer server) {
-    // The Session gets directory context into the specific save dir in run
-    // /run/<my-save-name>
-    Session session = ((MinecraftServerAccessor)server).getSession();
-    String dimensionNamespace = dimensionIdentifier.getNamespace();
-    String dimensionName = dimensionIdentifier.getPath();
-    String packName = DimensionManager.getPackFolder(dimensionIdentifier.toString());
-    Path datapacksPath = session.getDirectory(WorldSavePath.DATAPACKS);
+  // Attempts to load a saveFile in the datapack if exists
+  public Boolean loadDimensionFile() {
+    Datapack datapack = DatapackManager.getDatapack(this.datapackName);
+    if (datapack == null) {
+      // If there is no datapack there is no save file
+      return false;
+    }
+
+    String dimensionNamespace = this.identifier.getNamespace();
+    String dimensionName = this.identifier.getPath();
 
     // Path to load dimension save
-    Path datapackLoadFilePath = Paths.get(
-      datapacksPath.toString(),
-      packName,
+    Path savePath = Paths.get(
       "data",
       dimensionNamespace,
       WORLD_SAVE_FOLDER,
       dimensionName + ".zip" // File name should be dimensionName + zip
+    );
+    Path datapackLoadFilePath = Paths.get(
+      datapack.getDatapackPath().toString(),
+      savePath.toString()
     );
 
     // if there is no save file, this process fails
@@ -235,7 +342,7 @@ public class DimensionSave extends PersistentState {
 
     // Path the the save dir...
     Path dimensionSavePath = Paths.get(
-      datapacksPath.getParent().toString(),
+      datapack.getDatapackPath().getParent().getParent().toString(),
       "dimensions",
       dimensionNamespace,
       dimensionName
@@ -247,8 +354,6 @@ public class DimensionSave extends PersistentState {
       dimensionFile.mkdirs();
     }
 
-    Plunger.debug("DataPack Dir: " + datapackLoadFilePath); // full path
-
     try {
       
       // delete current dimension save
@@ -256,9 +361,13 @@ public class DimensionSave extends PersistentState {
       ZipUtility.deleteDirectory(dimensionSavePath);
 
       // Unzip the world files
-      Plunger.debug("Starting unzip");
+      Plunger.debug("Starting unzip for: " + this.identifier);
       ZipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
-      Plunger.debug("Done unzipping");
+      Plunger.debug("Done unzipping for: " + this.identifier);
+
+      // if we load a save file, it's an active dimension
+      this.dimensionSaveLoaded = true;
+      DimensionManager.addDimensionSave(this.identifier, this);
 
       return true;
     } catch (IOException e) {
@@ -268,8 +377,30 @@ public class DimensionSave extends PersistentState {
     return false;
   }
 
+  public DimensionSave removeDatapack() {
+    this.datapackName = null;
+    return this;
+  }
+
   public void removeGeneratedWorld(Identifier dimensionId) {
     this.generatedWorlds.remove(dimensionId);
+  }
+
+  public void setDatapackName(String name) {
+    this.datapackName = name;
+  }
+
+  public void setDimensionConfigPath(Path dimensionConfigPath) {
+    this.dimensionConfigPath = dimensionConfigPath;
+  }
+
+  public void setDimensionPath(Path dimensionPath) {
+    this.dimensionPath = dimensionPath;
+  }
+
+  public DimensionSave setIdentifer(Identifier identifier) {
+    this.identifier = identifier;
+    return this;
   }
 
   public void setPlayerData(UUID uuid, PlayerData playerData) {
@@ -290,6 +421,15 @@ public class DimensionSave extends PersistentState {
     }
   }
 
+  public void setSaveFile(Path saveFilePath) {
+    this.savefilePath = saveFilePath;
+  }
+
+  public DimensionSave setServerWorld(ServerWorld serverWorld) {
+    this.serverWorld = serverWorld;
+    return this;
+  }
+
   public Boolean setSpawnPos(ServerWorld dimension, BlockPos blockPos) {
     if (!dimension.getWorldBorder().contains(blockPos)) {
       return false;
@@ -308,7 +448,7 @@ public class DimensionSave extends PersistentState {
   // Empties invenotry if not
   // Saves Original Inventory
   public void swapPlayerInventoryWithDestination(ServerPlayerEntity player) {
-    DimensionSave originalDimensionSave = DimensionSave.buildDimensionSave(player.getServerWorld());
+    DimensionSave originalDimensionSave = DimensionManager.getOrCreateDimensionSave(player.getServerWorld());
     PlayerData originalDimensionPlayerData = originalDimensionSave.getPlayerData(player);
     PlayerData destinationPlayerData = this.getPlayerData(player);
     PlayerInventory playerInventory = player.getInventory();

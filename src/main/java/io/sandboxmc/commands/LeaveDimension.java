@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Plunger;
+import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.player.PlayerData;
 import io.sandboxmc.player.PlayerPosition;
@@ -31,7 +32,7 @@ public class LeaveDimension {
     ServerCommandSource source = context.getSource();
     ServerPlayerEntity player = source.getPlayerOrThrow();
     ServerWorld overworld = source.getServer().getWorld(World.OVERWORLD);
-    PlayerData overworldPlayerData = DimensionSave.buildDimensionSave(overworld).getPlayerData(player);
+    PlayerData overworldPlayerData = DimensionManager.getOrCreateDimensionSave(overworld).getPlayerData(player);
 
     if (overworldPlayerData.previousPositions.size() == 0) {
       player.sendMessage(Text.translatable("sandbox-dimensions.errorMessages.no-previous-pos"), true);
@@ -44,11 +45,11 @@ public class LeaveDimension {
     ServerWorld dimension = source.getServer().getWorld(
       RegistryKey.of(RegistryKeys.WORLD, new Identifier(playerPos.dimension))
     );
-    DimensionSave leavingFromDimensionSave = DimensionSave.buildDimensionSave(player.getServerWorld());
+    DimensionSave leavingFromDimensionSave = DimensionManager.getOrCreateDimensionSave(player.getServerWorld());
     if (!leavingFromDimensionSave.getRule(DimensionSave.KEEP_INVENTORY_ON_JOIN)) {
       // If the world the player is leaving from has KeepInvOnJoin set to false
       // we want to try to give them back their inventory from this previous world
-      DimensionSave destinationDimentionSave = DimensionSave.buildDimensionSave(dimension);
+      DimensionSave destinationDimentionSave = DimensionManager.getOrCreateDimensionSave(dimension);
       destinationDimentionSave.swapPlayerInventoryWithDestination(player);
     }
 

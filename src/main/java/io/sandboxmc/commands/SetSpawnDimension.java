@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
@@ -32,7 +33,7 @@ public class SetSpawnDimension {
     ServerWorld dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
     // Set the spawn location of dimension
     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-    DimensionSave dimensionSave = DimensionSave.buildDimensionSave(dimension);
+    DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimension);
     dimensionSave.setSpawnPos(dimension, player.getBlockPos());
     return 1;
   }

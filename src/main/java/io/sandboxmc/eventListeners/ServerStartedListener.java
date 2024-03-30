@@ -8,7 +8,8 @@ import net.minecraft.server.MinecraftServer;
 public class ServerStartedListener implements ServerStarted {
   @Override
   public void onServerStarted(MinecraftServer server) {
+    // DimensionManager needs access to the server first
     DimensionManager.processSandboxDimensionFiles(server);
-    DatapackManager.init(server);
+    DatapackManager.onServerStarted(server);
   }
 }

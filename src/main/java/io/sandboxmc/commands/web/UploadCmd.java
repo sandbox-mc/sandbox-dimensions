@@ -63,18 +63,16 @@ public class UploadCmd implements Runnable {
   }
 
   private ServerCommandSource source;
-  private Session session;
   private String datapackFileName;
 
   public UploadCmd(ServerCommandSource commandSource, String theDatapackFileName) {
     source = commandSource;
-    session = ((MinecraftServerAccessor)commandSource.getServer()).getSession();
     datapackFileName = theDatapackFileName;
   }
 
   public void run() {
     Web web = new Web(source, "/datapacks/upload", true);
-    String filePath = defaultFilePath(session, datapackFileName + ".zip");
+    String filePath = defaultFilePath(datapackFileName + ".zip");
     File file = new File(filePath);
     if (!file.exists()) {
       printMessage(source, "Datapack not found at " + filePath);
@@ -97,8 +95,8 @@ public class UploadCmd implements Runnable {
     }
   }
 
-  private static String defaultFilePath(Session session, String fileName) {
-    Path storageFolder = DatapackManager.getStorageFolder(session);
+  private static String defaultFilePath(String fileName) {
+    Path storageFolder = DatapackManager.getStorageFolder();
     return Paths.get(storageFolder.toString(), fileName).toString();
   }
 

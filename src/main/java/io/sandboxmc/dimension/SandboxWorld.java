@@ -13,17 +13,17 @@ import net.minecraft.util.Util;
 import net.minecraft.world.World;
 
 public class SandboxWorld extends ServerWorld {
-  final Boolean isPermanentWorld;
+  private SandboxWorldConfig config;
   private boolean flat;
 
-  public SandboxWorld(MinecraftServer server, RegistryKey<World> registryKey, SandboxWorldConfig config, Boolean isPermanentWorld) {
+  public SandboxWorld(MinecraftServer server, RegistryKey<World> registryKey, SandboxWorldConfig config) {
     super(
       server,
       Util.getMainWorkerExecutor(),
       ((MinecraftServerAccessor) server).getSession(),
       new SandboxWorldProperties(server.getSaveProperties(), config),
       registryKey,
-      config.createDimensionOptions(server),
+      config.getDimensionOptions(),
       ((MinecraftServerAccessor) server).getWorldGenerationProgressListenerFactory().create(11),
       false,
       config.getSeed(),
@@ -32,13 +32,21 @@ public class SandboxWorld extends ServerWorld {
       null
     );
 
-    this.isPermanentWorld = isPermanentWorld;
+    this.config = config;
     this.flat = config.getFlat().orElse(super.isFlat());
+  }
+
+  public SandboxWorldConfig getConfig() {
+    return this.config;
   }
 
   @Override
   public long getSeed() {
     return ((SandboxWorldProperties) this.properties).config.getSeed();
+  }
+
+  public boolean getShouldSaveWorld() {
+    return ((SandboxWorldProperties) this.properties).config.getShouldSaveWorld();
   }
 
   @Override
@@ -48,12 +56,12 @@ public class SandboxWorld extends ServerWorld {
 
   @Override
   public void save(@Nullable ProgressListener progressListener, boolean flush, boolean enabled) {
-  if (!this.isPermanentWorld || !flush) {
+  if (!this.getShouldSaveWorld() || !flush) {
     super.save(progressListener, flush, enabled);
   }
   }
   
   public interface Constructor {
-    SandboxWorld createWorld(MinecraftServer server, RegistryKey<World> registryKey, SandboxWorldConfig config, Boolean isPermanentWorld);
+    SandboxWorld createWorld(MinecraftServer server, RegistryKey<World> registryKey, SandboxWorldConfig config);
   }
 }

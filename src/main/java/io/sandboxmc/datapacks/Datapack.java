@@ -8,46 +8,75 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Map.Entry;
 
 import io.sandboxmc.Plunger;
 import io.sandboxmc.datapacks.types.DatapackMeta;
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.DimensionSave;
+import io.sandboxmc.dimension.SandboxWorldConfig;
+import io.sandboxmc.dimension.configs.DatapackDimensionConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.resource.Resource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
 import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class Datapack {
   DatapackMeta datapackMeta = new DatapackMeta();
-  public Path datapackPath;
+  private Path datapackPath;
+  private Map<Identifier, DatapackDimensionConfig> dimensionsToLoad = new HashMap<>();
+  private Map<Identifier, DimensionSave> dimensions = new HashMap<>();
   public String name;
+  // private HashSet<String> namespaces = new HashSet<>();
   Path tmpDirectory;
   Path tmpFile;
 
-  public Datapack(Path datapackPath, String name) {
-    this.datapackPath = Paths.get(datapackPath.toString(), name);
+  public Datapack(String name) {
+    if (DatapackManager.getRootPath() != null) {
+      this.datapackPath = Paths.get(DatapackManager.getRootPath().toString(), name);
+    }
+
     this.name = name;
   }
 
-  public void addDimensionFile(String namespace, String dimensionName, InputStream fileStream) {
-    Path dimensionConfigPath = Paths.get("data", namespace, "dimension");
+  public Datapack addDimension(DimensionSave dimensionSave) {
+    Identifier dimensionId = dimensionSave.getDimensionIdentifier();
+    if (this.dimensions.containsKey(dimensionId)) {
+      return this;
+    }
+
+    dimensionSave.setDatapackName(this.name);
+    dimensionSave.generateConfigFiles();
+
+    this.dimensions.put(dimensionId, dimensionSave);
+    return this;
+  }
+
+  // public Datapack addNamespace(String namespace) {
+  //   this.namespaces.add(namespace);
+  //   return this;
+  // }
+
+  private Path addConfigFile(Identifier identifier, String folder, String fileType, InputStream fileStream) throws IOException {
+    Path dimensionConfigPath = Paths.get("data", identifier.getNamespace(), folder);
     this.addFolder(dimensionConfigPath.toString());
-    dimensionConfigPath = Paths.get(datapackPath.toString(), dimensionConfigPath.toString(), dimensionName + ".json");
+    dimensionConfigPath = Paths.get(
+      datapackPath.toString(),
+      dimensionConfigPath.toString(),
+      identifier.getPath() + "." + fileType
+    );
 
     // Create new dimension.json file for the new dimension
     // This will allow for reloading this world
-    try {
-      Files.copy(fileStream, dimensionConfigPath, StandardCopyOption.REPLACE_EXISTING);
-
-      // Register the new dimension
-      DatapackManager.registerDatapackDimension(this.name, new Identifier(namespace, dimensionName));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    // Cloning the current state of the dimension being used
+    // Any Non-default dimensions will have a file to clone or it won't make it into this method
+    Files.copy(fileStream, dimensionConfigPath, StandardCopyOption.REPLACE_EXISTING);
+    return dimensionConfigPath;
   }
 
   public void addFolder(String folderPath) {
@@ -58,17 +87,17 @@ public class Datapack {
     }
   }
 
-  public void addWorldSaveFile(String namespace, String dimensionName, InputStream fileStream) {
-    Path worldSavePath = buildWorldSavePath(namespace, dimensionName);
+  // private void addWorldSaveFile(String namespace, String dimensionName, InputStream fileStream) {
+  //   Path worldSavePath = buildWorldSavePath(namespace, dimensionName);
 
-    // Copy over a default world save to use as default
-    // This is the save file that will be used for the new dimension
-    try {
-      Files.copy(fileStream, worldSavePath, StandardCopyOption.REPLACE_EXISTING);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+  //   // Copy over a default world save to use as default
+  //   // This is the save file that will be used for the new dimension
+  //   try {
+  //     Files.copy(fileStream, worldSavePath, StandardCopyOption.REPLACE_EXISTING);
+  //   } catch (IOException e) {
+  //     e.printStackTrace();
+  //   }
+  // }
 
   // Creates the world folder if it doesn't exist and returns .zip path
   private Path buildWorldSavePath(String namespace, String dimensionName) {
@@ -98,57 +127,84 @@ public class Datapack {
     }
   }
 
-  public void initializeDatapack(MinecraftServer server) {
+  public Path getDatapackPath() {
+    return this.datapackPath;
+  }
+
+  public void initializeDatapack() {
     File datapackFolder = this.datapackPath.toFile();
     if (!datapackFolder.exists()) {
-      // only create it if it doesn't exist
+      // create it if it doesn't exist
       datapackFolder.mkdirs();
     }
 
     Path packMcmetaPath = Paths.get(this.datapackPath.toString(), "pack.mcmeta");
     if (!packMcmetaPath.toFile().exists()) {
-      // If this doesn't exist we are generating a new datapack and need to create files
+      // generating a new datapack and need to create files
       try {
         FileWriter file = new FileWriter(packMcmetaPath.toString());
         file.write(this.datapackMeta.convertToJsonString());
         file.close();
       } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else {
-      // this is a loaded datapack
-      // we need to read through the files and process
-      File dataFolder = Paths.get(datapackFolder.toString(), "data").toFile();
-      File[] namespaces = dataFolder.listFiles((dir, name) -> dir.isDirectory());
-      for (File namespaceFile : namespaces) {
-        String namespace = namespaceFile.getName();
-        File namespaceDimensionFolder = Paths.get(namespaceFile.toString(), "dimension").toFile();
-        
-        File[] dimensionsInNamespace = namespaceDimensionFolder.listFiles((dir, name) -> {
-          return name.endsWith(".json");
-        });
-
-        for (File dimensionFile : dimensionsInNamespace) {
-          Identifier dimensionIdentifier = new Identifier(
-            namespace,
-            dimensionFile.getName().replaceAll(".json", "")
-          );
-  
-          // Create the dimension
-          DimensionManager.addDimensionToPacknameMap(dimensionIdentifier.toString(), this.name);
-          DimensionSave.loadDimensionFile(
-            dimensionIdentifier,
-            server
-          );
-          DimensionManager.createDimensionWorld(
-            server,
-            dimensionIdentifier,
-            new Identifier("overworld"),
-            server.getWorld(World.OVERWORLD).getSeed()
-          );
-        }
+        Plunger.error("Failed to Create metadata for: " + this.name, e);
       }
     }
+  }
+
+  public void loadQueuedDimensions() {
+    for (Entry<Identifier, DatapackDimensionConfig> entry : this.dimensionsToLoad.entrySet()) {
+      this.queueOrReloadDimension(entry.getKey(), entry.getValue());
+    }
+  }
+
+  public Datapack putDimension(Identifier id) {
+    return this;
+  }
+
+  public Datapack queueOrReloadDimension(Identifier id, DatapackDimensionConfig datapackDimensionConfig) {
+    if (datapackDimensionConfig == null) {
+      Plunger.error("datapackDimensionConfig cannot be null for dimension: " + id);
+      return null;
+    }
+
+    // Check if id exists
+    DimensionSave dimensionSave = DimensionManager.getDimensionSave(id);
+
+    if (dimensionSave == null) {
+      if (DatapackManager.getRootPath() == null) {
+        // we queue this up to be loaded onServerStart()
+        this.dimensionsToLoad.put(id, datapackDimensionConfig);
+        return this;
+      }
+
+      SandboxWorldConfig sandboxConfig = new SandboxWorldConfig(DatapackManager.getServer(), datapackDimensionConfig);
+      dimensionSave = DimensionManager.buildDimensionSaveFromConfig(id, sandboxConfig);
+      this.addDimension(dimensionSave);
+    }
+
+    // we reload the configs
+    // DimensionManager.reloadDimensionSave(id, config);
+    this.dimensionsToLoad.remove(id);
+    return this;
+  }
+
+  public void removeDimension(Identifier dimensionIdentifier) {
+    
+  }
+
+  public Datapack setDescription(String description) {
+    this.datapackMeta.pack.description = description;
+    return this;
+  }
+
+  public Datapack setPackFormat(Integer format) {
+    this.datapackMeta.pack.pack_format = format;
+    return this;
+  }
+
+  public Datapack setRootPath(Path datapackRootPath) {
+    this.datapackPath = Paths.get(datapackRootPath.toString(), this.name);
+    return this;
   }
 
   public void zipWorldfilesToDatapack(ServerWorld dimension) {

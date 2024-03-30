@@ -4,7 +4,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.util.Identifier;
 import io.sandboxmc.configs.PlayerRespawnConfig;
-import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.eventListeners.ServerStartedListener;
 import io.sandboxmc.eventListeners.ServerStartingListener;
 import io.sandboxmc.eventListeners.ServerStoppedListener;
@@ -28,8 +28,8 @@ public class SandboxMC implements ModInitializer {
     // Initialize Commands
     ChunkGeneratorManager.init();
     CommandInit.init();
-    DimensionManager.init();
     PlayerRespawnConfig.initRespawnListener();
+    DatapackManager.init();
   }
 
   public static Identifier id(String name) {
