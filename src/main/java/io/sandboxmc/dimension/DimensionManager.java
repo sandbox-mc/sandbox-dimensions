@@ -10,7 +10,6 @@ import java.util.Set;
 
 import io.sandboxmc.Plunger;
 import io.sandboxmc.SandboxMC;
-import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -54,7 +53,7 @@ public class DimensionManager {
     //         .replaceAll("dimension/", "")
     //         .replaceAll(".json", "");
     //       String dimensionRegistrationKey = dimensionName.getNamespace() + ":" + dimPath;
-    //       System.out.println("DimensionKey: " + dimensionRegistrationKey);
+    //       Plunger.debug("DimensionKey: " + dimensionRegistrationKey);
     //       initializedDimensions.add(dimensionRegistrationKey);
     //     }
 
@@ -63,7 +62,7 @@ public class DimensionManager {
     //     for (Identifier resourceName : worldSaves.keySet()) {
     //       Resource resource = worldSaves.get(resourceName);
     //       String packName = resource.getResourcePackName().replaceAll("file/", "");
-    //       System.out.println("Pathing: " + resourceName);
+    //       Plunger.debug("Pathing: " + resourceName);
     //       // Pathing should match for Namespace and fileName
     //       String dimensionKey = resourceName.toString()
     //         .replaceAll(DimensionSave.WORLD_SAVE_FOLDER + "/", "") // remove folder name
@@ -75,7 +74,7 @@ public class DimensionManager {
     //           sandboxDimensionWorldFiles.put(dimensioIdentifier, packName);
     //         }
     //       } else {
-    //         System.out.println("WARNING: " + resourceName + " does not have a dimension loaded from a Datapack");
+    //         Plunger.debug("WARNING: " + resourceName + " does not have a dimension loaded from a Datapack");
     //       }
     //     }
 
@@ -190,7 +189,7 @@ public class DimensionManager {
     RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
     Identifier dimensionOptionsId = sandboxConfig.getDimensionOptionsId();
     if (dimensionOptionsId == null) {
-      // TODO: Brent, this throws... I think, sometimes...
+      // TODO:BRENT this throws... I think, sometimes...
       dimensionOptionsId = sandboxConfig.getDimensionOptions().dimensionTypeEntry().getKey().get().getValue();
     }
     Boolean isEmptyWorld = dimensionOptionsId.equals(SandboxMC.id("empty"));
@@ -315,7 +314,7 @@ public class DimensionManager {
     // }
 
     // Create Dimensions that were never added to a datapack
-    // TODO: Brent, add the config files to this to be tracked, rather than on main world
+    // TODO:BRENT add the config files to this to be tracked, rather than on main world
     HashMap<Identifier, Identifier> mainSave = DimensionManager
       .getOrCreateDimensionSave(server.getWorld(World.OVERWORLD))
       .getGeneratedWorlds();

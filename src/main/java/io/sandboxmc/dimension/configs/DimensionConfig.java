@@ -1,5 +1,6 @@
 package io.sandboxmc.dimension.configs;
 
+import io.sandboxmc.Plunger;
 import net.minecraft.server.world.ServerWorld;
 
 public class DimensionConfig {
@@ -10,7 +11,7 @@ public class DimensionConfig {
     DimensionConfig config = new DimensionConfig();
     config.type = server.getDimensionKey().getValue().toString();
     config.generator = GeneratorConfig.create(server.getChunkManager().getChunkGenerator());
-    System.out.println("Config: " + config.type);
+    Plunger.debug("Config: " + config.type);
     return new DimensionConfig();
   }
 }

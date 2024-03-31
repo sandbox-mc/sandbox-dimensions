@@ -15,7 +15,7 @@ public class DatapackDimensionConfig {
 
   // Should allow instancing?
   // if shouldSave is true, this is ignored
-  // What about if we just have a createInstance() method that clones it and doens't save?
+  // What about if we just have a createInstance() method that clones it and doesn't save?
   // do we really need this flag?
   public Boolean canInstance = false;
 

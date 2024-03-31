@@ -12,7 +12,6 @@ import com.mojang.brigadier.context.CommandContext;
 
 import io.sandboxmc.dimension.DimensionManager;
 import io.sandboxmc.dimension.SandboxWorldConfig;
-import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.registry.RegistryKey;
@@ -31,6 +30,7 @@ public class CreateDimension {
       CommandManager
       .argument("namespace", StringArgumentType.word())
       // TODO:BRENT not sure how to get a suggestion for these without a namespace
+      // (Tyler: this is a list of namespaces, can you just pull up ALL namespaces?)
       // .suggests(new StringListAutoComplete(getNamespaceAutoCompleteOptions()))
       .then(
         CommandManager

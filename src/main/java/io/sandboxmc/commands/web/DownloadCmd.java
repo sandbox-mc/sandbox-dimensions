@@ -17,7 +17,6 @@ import io.sandboxmc.Plunger;
 import io.sandboxmc.Web;
 import io.sandboxmc.commands.autoComplete.web.WebAutoComplete;
 import io.sandboxmc.datapacks.DatapackManager;
-import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -26,7 +25,6 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DownloadCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {
@@ -93,7 +91,7 @@ public class DownloadCmd implements Runnable {
         return;
     }
 
-    // TODO:TYLER don't require auth if there's a creator
+    // TODO:TYLER don't require auth if there's a creator (these would be published/public items)
     Web web = new Web(source, fileUrl + "/download", true);
     Path filePath = defaultFilePath(); // Currently not supporting anything but default.
     try {

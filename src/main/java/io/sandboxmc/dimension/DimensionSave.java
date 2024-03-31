@@ -227,7 +227,8 @@ public class DimensionSave extends PersistentState {
 
         FileUtils.copyInputStreamToFile(inputStream, newFile);
       } catch (IOException e) {
-        Plunger.error("Failed to Write Json for: " + identifier, e);
+        Plunger.error("Failed to write JSON for: " + identifier, e);
+        return false;
       }
     }
 
@@ -355,15 +356,15 @@ public class DimensionSave extends PersistentState {
     }
 
     try {
-      
       // delete current dimension save
       // Maybe make this a backup process or something???
       ZipUtility.deleteDirectory(dimensionSavePath);
 
       // Unzip the world files
-      Plunger.debug("Starting unzip for: " + this.identifier);
+      Plunger.debug("Unzipping " + this.identifier);
+      long started = System.nanoTime();
       ZipUtility.unzipFile(datapackLoadFilePath, dimensionSavePath);
-      Plunger.debug("Done unzipping for: " + this.identifier);
+      Plunger.debug("Done unzipping " + this.identifier + ". Took " + (System.nanoTime() - started) + "ns");
 
       // if we load a save file, it's an active dimension
       this.dimensionSaveLoaded = true;
