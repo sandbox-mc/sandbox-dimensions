@@ -15,7 +15,7 @@ import io.sandboxmc.dimension.DimensionManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
 
-public final class DimensionAutoComplete implements SuggestionProvider<ServerCommandSource> {
+public class DimensionAutoComplete implements SuggestionProvider<ServerCommandSource> {
   private static final DimensionAutoComplete INSTANCE = new DimensionAutoComplete();
 
   public static DimensionAutoComplete Instance() { return INSTANCE; }
@@ -35,7 +35,7 @@ public final class DimensionAutoComplete implements SuggestionProvider<ServerCom
 
   private void refreshCache(CommandContext<ServerCommandSource> context) {
     identifierList = this.buildCache.apply(context);
-    this.shouldRefreshCache = false;
+    // this.shouldRefreshCache = false;
   }
 
   @Override

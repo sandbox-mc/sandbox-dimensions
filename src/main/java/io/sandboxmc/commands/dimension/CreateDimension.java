@@ -11,8 +11,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.dimension.SandboxWorldConfig;
-import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.registry.RegistryKey;
@@ -30,8 +30,6 @@ public class CreateDimension {
     return CommandManager.literal("create").then(
       CommandManager
       .argument("namespace", StringArgumentType.word())
-      // TODO:BRENT not sure how to get a suggestion for these without a namespace
-      // .suggests(new StringListAutoComplete(getNamespaceAutoCompleteOptions()))
       .then(
         CommandManager
         .argument("dimensionName", StringArgumentType.word())
@@ -79,7 +77,8 @@ public class CreateDimension {
     SandboxWorldConfig config = new SandboxWorldConfig(server);
     config.setSeed(passedSeed ? seed : server.getWorld(World.OVERWORLD).getSeed());
     config.setDimensionOptionsId(dimensionOptionsId);
-    DimensionManager.buildDimensionSaveFromConfig(dimensionIdentifier, config);
+    DimensionSave dimensionSave = DimensionManager.buildDimensionSaveFromConfig(dimensionIdentifier, config);
+    dimensionSave.generateConfigFiles();
 
     source.sendFeedback(() -> {
       return Text.literal("Created new Dimension: " + dimensionName);

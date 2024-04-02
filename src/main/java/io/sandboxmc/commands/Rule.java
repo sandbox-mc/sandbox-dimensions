@@ -28,7 +28,6 @@ public class Rule {
           )
         )
       )
-      // TODO:BRENT add specific blockPos as secondary argument
       .executes(context -> {
         Plunger.debug("Fallback????");
         return 1;

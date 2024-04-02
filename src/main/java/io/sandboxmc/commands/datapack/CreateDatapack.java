@@ -4,7 +4,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
-import io.sandboxmc.Plunger;
 import io.sandboxmc.datapacks.Datapack;
 import io.sandboxmc.datapacks.DatapackManager;
 import net.minecraft.server.command.CommandManager;

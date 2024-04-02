@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import io.sandboxmc.Plunger;
 import io.sandboxmc.SandboxMC;
-import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -30,65 +28,8 @@ import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.level.storage.LevelStorage;
 
 public class DimensionManager {
-  private static Set<String> datapackFolderSet = new HashSet<String>();
-  private static Map<Identifier, String> sandboxDimensionWorldFiles = new HashMap<>();
   private static Map<Identifier, DimensionSave> dimensionSaves = new HashMap<>();
   private static MinecraftServer minecraftServer = null;
-
-  public static void init() {
-    // ResourceManagerHelper.get(ResourceType.SERVER_DATA)
-    // .registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-    //   @Override
-    //   public Identifier getFabricId() {
-    //     return Main.id("world_save_loader");
-    //   }
-
-    //   @Override
-    //   public void reload(ResourceManager manager) {
-    //     List<String> initializedDimensions = new ArrayList<>();
-
-    //     // Build a list of Dimensions coming from Datapacks
-    //     Map<Identifier, Resource> dimensions = manager.findResources("dimension", path -> true);
-    //     for (Identifier dimensionName : dimensions.keySet()) {
-    //       String dimPath = dimensionName.getPath()
-    //         .replaceAll("dimension/", "")
-    //         .replaceAll(".json", "");
-    //       String dimensionRegistrationKey = dimensionName.getNamespace() + ":" + dimPath;
-    //       System.out.println("DimensionKey: " + dimensionRegistrationKey);
-    //       initializedDimensions.add(dimensionRegistrationKey);
-    //     }
-
-    //     // Build a list of World Save files from Datapacks
-    //     Map<Identifier, Resource> worldSaves = manager.findResources(DimensionSave.WORLD_SAVE_FOLDER, path -> true);
-    //     for (Identifier resourceName : worldSaves.keySet()) {
-    //       Resource resource = worldSaves.get(resourceName);
-    //       String packName = resource.getResourcePackName().replaceAll("file/", "");
-    //       System.out.println("Pathing: " + resourceName);
-    //       // Pathing should match for Namespace and fileName
-    //       String dimensionKey = resourceName.toString()
-    //         .replaceAll(DimensionSave.WORLD_SAVE_FOLDER + "/", "") // remove folder name
-    //         .replaceAll(".zip", "");
-    //       Identifier dimensioIdentifier = new Identifier(dimensionKey);
-    //       // Check if there is an initialized dimension for the save file
-    //       if (initializedDimensions.contains(dimensionKey)) {
-    //         if (!sandboxDimensionWorldFiles.containsKey(dimensioIdentifier)) {
-    //           sandboxDimensionWorldFiles.put(dimensioIdentifier, packName);
-    //         }
-    //       } else {
-    //         System.out.println("WARNING: " + resourceName + " does not have a dimension loaded from a Datapack");
-    //       }
-    //     }
-
-    //     if (DimensionManager.minecraftServer != null) {
-    //       DimensionManager.processSandboxDimensionFiles(DimensionManager.minecraftServer);
-    //     }
-    //   }
-    // });
-  }
-
-  // public static void addDimensionToPacknameMap(Identifier dimensionIdentifier, String packName) {
-  //   sandboxDimensionWorldFiles.put(dimensionIdentifier, packName);
-  // }
 
   public static void addDimensionSave(Identifier dimensionName, DimensionSave dimensionSave) {
     dimensionSaves.put(dimensionName, dimensionSave);
@@ -177,6 +118,10 @@ public class DimensionManager {
     return dimensionSaves.keySet();
   }
 
+  public static Map<Identifier, DimensionSave> getDimensions() {
+    return dimensionSaves;
+  }
+
   public static DimensionSave getDimensionSave(Identifier dimensionName) {
     return dimensionSaves.get(dimensionName);
   }
@@ -190,7 +135,6 @@ public class DimensionManager {
     RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
     Identifier dimensionOptionsId = sandboxConfig.getDimensionOptionsId();
     if (dimensionOptionsId == null) {
-      // TODO: Brent, this throws... I think, sometimes...
       dimensionOptionsId = sandboxConfig.getDimensionOptions().dimensionTypeEntry().getKey().get().getValue();
     }
     Boolean isEmptyWorld = dimensionOptionsId.equals(SandboxMC.id("empty"));
@@ -225,10 +169,6 @@ public class DimensionManager {
 
     return dimensionSave;
   }
-
-  // public static String getPackFolder(Identifier dimensionId) {
-  //   return sandboxDimensionWorldFiles.get(dimensionId);
-  // }
 
   private static Type<DimensionSave> type = new Type<>(
     DimensionSave::new, // If there's no 'DimensionSave' yet create one
@@ -274,46 +214,6 @@ public class DimensionManager {
       DimensionManager.minecraftServer = server;
     }
 
-    // Map<Identifier, ServerWorld> worldMap = new HashMap<>();
-
-    // // Get a mapping of the currently loaded worlds for persistent storage
-    // for (ServerWorld world : server.getWorlds()) {
-    //   Identifier worldId = world.getRegistryKey().getValue();
-    //   if (!sandboxDimensionWorldFiles.containsKey(worldId)) {
-    //     DimensionManager.getOrCreateDimensionSave(world);
-    //   }
-
-    //   // DimensionConfig.create(world);
-
-    //   worldMap.put(worldId, world);
-    // }
-
-    // // Loop through all the saves that are found
-    // for (Identifier dimensionId : sandboxDimensionWorldFiles.keySet()) {
-    //   ServerWorld dimensionWorld = worldMap.get(dimensionId);
-    //   if (dimensionWorld != null) {
-    //     // Register dimension to datapack
-    //     Plunger.debug("Register: " + dimensionId + " : " + sandboxDimensionWorldFiles.get(dimensionId));
-    //     DatapackManager.registerDatapackDimension(sandboxDimensionWorldFiles.get(dimensionId), dimensionId);
-    //     DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimensionWorld);
-    //     if (!dimensionSave.dimensionSaveLoaded) {
-    //       Plunger.debug("Loading World File: " + dimensionId);
-    //       // Load datapack save zip and set as loaded
-    //       Boolean loaded = dimensionSave.loadDimensionFile();
-    //       if (!loaded) {
-    //         Plunger.debug("WARNING: Failed to load world for: " + dimensionId);
-    //       }
-    //     } else {
-    //       Plunger.debug("World Save files already loaded, Skipping: " + dimensionId);
-    //     }
-
-    //     // Add to list for auto-complete
-    //     DimensionManager.addDimensionSave(dimensionId, dimensionSave);
-    //   } else {
-    //     Plunger.debug("WARNING: Failed to load world for: " + dimensionId);
-    //   }
-    // }
-
     // Create Dimensions that were never added to a datapack
     // TODO: Brent, add the config files to this to be tracked, rather than on main world
     HashMap<Identifier, Identifier> mainSave = DimensionManager
@@ -334,8 +234,6 @@ public class DimensionManager {
   }
 
   public static void unload() {
-    datapackFolderSet = new HashSet<String>();
-    sandboxDimensionWorldFiles = new HashMap<>();
     dimensionSaves = new HashMap<>();
     minecraftServer = null;
   } 

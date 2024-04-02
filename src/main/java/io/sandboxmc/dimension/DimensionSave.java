@@ -61,7 +61,7 @@ public class DimensionSave extends PersistentState {
   private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
   // Class props
-  private SandboxWorldConfig sandboxWorldConfig;
+  // private SandboxWorldConfig sandboxWorldConfig;
   private String datapackName;
   public Boolean dimensionIsActive = false;
   public Boolean dimensionSaveLoaded = false;
@@ -251,10 +251,6 @@ public class DimensionSave extends PersistentState {
     return this.datapackName;
   }
 
-  public Identifier getDimensionIdentifier() {
-    return this.identifier;
-  }
-
   public Path getDimensionConfigPath() {
     return this.dimensionConfigPath;
   }
@@ -265,6 +261,10 @@ public class DimensionSave extends PersistentState {
 
   public HashMap<Identifier, Identifier> getGeneratedWorlds() {
     return this.generatedWorlds;
+  }
+
+  public Identifier getIdentifier() {
+    return this.identifier;
   }
 
   public PlayerData getPlayerData(PlayerEntity player) {

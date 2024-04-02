@@ -12,11 +12,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.sandboxmc.Web;
 import io.sandboxmc.datapacks.DatapackManager;
-import io.sandboxmc.mixin.MinecraftServerAccessor;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
-import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class UploadCmd implements Runnable {
   public static LiteralArgumentBuilder<ServerCommandSource> register() {

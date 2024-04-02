@@ -13,8 +13,6 @@ import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.commands.autoComplete.StringListAutoComplete;
 import io.sandboxmc.datapacks.Datapack;
 import io.sandboxmc.datapacks.DatapackManager;
-import io.sandboxmc.dimension.DimensionManager;
-import io.sandboxmc.dimension.DimensionSave;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -70,14 +68,6 @@ public class RemoveDimension {
       }, false);
       return 0;
     }
-    
-    // DimensionSave dimensionSave = DimensionManager.getDimensionSave(dimensionId);
-    // if (dimensionSave == null) {
-    //   source.sendFeedback(() -> {
-    //     return Text.literal("Dimension does not exist: " + dimensionId);
-    //   }, false);
-    //   return 0;
-    // }
 
     datapack.removeDimension(dimensionId);
     

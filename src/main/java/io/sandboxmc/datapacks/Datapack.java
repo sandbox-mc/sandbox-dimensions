@@ -3,15 +3,12 @@ package io.sandboxmc.datapacks;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Map.Entry;
 
@@ -23,7 +20,6 @@ import io.sandboxmc.dimension.SandboxWorldConfig;
 import io.sandboxmc.dimension.configs.DatapackDimensionConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
-import net.minecraft.resource.Resource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.level.storage.LevelStorage.Session;
@@ -47,7 +43,7 @@ public class Datapack {
   }
 
   public Datapack addDimension(DimensionSave dimensionSave) {
-    Identifier dimensionId = dimensionSave.getDimensionIdentifier();
+    Identifier dimensionId = dimensionSave.getIdentifier();
     if (this.dimensions.containsKey(dimensionId)) {
       return this;
     }
