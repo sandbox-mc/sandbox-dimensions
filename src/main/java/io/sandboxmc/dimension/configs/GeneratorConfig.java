@@ -1,5 +1,6 @@
 package io.sandboxmc.dimension.configs;
 
+import io.sandboxmc.Plunger;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
 
@@ -16,7 +17,7 @@ public class GeneratorConfig {
     } else {
       chunkGeneratorConfig.type = "minecraft:flat";
     }
-    // System.out.println("ChunkConfig: " + chunkGeneratorConfig.settings);
+    Plunger.debug("ChunkConfig: " + chunkGeneratorConfig.settings);
     return chunkGeneratorConfig;
   }
 }

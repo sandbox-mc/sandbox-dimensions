@@ -215,7 +215,7 @@ public class DimensionManager {
     }
 
     // Create Dimensions that were never added to a datapack
-    // TODO: Brent, add the config files to this to be tracked, rather than on main world
+    // TODO:BRENT add the config files to this to be tracked, rather than on main world
     HashMap<Identifier, Identifier> mainSave = DimensionManager
       .getOrCreateDimensionSave(server.getWorld(World.OVERWORLD))
       .getGeneratedWorlds();

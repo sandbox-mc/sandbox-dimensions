@@ -145,7 +145,7 @@ public class DatapackManager {
     DownloadedPack downloadedPack = downloadedDatapacks.get(datapackIdString);
     String datapackName = downloadedPack.packIdentifier.getPath();
 
-    // TODO: Brent, Check for name duplicates and Should prompt with Overwrite or new name
+    // TODO:BRENT Check for name duplicates and Should prompt with Overwrite or new name
 
     try {
       unzipDatapack(downloadedPack.installFile, Paths.get(datapackRootPath.toString(), datapackName));

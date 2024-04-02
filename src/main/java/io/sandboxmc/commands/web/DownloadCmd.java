@@ -91,7 +91,7 @@ public class DownloadCmd implements Runnable {
         return;
     }
 
-    // TODO:TYLER don't require auth if there's a creator
+    // TODO:TYLER don't require auth if there's a creator (these would be published/public items)
     Web web = new Web(source, fileUrl + "/download", true);
     Path filePath = defaultFilePath(); // Currently not supporting anything but default.
     try {
