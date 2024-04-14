@@ -27,12 +27,14 @@ public class ZipUtility {
     Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
       @Override
       public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        Plunger.info("Folder: " + dir + " : " + source.relativize(dir).toString());
         Files.createDirectories(target.resolve(source.relativize(dir).toString()));
         return FileVisitResult.CONTINUE;
       }
 
       @Override
       public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        Plunger.info("File: " + file + " : " + source.relativize(file).toString());
         Files.copy(file, target.resolve(source.relativize(file).toString()), options);
         return FileVisitResult.CONTINUE;
       }

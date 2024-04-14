@@ -148,6 +148,8 @@ public class Datapack {
         return false;
       }
 
+      Plunger.info("Identifier: " + id);
+
       SandboxWorldConfig sandboxConfig = new SandboxWorldConfig(DatapackManager.getServer(), datapackDimensionConfig);
       dimensionSave = DimensionManager.buildDimensionSaveFromConfig(id, sandboxConfig);
       this.addDimension(dimensionSave);

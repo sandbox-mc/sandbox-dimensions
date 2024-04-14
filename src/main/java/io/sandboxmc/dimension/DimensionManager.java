@@ -13,7 +13,6 @@ import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.block.BlockState;
-import net.minecraft.registry.DynamicRegistryManager.Immutable;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -24,7 +23,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
 import net.minecraft.world.PersistentState.Type;
-import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.level.storage.LevelStorage;
 
 public class DimensionManager {
@@ -35,67 +33,23 @@ public class DimensionManager {
     dimensionSaves.put(dimensionName, dimensionSave);
   }
 
-  // This will generate a dimension with EmptyChunkGenerator
-  public static void createDimensionWorld(MinecraftServer server, Identifier dimensionIdentifier, Identifier dimensionOptionsId, long seed) {
-    MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
-    RegistryKey<World> registryKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
-    Immutable registryManager = server.getRegistryManager();
-
-    // Get the presets for DimensionOptions
-    // This should allow for custom dimension types to be generated
-    DimensionOptions dimensionOptions = registryManager.get(RegistryKeys.DIMENSION).get(dimensionOptionsId);
-    Boolean isEmptyWorld = dimensionOptionsId.equals(SandboxMC.id("empty"));
-    SandboxWorldConfig config = new SandboxWorldConfig(server);
-    config.setSeed(seed);
-    if (dimensionOptions != null) {
-      config.setDimensionOptions(dimensionOptions);
-    } else {
-      Plunger.error("Warning: Failed to create world with dimensionOptions: " + dimensionOptionsId);
-      return;
-    }
-
-    // Create the World
-    SandboxWorld dimensionWorld = new SandboxWorld(server, registryKey, config);
-    // TODO:BRENT check if we need/want to align the borders, I don't know if we do...
-    // server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
-    serverAccess.getWorlds().put(registryKey, dimensionWorld);
-    DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimensionWorld, true);
-
-    // Add dimension to generated list so it can be restored on server restart
-    DimensionSave mainSave = DimensionManager.getOrCreateDimensionSave(server.getWorld(World.OVERWORLD));
-    mainSave.addGeneratedWorld(dimensionIdentifier, dimensionOptionsId);
-
-    // Set spawn point for single block placement
-    int spawnX = dimensionWorld.getLevelProperties().getSpawnX();
-    // TODO:BRENT adjust for generated terrain
-    int spawnY = dimensionWorld.getSeaLevel();
-    int spawnZ = dimensionWorld.getLevelProperties().getSpawnZ();
-    BlockPos blockPos = new BlockPos(spawnX, spawnY, spawnZ);
-    dimensionSave.setSpawnPos(dimensionWorld, blockPos);
-
-    if (isEmptyWorld) {
-      BlockState blockState = Registries.BLOCK.get(new Identifier("grass_block")).getDefaultState();
-      dimensionWorld.setBlockState(blockPos, blockState);
-    }
-  }
-
-  public static void deleteDimension(MinecraftServer server, Identifier dimensionIdentifier) {
+  public static void deleteDimension(Identifier dimensionIdentifier) {
     RegistryKey<World> dimensionKey = RegistryKey.of(RegistryKeys.WORLD, dimensionIdentifier);
-    ServerWorld dimension = server.getWorld(dimensionKey);
-    MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
+    ServerWorld dimension = minecraftServer.getWorld(dimensionKey);
+    MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(minecraftServer);
 
+    ServerWorldEvents.UNLOAD.invoker().onWorldUnload(minecraftServer, dimension);
     if (serverAccess.getWorlds().remove(dimensionKey, dimension)) {
-      ServerWorldEvents.UNLOAD.invoker().onWorldUnload(server, dimension);
       dimensionSaves.get(dimensionIdentifier).deleteConfigFiles();
       dimensionSaves.remove(dimensionKey.getValue());
-      
+
       // remove from generated list to prevent attenpts to create it on restart
-      DimensionSave mainSave = DimensionManager.getOrCreateDimensionSave(server.getWorld(World.OVERWORLD));
+      DimensionSave mainSave = DimensionManager.getOrCreateDimensionSave(minecraftServer.getWorld(World.OVERWORLD));
       mainSave.removeGeneratedWorld(dimensionIdentifier);
 
       LevelStorage.Session session = serverAccess.getSession();
       File worldDirectory = session.getWorldDirectory(dimensionKey).toFile();
-      Plunger.debug("Delete Dir: " + worldDirectory);
+      Plunger.info("Delete Dir: " + worldDirectory);
       if (worldDirectory.exists()) {
         try {
           ZipUtility.deleteDirectory(worldDirectory.toPath());
@@ -105,10 +59,6 @@ public class DimensionManager {
           }
         } catch (IOException e) {
           Plunger.error("Failed to delete world directory", e);
-          try {
-            ZipUtility.deleteDirectory(worldDirectory.toPath());
-          } catch (IOException ignored) {
-          }
         }
       }
     }
@@ -137,6 +87,7 @@ public class DimensionManager {
     if (dimensionOptionsId == null) {
       dimensionOptionsId = sandboxConfig.getDimensionOptions().dimensionTypeEntry().getKey().get().getValue();
     }
+
     Boolean isEmptyWorld = dimensionOptionsId.equals(SandboxMC.id("empty"));
   
     // Create the World
@@ -204,7 +155,7 @@ public class DimensionManager {
     return dimensionSave;
   }
 
-  public static void onServerStart(MinecraftServer server) {
+  public static void onServerStarted(MinecraftServer server) {
     minecraftServer = server;
   }
 
@@ -214,8 +165,33 @@ public class DimensionManager {
       DimensionManager.minecraftServer = server;
     }
 
+    // Add sandbox_<GUID> datapack to load these
+
+    // MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
+    // Session session = serverAccess.getSession();
+    // String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
+    // Path standAloneDimensions = Paths.get(minecraftFolder, "sandbox", "dimensions", "data");
+    // File dimensionsDataFolder = standAloneDimensions.toFile();
+    // if (dimensionsDataFolder.exists()) {
+    //   File[] namespaces = dimensionsDataFolder.listFiles((dir, name) -> dir.isDirectory());
+    //   for (File namespaceFolder : namespaces) {
+    //     Plunger.info("Namespace: " + namespaceFolder.toPath());
+    //     // Check for sandbox_dimension files
+    //     File sandboxDimensionFolder = Paths.get(
+    //       namespaceFolder.toPath().toString(),
+    //       DimensionSave.DIMENSION_CONFIG_FOLDER
+    //     ).toFile();
+
+    //     if (sandboxDimensionFolder.exists()) {
+
+    //     }
+    //   }
+    // }
+
     // Create Dimensions that were never added to a datapack
     // TODO:BRENT add the config files to this to be tracked, rather than on main world
+    // Need to get list of configs in the /storage folder or build a list of all dimensions
+    // that are not part of a datapack
     HashMap<Identifier, Identifier> mainSave = DimensionManager
       .getOrCreateDimensionSave(server.getWorld(World.OVERWORLD))
       .getGeneratedWorlds();

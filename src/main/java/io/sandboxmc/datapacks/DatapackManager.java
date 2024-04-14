@@ -95,6 +95,30 @@ public class DatapackManager {
     downloadedDatapacks.put(name.toString(), new DownloadedPack(name, zipFile));
   }
 
+  public static Boolean deleteDatapack(String datapackName) {
+    Datapack datapack = getDatapack(datapackName);
+
+    // Remove/move any dimensions to general Sandbox storage
+    for (Identifier dimensionIdentifier : datapack.getDimensionIds()) {
+      datapack.removeDimension(dimensionIdentifier);
+    }
+
+    if (datapack != null) {
+      datapackCache.remove(datapackName);
+      try {
+        ZipUtility.deleteDirectory(datapack.getDatapackPath());
+      } catch (IOException e) {
+        Plunger.error("Failed to delete datapack folder for: " + datapack, e);
+        return false;
+      }
+
+      return true;
+    }
+
+    Plunger.error("Delete Datapack not found: " + datapack);
+    return false;
+  }
+
   public static Datapack getDatapack(String datapackName) {
     return datapackCache.get(datapackName);
   }

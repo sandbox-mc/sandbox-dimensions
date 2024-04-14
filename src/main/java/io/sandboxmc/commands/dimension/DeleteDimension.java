@@ -3,10 +3,10 @@ package io.sandboxmc.commands.dimension;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
+import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
 import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -28,9 +28,9 @@ public class DeleteDimension {
   private static int deleteDimension(CommandContext<ServerCommandSource> context) {
     Identifier dimensionIdentifier = IdentifierArgumentType.getIdentifier(context, "dimension");
     ServerCommandSource source = context.getSource();
-    MinecraftServer server = source.getServer();
+    Plunger.info("Command: " + dimensionIdentifier);
 
-    DimensionManager.deleteDimension(server, dimensionIdentifier);
+    DimensionManager.deleteDimension(dimensionIdentifier);
 
     source.sendFeedback(() -> {
       return Text.literal("Created new Dimension: " + dimensionIdentifier);

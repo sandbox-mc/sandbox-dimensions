@@ -9,7 +9,8 @@ public class ServerStartedListener implements ServerStarted {
   @Override
   public void onServerStarted(MinecraftServer server) {
     // DimensionManager needs access to the server first
-    DimensionManager.processSandboxDimensionFiles(server);
+    DimensionManager.onServerStarted(server);
     DatapackManager.onServerStarted(server);
+    DimensionManager.processSandboxDimensionFiles(server);
   }
 }

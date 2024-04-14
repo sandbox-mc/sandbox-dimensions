@@ -14,6 +14,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.sandboxmc.Plunger;
 import io.sandboxmc.commands.autoComplete.DimensionAutoComplete;
 import io.sandboxmc.dimension.DimensionManager;
+import io.sandboxmc.dimension.DimensionSave;
 import io.sandboxmc.dimension.SandboxWorldConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
@@ -88,10 +89,11 @@ public class CopyDimension {
     SandboxWorldConfig config = new SandboxWorldConfig(server);
     config.setSeed(dimension.getSeed());
     config.setDimensionOptionsId(dimension.getDimensionKey().getValue());
-    DimensionManager.buildDimensionSaveFromConfig(newDimensionId, config);
+    DimensionSave dimensionSave = DimensionManager.buildDimensionSaveFromConfig(newDimensionId, config);
+    dimensionSave.generateConfigFiles();
 
     context.getSource().sendFeedback(() -> {
-      return Text.literal("Copied Dimension: " + dimensionId);
+      return Text.literal("Copied Dimension: " + dimensionId + " as " + newDimensionId);
     }, false);
 
     return 1;

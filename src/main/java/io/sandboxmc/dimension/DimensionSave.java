@@ -147,7 +147,11 @@ public class DimensionSave extends PersistentState {
 
   public void deleteConfigFiles() {
     this.dimensionConfigPath.toFile().delete();
-    this.dimensionPath.toFile().delete();
+    if (this.dimensionPath != null) {
+      // dimensionPath can be null if it uses a non-custom dimension.json file
+      // or one from a mod
+      this.dimensionPath.toFile().delete();
+    }
   }
 
   public Boolean generateConfigFiles() {
@@ -161,7 +165,11 @@ public class DimensionSave extends PersistentState {
         Plunger.error("Missing expected datapack: " + this.datapackName);
         return false;
       }
+
+      // TODO: Brent, remove from mainSave generatedWorlds
     }
+
+    // TODO: Brent, Else add to mainSave generatedWorlds
 
     Path namespacePath = Paths.get(basePath.toString(), "data", identifier.getNamespace());
 
@@ -193,9 +201,18 @@ public class DimensionSave extends PersistentState {
         Plunger.error("Failed to Create config for: " + identifier, e);
       }
     } else if (!this.dimensionConfigPath.equals(newDimensionConfigPath)) {
+      File previousSandboxFolder = this.dimensionConfigPath.getParent().toFile();
+      File previousNamespaceFolder = previousSandboxFolder.getParentFile();
       // we need to move the files and not write them
       this.dimensionConfigPath.toFile().renameTo(new File(newDimensionConfigPath.toString()));
       this.dimensionConfigPath = newDimensionConfigPath;
+      if (previousSandboxFolder.isDirectory() && previousSandboxFolder.list().length == 0) {
+        previousSandboxFolder.delete();
+
+        if (previousNamespaceFolder.isDirectory() && previousNamespaceFolder.list().length == 0) {
+          previousNamespaceFolder.delete();
+        }
+      }
     }
 
     return true;
