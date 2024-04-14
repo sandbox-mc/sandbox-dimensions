@@ -1,14 +1,22 @@
 package io.sandboxmc.dimension;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gson.Gson;
+
 import io.sandboxmc.Plunger;
 import io.sandboxmc.SandboxMC;
+import io.sandboxmc.datapacks.DatapackManager;
+import io.sandboxmc.dimension.configs.DatapackDimensionConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -19,14 +27,17 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
 import net.minecraft.world.PersistentState.Type;
 import net.minecraft.world.level.storage.LevelStorage;
+import net.minecraft.world.level.storage.LevelStorage.Session;
 
 public class DimensionManager {
   private static Map<Identifier, DimensionSave> dimensionSaves = new HashMap<>();
+  private static Gson gson = new Gson();
   private static MinecraftServer minecraftServer = null;
 
   public static void addDimensionSave(Identifier dimensionName, DimensionSave dimensionSave) {
@@ -167,46 +178,49 @@ public class DimensionManager {
 
     // Add sandbox_<GUID> datapack to load these
 
-    // MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
-    // Session session = serverAccess.getSession();
-    // String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
-    // Path standAloneDimensions = Paths.get(minecraftFolder, "sandbox", "dimensions", "data");
-    // File dimensionsDataFolder = standAloneDimensions.toFile();
-    // if (dimensionsDataFolder.exists()) {
-    //   File[] namespaces = dimensionsDataFolder.listFiles((dir, name) -> dir.isDirectory());
-    //   for (File namespaceFolder : namespaces) {
-    //     Plunger.info("Namespace: " + namespaceFolder.toPath());
-    //     // Check for sandbox_dimension files
-    //     File sandboxDimensionFolder = Paths.get(
-    //       namespaceFolder.toPath().toString(),
-    //       DimensionSave.DIMENSION_CONFIG_FOLDER
-    //     ).toFile();
+    MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(server);
+    Session session = serverAccess.getSession();
+    String minecraftFolder = session.getDirectory(WorldSavePath.ROOT).toString();
+    Path standAloneDimensions = Paths.get(minecraftFolder, "sandbox", "dimensions", "data");
+    File dimensionsDataFolder = standAloneDimensions.toFile();
+    if (dimensionsDataFolder.exists()) {
+      File[] namespaces = dimensionsDataFolder.listFiles((dir, name) -> dir.isDirectory());
+      for (File namespaceFolder : namespaces) {
+        Plunger.info("Namespace: " + namespaceFolder.getName());
+        // Check for sandbox_dimension files
+        File sandboxDimensionFolder = Paths.get(
+          namespaceFolder.toPath().toString(),
+          DimensionSave.DIMENSION_CONFIG_FOLDER
+        ).toFile();
 
-    //     if (sandboxDimensionFolder.exists()) {
+        if (sandboxDimensionFolder.exists()) {
+          File[] configFiles = sandboxDimensionFolder.listFiles((file) -> file.getName().endsWith(".json"));
+          for (File configFile : configFiles) {
+            Identifier dimensionIdentifier = new Identifier(
+              namespaceFolder.getName(),
+              configFile.getName().replaceAll(".json", "")
+            );
 
-    //     }
-    //   }
-    // }
+            InputStream inputStream;
+            try {
+              inputStream = new FileInputStream(configFile);
+              byte[] buffer = new byte[inputStream.available()];
+              inputStream.read(buffer);
+              inputStream.close();
+              String jsonString = new String(buffer, "UTF-8");
+              DatapackDimensionConfig dimensionConfig = gson.fromJson(jsonString, DatapackDimensionConfig.class);
+              SandboxWorldConfig sandboxConfig = new SandboxWorldConfig(server, dimensionConfig);
+              DimensionManager.buildDimensionSaveFromConfig(dimensionIdentifier, sandboxConfig);
+            } catch (FileNotFoundException e) {
+              Plunger.error("Config File not found", e);
+            } catch (IOException e) {
+              Plunger.error("Issue reading in Config file", e);
+            }
 
-    // Create Dimensions that were never added to a datapack
-    // TODO:BRENT add the config files to this to be tracked, rather than on main world
-    // Need to get list of configs in the /storage folder or build a list of all dimensions
-    // that are not part of a datapack
-    HashMap<Identifier, Identifier> mainSave = DimensionManager
-      .getOrCreateDimensionSave(server.getWorld(World.OVERWORLD))
-      .getGeneratedWorlds();
-
-    // mainSave.keySet().forEach(dimensionId -> {
-    //   if (DimensionManager.getDimensionSave(dimensionId) == null) {
-    //     Plunger.debug("WARNING: Failed to load world for: ");
-    //     // Create the dimension
-    //     SandboxWorldConfig config = new SandboxWorldConfig();
-    //     // Longs default to 0, so null arg would be 0, not sure what we should do if some passes 0...
-    //     config.setSeed(server.getWorld(World.OVERWORLD).getSeed());
-    //     config.setDimensionOptionsId(mainSave.get(dimensionId));
-    //     DimensionManager.buildDimensionSaveFromConfig(dimensionId, config);
-    //   }
-    // });
+          }
+        }
+      }
+    }
   }
 
   public static void unload() {
