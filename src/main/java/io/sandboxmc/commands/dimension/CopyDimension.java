@@ -19,6 +19,8 @@ import io.sandboxmc.dimension.SandboxWorldConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
 import net.minecraft.command.argument.DimensionArgumentType;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -88,7 +90,14 @@ public class CopyDimension {
     // Create world once files are in place using dimension data
     SandboxWorldConfig config = new SandboxWorldConfig(server);
     config.setSeed(dimension.getSeed());
+    // TODO: figure out how to get or pass DimensionOptions
+    // DimensionOptions is not on the dimesion, we are storing it in generatedWorlds list
+    // But that is only there for worlds we create
+    // can we assume that dimensions created outside out system have a dimension.json file?
     config.setDimensionOptionsId(dimension.getDimensionKey().getValue());
+    server.getRegistryManager().get(RegistryKeys.DIMENSION).get(dimensionId);
+    
+    Plunger.info("OptionsId: " + dimension.getDimensionKey().getValue());
     DimensionSave dimensionSave = DimensionManager.buildDimensionSaveFromConfig(newDimensionId, config);
     dimensionSave.generateConfigFiles();
 

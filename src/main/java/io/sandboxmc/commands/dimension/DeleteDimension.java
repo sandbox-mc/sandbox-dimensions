@@ -33,7 +33,7 @@ public class DeleteDimension {
     DimensionManager.deleteDimension(dimensionIdentifier);
 
     source.sendFeedback(() -> {
-      return Text.literal("Created new Dimension: " + dimensionIdentifier);
+      return Text.literal("Deleted Dimension: " + dimensionIdentifier);
     }, false);
     return 1;
   }

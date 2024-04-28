@@ -1,5 +1,6 @@
 package io.sandboxmc.dimension.configs;
 
+import io.sandboxmc.dimension.GameRuleOverrides;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.Difficulty;
 
@@ -60,7 +61,7 @@ public class DatapackDimensionConfig {
   // Is flat world or not
   // must be initialized
   public Boolean flat;
-  // public final GameRuleOverrides gameRules = new GameRuleOverrides();
+  public GameRuleConfig gameRules = new GameRuleConfig();
   public boolean raining;
   public int rainTime = 0;
   public long seed = 0;

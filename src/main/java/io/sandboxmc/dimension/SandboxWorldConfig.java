@@ -76,6 +76,9 @@ public class SandboxWorldConfig {
       this.setRaining(datapackConfig.raining);
     }
 
+    // Apply any override rules from config
+    datapackConfig.gameRules.applyToOverrides(this.gameRules);
+
     this.setDimensionOptions(this.createDimensionOptions());
   }
 

@@ -1,9 +1,13 @@
 {
-  "type": "minecraft:overworld",
+  "type": "sandboxmc:empty_overworld",
   "generator": {
     "type": "minecraft:flat",
     "settings": {
-      "layers": []
+      "biome": "sandbox:emptyplains",
+      "lakes": false,
+      "features": false,
+      "layers": [],
+      "structure_overrides": []
     }
   }
 }

@@ -52,12 +52,12 @@ public class CreateDimension {
 
   private static Function<CommandContext<ServerCommandSource>, List<String>> getDimensionAutoCompleteOptions() {
     return (context) -> {
-      Set<RegistryKey<DimensionOptions>> dimensionTypes = context.getSource().getServer()
+      Set<RegistryKey<DimensionOptions>> dimensionOptionTypes = context.getSource().getServer()
         .getRegistryManager().get(RegistryKeys.DIMENSION).getKeys();
       List<String> dimensionTypeList = new ArrayList<>();
 
-      for (RegistryKey<DimensionOptions> dimensionType : dimensionTypes) {
-        dimensionTypeList.add(dimensionType.getValue().toString());
+      for (RegistryKey<DimensionOptions> dimensionOptions : dimensionOptionTypes) {
+        dimensionTypeList.add(dimensionOptions.getValue().toString());
       }
 
       return dimensionTypeList;

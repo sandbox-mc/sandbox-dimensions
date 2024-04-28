@@ -15,7 +15,6 @@ import com.google.gson.Gson;
 
 import io.sandboxmc.Plunger;
 import io.sandboxmc.SandboxMC;
-import io.sandboxmc.datapacks.DatapackManager;
 import io.sandboxmc.dimension.configs.DatapackDimensionConfig;
 import io.sandboxmc.mixin.MinecraftServerAccessor;
 import io.sandboxmc.zip.ZipUtility;
@@ -49,7 +48,10 @@ public class DimensionManager {
     ServerWorld dimension = minecraftServer.getWorld(dimensionKey);
     MinecraftServerAccessor serverAccess = (MinecraftServerAccessor)(minecraftServer);
 
+    // Call unload to allow other mods/places to listen to unload events
     ServerWorldEvents.UNLOAD.invoker().onWorldUnload(minecraftServer, dimension);
+
+    // Then we can remove the world from the world list
     if (serverAccess.getWorlds().remove(dimensionKey, dimension)) {
       dimensionSaves.get(dimensionIdentifier).deleteConfigFiles();
       dimensionSaves.remove(dimensionKey.getValue());
@@ -60,7 +62,7 @@ public class DimensionManager {
 
       LevelStorage.Session session = serverAccess.getSession();
       File worldDirectory = session.getWorldDirectory(dimensionKey).toFile();
-      Plunger.info("Delete Dir: " + worldDirectory);
+      Plunger.info("Attempting to delete Dir: " + worldDirectory);
       if (worldDirectory.exists()) {
         try {
           ZipUtility.deleteDirectory(worldDirectory.toPath());
@@ -72,6 +74,8 @@ public class DimensionManager {
           Plunger.error("Failed to delete world directory", e);
         }
       }
+    } else {
+      Plunger.error("Unable to remove dimension from worlds list: " + dimensionIdentifier);
     }
   }
 
@@ -106,6 +110,7 @@ public class DimensionManager {
 
     // TODO:BRENT check if we need/want to align the borders, I don't know if we do...
     // server.getWorld(World.OVERWORLD).getWorldBorder().addListener(new WorldBorderSyncer(dimensionWorld.getWorldBorder()));
+    // dimensionWorld.getWorldBorder().setMaxRadius(4);
     serverAccess.getWorlds().put(registryKey, dimensionWorld);
     DimensionSave dimensionSave = DimensionManager.getOrCreateDimensionSave(dimensionWorld, true);
     
@@ -209,8 +214,10 @@ public class DimensionManager {
               inputStream.close();
               String jsonString = new String(buffer, "UTF-8");
               DatapackDimensionConfig dimensionConfig = gson.fromJson(jsonString, DatapackDimensionConfig.class);
+              Plunger.info("Options: " + dimensionConfig.getDimensionOptionsId());
               SandboxWorldConfig sandboxConfig = new SandboxWorldConfig(server, dimensionConfig);
-              DimensionManager.buildDimensionSaveFromConfig(dimensionIdentifier, sandboxConfig);
+              DimensionSave dimensionSave = DimensionManager.buildDimensionSaveFromConfig(dimensionIdentifier, sandboxConfig);
+              dimensionSave.setDimensionConfigPath(configFile.toPath());
             } catch (FileNotFoundException e) {
               Plunger.error("Config File not found", e);
             } catch (IOException e) {

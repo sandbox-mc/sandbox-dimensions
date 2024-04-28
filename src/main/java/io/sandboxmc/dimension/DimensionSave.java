@@ -146,11 +146,19 @@ public class DimensionSave extends PersistentState {
   }
 
   public void deleteConfigFiles() {
-    this.dimensionConfigPath.toFile().delete();
+    if (this.dimensionConfigPath != null) {
+      File dimensionConfigFile = this.dimensionConfigPath.toFile();
+      if (dimensionConfigFile.exists()) {
+        dimensionConfigFile.delete();
+      }
+    }
     if (this.dimensionPath != null) {
       // dimensionPath can be null if it uses a non-custom dimension.json file
       // or one from a mod
-      this.dimensionPath.toFile().delete();
+      File dimensionFile = this.dimensionPath.toFile();
+      if (dimensionFile.exists()) {
+        dimensionFile.delete();
+      }
     }
   }
 
